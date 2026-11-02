@@ -240,10 +240,10 @@ const CAPAS=(function(){
  setTimeout(todo,2500);setTimeout(todo,6000);
 })();
 
-/* ---------- Girar: un dedo arrastrando hacia los costados hace girar el átomo sobre su eje vertical.
-   La inclinación (ver arriba/abajo) queda bloqueada a propósito: se logra moviendo el marcador o el celular. ---------- */
+/* ---------- Girar: un dedo arrastrando hacia los costados hace girar el átomo sobre un solo eje (Z del marcador).
+   Los otros dos ejes quedan bloqueados a propósito: se logran girando el marcador o moviendo el celular. ---------- */
 (function(){
- const TH=AFRAME.THREE,EJE=new TH.Vector3(0,1,0),K=.01,q=new TH.Quaternion();
+ const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),K=.01,q=new TH.Quaternion();
  const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
  const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info");
  const marcadores=()=>[...document.querySelectorAll("a-marker")];
