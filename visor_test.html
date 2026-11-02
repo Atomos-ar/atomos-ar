@@ -240,17 +240,17 @@ const CAPAS=(function(){
  setTimeout(todo,2500);setTimeout(todo,6000);
 })();
 
-/* ---------- Inclinar: un dedo arrastrando hacia arriba o abajo muestra la parte de arriba y la de abajo del átomo.
-   El giro horizontal queda bloqueado a propósito: para verlo por el otro lado se gira el marcador con la mano. ---------- */
+/* ---------- Girar: un dedo arrastrando hacia los costados hace girar el átomo sobre su eje vertical.
+   La inclinación (ver arriba/abajo) queda bloqueada a propósito: se logra moviendo el marcador o el celular. ---------- */
 (function(){
- const TH=AFRAME.THREE,EJE=new TH.Vector3(1,0,0),K=.01,q=new TH.Quaternion();
+ const TH=AFRAME.THREE,EJE=new TH.Vector3(0,1,0),K=.01,q=new TH.Quaternion();
  const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
  const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info");
  const marcadores=()=>[...document.querySelectorAll("a-marker")];
- let pid=null,y=0;
- addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix)return;pid=e.pointerId;y=e.clientY},true);
- addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;const dy=e.clientY-y;y=e.clientY;
-  marcadores().forEach(m=>{if(m.object3D.visible)m.__tilt=(m.__tilt||0)+dy*K})},true);
+ let pid=null,x0=0;
+ addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix)return;pid=e.pointerId;x0=e.clientX},true);
+ addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;const dx=e.clientX-x0;x0=e.clientX;
+  marcadores().forEach(m=>{if(m.object3D.visible)m.__tilt=(m.__tilt||0)+dx*K})},true);
  const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
  /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
  (function tk(){requestAnimationFrame(tk);
