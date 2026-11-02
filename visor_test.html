@@ -250,7 +250,7 @@ const CAPAS=(function(){
  let pid=null,x0=0;
  addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix)return;pid=e.pointerId;x0=e.clientX},true);
  addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;const dx=e.clientX-x0;x0=e.clientX;
-  marcadores().forEach(m=>{if(m.object3D.visible)m.__tilt=(m.__tilt||0)+dx*K})},true);
+  marcadores().forEach(m=>{if(m.object3D.visible)m.__tilt=(m.__tilt||0)-dx*K})},true);
  const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
  /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
  (function tk(){requestAnimationFrame(tk);
