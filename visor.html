@@ -239,4 +239,26 @@ const CAPAS=(function(){
  document.querySelectorAll("a-marker").forEach(m=>m.addEventListener("markerFound",()=>{const e=m.querySelector("[gltf-model]");if(e&&e.object3D)CAPAS.aplicarModelo(e.object3D)}));
  setTimeout(todo,2500);setTimeout(todo,6000);
 })();
+
+/* ---------- Girar: un dedo arrastrando hacia los costados hace girar el átomo sobre un solo eje (Z del marcador).
+   Los otros dos ejes quedan bloqueados a propósito: se logran girando el marcador o moviendo el celular. ---------- */
+(function(){
+ const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),K=.01,q=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
+ const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info");
+ const marcadores=()=>[...document.querySelectorAll("a-marker")];
+ let pid=null,x0=0,y0=0;
+ addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix)return;pid=e.pointerId;x0=e.clientX;y0=e.clientY},true);
+ addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;const dx=e.clientX-x0,dy=e.clientY-y0;x0=e.clientX;y0=e.clientY;
+  /* el sentido sale de cómo se ve el eje en pantalla: la cara visible del átomo sigue al dedo aunque se gire el marcador */
+  marcadores().forEach(m=>{if(!m.object3D.visible)return;
+   m.object3D.getWorldQuaternion(qm);ce.object3D.getWorldQuaternion(qc);a.copy(EJE).applyQuaternion(qm).applyQuaternion(qc.invert());
+   const vx=a.y,vy=-a.x,n=Math.hypot(vx,vy),f=n<.25?4:1/n;
+   m.__tilt=(m.__tilt||0)+K*(dx*vx-dy*vy)*f})},true);
+ const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
+ /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
+ (function tk(){requestAnimationFrame(tk);
+  for(const m of marcadores()){const w=m.querySelector(":scope > a-entity");if(!w||w.object3D.parent!==m.object3D)continue;
+   w.object3D.quaternion.copy(q.setFromAxisAngle(EJE,m.__tilt||0))}})();
+})();
 </script></body></html>
