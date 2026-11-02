@@ -39,10 +39,6 @@
 #capp .cn button{padding:9px 0;border-radius:10px;border:1.5px solid rgba(255,255,255,.18);background:transparent;color:#cfd8ee;font:600 13px system-ui,sans-serif;opacity:.5;touch-action:manipulation}
 #capp .cn button.on{opacity:1;border-color:#3de6ff;background:rgba(61,230,255,.16);color:#fff;box-shadow:0 0 8px rgba(61,230,255,.35)}
 #capp .sec{margin-top:12px}
-#fijar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:15;padding:8px 14px;border-radius:20px;border:0;background:rgba(5,7,13,.7);color:#fff;font:15px system-ui,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-#fijar.on{background:rgba(61,230,255,.28)}
-#fhint{position:fixed;top:calc(52px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:15;padding:7px 12px;border-radius:14px;background:rgba(8,12,24,.85);color:#fff;font:13px system-ui,sans-serif;max-width:80vw;text-align:center;pointer-events:none}
-#fhint[hidden]{display:none}
 </style></head>
 <body>
 <div id="intro" aria-hidden="true"><canvas id="mx"></canvas><p id="introT">Preparando la cámara…</p></div>
@@ -96,7 +92,7 @@ requestAnimationFrame(draw)})();
  function listo(){const v=document.querySelector("video");return !!(v&&v.videoWidth>0&&v.readyState>=2)}
  (function w(){const t=performance.now()-t0;if((listo()&&t>MIN)||t>10000)fin();else setTimeout(w,120)})()})();
 </script>
-<a id="back" href="lector_test.html">‹ Grupos</a><button id="fijar" type="button">Fijar</button><div id="fhint" hidden></div><div id="info"><b id="t">Apunta la cámara a un marcador</b><small id="s">Si el video se ve con mucho zoom, prueba agregar ?c=1 o ?c=2 a la dirección</small></div>
+<a id="back" href="lector_test.html">‹ Grupos</a><div id="info"><b id="t">Apunta la cámara a un marcador</b><small id="s">Si el video se ve con mucho zoom, prueba agregar ?c=1 o ?c=2 a la dirección</small></div>
 <div id="ui"><button id="mn" aria-label="Más pequeño">−</button><input id="sl" type="range" min="-100" max="100" step="1" value="0" aria-label="Tamaño"><button id="mp" aria-label="Más grande">+</button><span id="pc" title="Toca para volver al 100%">100%</span></div>
 <script>
 window.addEventListener("error",e=>{window.__err=(e.message||"")+" "+String(e.filename||"").split("/").pop()});
@@ -244,38 +240,21 @@ const CAPAS=(function(){
  setTimeout(todo,2500);setTimeout(todo,6000);
 })();
 
-/* ---------- Fijar: deja el modelo quieto en pantalla (sin depender del marcador) para girarlo con el dedo y verlo desde todos los ángulos ---------- */
+/* ---------- Inclinar: un dedo arrastrando hacia arriba o abajo muestra la parte de arriba y la de abajo del átomo.
+   El giro horizontal queda bloqueado a propósito: para verlo por el otro lado se gira el marcador con la mano. ---------- */
 (function(){
- const TH=AFRAME.THREE,btn=document.getElementById("fijar"),hint=document.getElementById("fhint"),sc=document.querySelector("a-scene"),ce=document.querySelector("a-entity[camera]");
- let items=[],ht;const P=new Map();let pd=0;
- const msg=t=>{hint.textContent=t;hint.hidden=false;clearTimeout(ht);ht=setTimeout(()=>{hint.hidden=true},3500)};
- const dist=()=>{const a=[...P.values()];return a.length<2?0:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};
- function estado(on){btn.textContent=on?"Soltar":"Fijar";btn.classList.toggle("on",on);
-  document.body.style.touchAction=document.documentElement.style.touchAction=on?"none":""}
- function fijar(){
-  const vis=[...document.querySelectorAll("a-marker")].filter(m=>m.object3D.visible);
-  if(!vis.length){msg("Apunta primero a un marcador");return}
-  sc.object3D.updateMatrixWorld(true);const v=new TH.Vector3();
-  vis.forEach(m=>{const w=m.querySelector(":scope > a-entity"),inn=w&&w.querySelector(":scope > a-entity");if(!inn)return;
-   /* el pivote de giro es el centro del átomo, en las mismas coordenadas de cámara donde se ve ahora */
-   inn.object3D.getWorldPosition(v);ce.object3D.worldToLocal(v);
-   const H=new TH.Group(),R=new TH.Group();H.position.copy(v);H.add(R);ce.object3D.add(H);R.add(w.object3D);
-   items.push({m,w,inn,H,R})});
-  if(!items.length)return;
-  estado(true);msg("Fijado · arrastra para girar · pellizca para el tamaño")}
- function soltar(){
-  items.forEach(i=>{i.R.remove(i.w.object3D);i.w.object3D.position.set(0,0,0);i.m.object3D.add(i.w.object3D);ce.object3D.remove(i.H)});
-  items=[];P.clear();pd=0;estado(false);msg("Vuelve a seguir al marcador")}
- btn.addEventListener("click",()=>items.length?soltar():fijar());
- /* mantiene el centro del átomo sobre el pivote aunque cambie el tamaño con el control − / + */
- (function tk(){requestAnimationFrame(tk);for(const i of items)i.w.object3D.position.set(0,-i.inn.object3D.position.y,0)})();
+ const TH=AFRAME.THREE,EJE=new TH.Vector3(1,0,0),K=.01,q=new TH.Quaternion();
+ const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
  const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info");
- addEventListener("pointerdown",e=>{if(!items.length||ui(e))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(P.size==2)pd=dist()},true);
- addEventListener("pointermove",e=>{const p=P.get(e.pointerId);if(!p||!items.length)return;
-  const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
-  if(P.size==1){const q=new TH.Quaternion().setFromEuler(new TH.Euler(dy*.01,dx*.01,0));items.forEach(i=>i.R.quaternion.premultiply(q))}
-  else if(P.size==2){const d=dist();if(pd>0&&d>0)cambiar(mult*d/pd);pd=d}},true);
- ["pointerup","pointercancel"].forEach(n=>addEventListener(n,e=>{P.delete(e.pointerId);pd=P.size==2?dist():0},true));
- addEventListener("wheel",e=>{if(!items.length||ui(e))return;e.preventDefault();cambiar(mult*(e.deltaY<0?1.1:1/1.1))},{passive:false});
+ const marcadores=()=>[...document.querySelectorAll("a-marker")];
+ let pid=null,y=0;
+ addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix)return;pid=e.pointerId;y=e.clientY},true);
+ addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;const dy=e.clientY-y;y=e.clientY;
+  marcadores().forEach(m=>{if(m.object3D.visible)m.__tilt=(m.__tilt||0)+dy*K})},true);
+ const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
+ /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
+ (function tk(){requestAnimationFrame(tk);
+  for(const m of marcadores()){const w=m.querySelector(":scope > a-entity");if(!w||w.object3D.parent!==m.object3D)continue;
+   w.object3D.quaternion.copy(q.setFromAxisAngle(EJE,m.__tilt||0))}})();
 })();
 </script></body></html>
