@@ -258,8 +258,9 @@ const CAPAS=(function(){
    m.object3D.getWorldQuaternion(qm);ce.object3D.getWorldQuaternion(qc);a.copy(EJE).applyQuaternion(qm).applyQuaternion(qc.invert());
    const vx=a.y,vy=-a.x,n=Math.hypot(vx,vy),f=n<.25?4:1/n;
    m.__tilt=(m.__tilt||0)+K*(dx*vx-dy*vy)*f;
-   /* eje X (el tercero, que antes estaba bloqueado): mismo criterio que Z, el sentido sale de cómo se ve el eje en pantalla */
-   b2.copy(EJX).applyQuaternion(qm).applyQuaternion(qc);const wx=b2.y,wy=-b2.x,n2=Math.hypot(wx,wy),f2=n2<.25?4:1/n2;
+   /* eje X (el tercero, que antes estaba bloqueado): mismo criterio que Z, el sentido sale de cómo se ve el eje en pantalla.
+      Ese eje gira junto con el átomo cuando se lo gira sobre Z (por eso se le aplica ese giro): así, aunque el átomo quede de espaldas, el giro sigue al dedo */
+   b2.copy(EJX).applyQuaternion(q.setFromAxisAngle(EJE,m.__tilt)).applyQuaternion(qm).applyQuaternion(qc);const wx=b2.y,wy=-b2.x,n2=Math.hypot(wx,wy),f2=n2<.25?4:1/n2;
    m.__tx=(m.__tx||0)+K*(dx*wx-dy*wy)*f2})},true);
  const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
  /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
