@@ -370,4 +370,60 @@ const CAPAS=(function(){
    if(a.f<.999||a.on){a.on=a.f<.999?1:0;const g=a.on?a.f:1,k=k0*g;a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=d[5]*k+.1*g}}
  })();
 })();
+
+/* ---------- Hoja: nombre flotante de la familia y líneas de neón entre los marcadores del mismo grupo ----------
+   Con 2 o más marcadores de una misma familia a la vista, se unen con líneas de neón (cada uno con su vecino más cercano)
+   y sobre el grupo flota el nombre de la familia. Se apagan desde el panel Capas, o con ?lineas=0 / ?nombre=0. */
+(function(){
+ const TH=AFRAME.THREE,sc=document.querySelector("a-scene");
+ const FN={alc:"Metales alcalinos",alt:"Alcalinotérreos",tr:"Metales de transición",lan:"Lantánidos",act:"Actínidos",pt:"Otros metales",mo:"Metaloides",nm:"No metales",ha:"Halógenos",gn:"Gases nobles"};
+ const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff"};
+ const FAM={};for(const k in G)G[k].forEach(z=>FAM[z]=k);
+ const op={li:1,no:1};
+ try{const g=JSON.parse(localStorage.getItem("hoja")||"null");if(g){op.li=g.li?1:0;op.no=g.no?1:0}}catch(e){}
+ if(Q.get("lineas")==="0")op.li=0;if(Q.get("nombre")==="0")op.no=0;
+ const cp=document.getElementById("capp");
+ if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Hoja de marcadores</div><label class="ca"><input type="checkbox" id="hoLi"> Líneas entre elementos del grupo</label><label class="ca"><input type="checkbox" id="hoNo"> Nombre de la familia</label>');
+  const li=cp.querySelector("#hoLi"),no=cp.querySelector("#hoNo"),gu=()=>{try{localStorage.setItem("hoja",JSON.stringify(op))}catch(e){}};
+  li.checked=!!op.li;no.checked=!!op.no;
+  li.addEventListener("change",()=>{op.li=li.checked?1:0;gu()});no.addEventListener("change",()=>{op.no=no.checked?1:0;gu()})}
+ const root=new TH.Group();sc.object3D.add(root);
+ const geo=new TH.CylinderGeometry(1,1,1,8,1,true),mats={};
+ const MT=col=>mats[col]||(mats[col]={c:new TH.MeshBasicMaterial({color:col,transparent:true,opacity:.9,depthWrite:false}),g:new TH.MeshBasicMaterial({color:col,transparent:true,opacity:.28,depthWrite:false})});
+ const segs=[],seg=i=>{if(!segs[i]){const g=new TH.Group(),c=new TH.Mesh(geo),h=new TH.Mesh(geo);g.add(h,c);g.userData={c,h};root.add(g);segs[i]=g}return segs[i]};
+ const lbl={};
+ function label(k){if(lbl[k])return lbl[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d");
+  x.font="700 62px system-ui,-apple-system,'Segoe UI',sans-serif";const w=x.measureText(FN[k]).width;
+  if(w>590)x.font="700 "+Math.floor(62*590/w)+"px system-ui,-apple-system,'Segoe UI',sans-serif";
+  x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(FN[k],320,66);x.fillText(FN[k],320,66);
+  x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(FN[k],320,66);
+  const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));
+  s.renderOrder=20;s.scale.set(3.6,.72,1);s.visible=false;root.add(s);return lbl[k]=s}
+ const ms=[...document.querySelectorAll("a-marker")].map(m=>{const z=+m.id.slice(1);return{m,w:m.querySelector(":scope > a-entity"),k:FAM[z],p:new TH.Vector3(),u:new TH.Vector3(),s:1}}).filter(a=>a.k&&a.w);
+ const Y=new TH.Vector3(0,1,0),d=new TH.Vector3(),mid=new TH.Vector3(),sv=new TH.Vector3(),MAXE=3.5;
+ (function tk(t){requestAnimationFrame(tk);
+  let ns=0;const usadas={},nom={};
+  if(op.li||op.no){const por={};
+   for(const a of ms){const o=a.m.object3D;if(!o.visible)continue;o.updateWorldMatrix(true,false);
+    sv.setFromMatrixScale(o.matrixWorld);a.s=sv.x>1e-6?sv.x:1;a.p.set(0,a.w.object3D.position.y,0);o.localToWorld(a.p);a.u.set(0,1,0).transformDirection(o.matrixWorld);
+    (por[a.k]=por[a.k]||[]).push(a)}
+   for(const k in por){const L=por[k];if(L.length<2)continue;
+    const E=[];for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const e=L[i].p.distanceTo(L[j].p)/L[i].s;if(e<=MAXE)E.push([e,i,j])}
+    E.sort((a,b)=>a[0]-b[0]);const par=L.map((_,i)=>i),f=i=>{while(par[i]!==i)i=par[i]=par[par[i]];return i},ch=[];
+    for(const[e,i,j]of E){const a=f(i),b=f(j);if(a!==b){par[a]=b;ch.push([i,j])}}
+    if(!ch.length)continue;
+    if(op.li){const M=MT(FC[k]);usadas[FC[k]]=1;
+     for(const[i,j]of ch){const A=L[i].p,B=L[j].p,s=L[i].s,g=seg(ns++);g.visible=true;
+      mid.addVectors(A,B).multiplyScalar(.5);d.subVectors(B,A);const len=d.length();g.position.copy(mid);g.quaternion.setFromUnitVectors(Y,d.divideScalar(len||1));
+      g.userData.c.material=M.c;g.userData.h.material=M.g;g.userData.c.scale.set(.03*s,len,.03*s);g.userData.h.scale.set(.08*s,len,.08*s)}}
+    if(op.no){const cnt={};L.forEach((_,i)=>{const r=f(i);cnt[r]=(cnt[r]||0)+1});
+     let best=-1,bn=0;for(const r in cnt)if(cnt[r]>bn){bn=cnt[r];best=+r}
+     if(bn>=2){const c=new TH.Vector3(),u=new TH.Vector3();let s=0,n=0;
+      L.forEach((a,i)=>{if(f(i)===best){c.add(a.p);u.add(a.u);s+=a.s;n++}});c.multiplyScalar(1/n);u.normalize();s/=n;
+      const sp=label(k);sp.position.copy(c).addScaledVector(u,2*s);sp.scale.set(3.6*s,.72*s,1);sp.visible=true;nom[k]=1}}}}
+  for(let i=ns;i<segs.length;i++)segs[i].visible=false;
+  for(const k in lbl)if(!nom[k])lbl[k].visible=false;
+  for(const col in mats){const p=Math.sin(t/260);mats[col].c.opacity=usadas[col]?(.82+.18*p):.9;mats[col].g.opacity=.26+.1*p}
+ })();
+})();
 </script></body></html>
