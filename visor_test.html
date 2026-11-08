@@ -270,7 +270,7 @@ const CAPAS=(function(){
  +"#datp[hidden]{display:none}#datp.tapa{visibility:hidden}#datp.vacia{background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}#datp.ex{background:rgba(8,12,24,.9);border-radius:0 0 16px 16px}"
  +"#datp .dc{position:relative}#datp.off .rw{opacity:.6}#datp .rw{transition:opacity .25s}"
  +"#datp .t{height:36px;line-height:36px;padding:0 96px;font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#datp .sy{color:#c3cfe8;font-weight:600}"
- +"#datp .f{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;min-height:30px;font-size:14.5px}#datp .f.ul{padding:0 92px 0 8px}"
+ +"#datp .f{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;min-height:30px;font-size:14.5px}#datp .f.ul{padding:0 92px 0 8px}#datp .f.c{padding:0}"
  +"#datp .f.g{display:grid;grid-template-columns:1fr auto 1fr;column-gap:12px;padding:0}#datp .f.g .l{justify-self:end}#datp .f.g .rr{justify-self:start}#datp.bajo .dc{padding-bottom:34px}#datp .f span{white-space:nowrap}#datp .f i{font-style:normal;color:#c3cfe8;margin-right:5px}#datp .f b{font-weight:600}"
  +"#datb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;right:-4px;bottom:0;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}"
  +"#datp.ex #datb{border-color:#3de6ff;background:rgba(61,230,255,.22)}"
@@ -328,12 +328,12 @@ const CAPAS=(function(){
   const nom=ver.n&&ver.s?d.n+' <span class="sy">('+d.s+')</span>':ver.n?d.n:ver.s?d.s:"";
   const f=[],dt=[];
   const zs=ver.z?'<span><b>Z = '+d.z+'</b></span>':"",as=ver.a?'<span><b>A = '+d.a+'</b></span>':"";
-  let gr=false;
+  let gr=false,cz=false;
   if(ver.c){gr=true;f.push('<div class="l">'+zs+'</div><span><i>CEE</i><b>'+d.ce+'</b></span><div class="rr">'+as+'</div>')}
-  else if(zs||as)f.push(zs+as);
+  else if(zs||as){f.push(zs+as);cz=true}
   p.classList.toggle("vacia",!nom&&!f.length);
   if(!f.length)f.push("");/* fila vacía que aloja el botón */
-  rw.innerHTML='<div class="t">'+nom+'</div>'+f.map((x,i)=>'<div class="f'+(gr&&i==f.length-1?' g':'')+(i==f.length-1?' ul':'')+'">'+x+'</div>').join("");
+  rw.innerHTML='<div class="t">'+nom+'</div>'+f.map((x,i)=>'<div class="f'+(gr&&i==f.length-1?' g':'')+(cz&&i==f.length-1?' c':'')+(i==f.length-1?' ul':'')+'">'+x+'</div>').join("");
   /* si Z/A/CEE llegan hasta el botón "Ver más", el botón baja a su propia fila */
   const cw=document.getElementById("capb");if(cw&&cw.offsetWidth)btn.style.width=cw.offsetWidth+"px";
   p.classList.remove("bajo");
