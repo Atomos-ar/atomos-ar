@@ -44,6 +44,7 @@ body.sal #warp{animation:onda .6s cubic-bezier(.3,.1,.3,1) forwards}
 .grp:not(.off):active path{fill:var(--f)}
 .nb{display:block;margin:26px auto 0;padding:11px 24px;border-radius:999px;background:transparent;border:1.5px solid var(--ac);color:var(--ac);font:600 15px system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.5px;text-shadow:0 0 8px rgba(61,230,255,.7);box-shadow:0 0 12px rgba(61,230,255,.35),inset 0 0 10px rgba(61,230,255,.12);cursor:pointer;touch-action:manipulation}
 .nb:active{background:rgba(61,230,255,.14)}
+.nb:disabled{opacity:.3;pointer-events:none;box-shadow:none;text-shadow:none;transition:opacity .2s}
 #cv{display:none;margin:auto 0;width:100%;flex-direction:column;align-items:center}
 body.cl main,body.cl #dock{display:none}
 body.cl #cv{display:flex;animation:cvin .45s ease-out}
@@ -110,7 +111,7 @@ function draw(){const n=tot();for(const k in G){const on=sel.has(k),off=!on&&n+G
   B[k].setAttribute("class","grp"+(on?" on":off?" off":""));B[k].closest(".lay").classList.toggle("off",off);B[k].setAttribute("aria-pressed",on)}
  document.getElementById("cnt").innerHTML="<b>"+n+"</b> / "+MAX+" elementos";
  const P=new URLSearchParams(Q);P.set("g",[...sel].join(","));const go=document.getElementById("go");
- go.href="visor.html?"+P.toString();go.className=n?"":"dis"}
+ go.href="visor.html?"+P.toString();go.className=n?"":"dis";const tc=document.getElementById("tc");if(tc)tc.disabled=n>0}
 draw();
 const go=document.getElementById("go"),rm=matchMedia("(prefers-reduced-motion:reduce)").matches;
 go.addEventListener("click",e=>{if(go.classList.contains("dis")){e.preventDefault();return}

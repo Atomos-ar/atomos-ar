@@ -106,20 +106,7 @@ const G={"alc": [3, 11, 19, 37, 55, 87], "alt": [4, 12, 20, 38, 56, 88], "tr": [
 (Q0.get("g")||"").split(",").forEach(k=>{if(G[k]&&ZS.length+G[k].length<=MAX)ZS=ZS.concat(G[k])});
 window.__Z=ZS;document.getElementById("back").href="lector_test.html"+location.search;
 if(!ZS.length)location.replace("lector_test.html"+location.search);
-/* Aura: marco de neón del color de la familia alrededor de cada marcador elegido (?aura=0 lo apaga) */
-const AUC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff"},AUZ={},AUON=Q0.get("aura")!=="0";
-for(const k in G)G[k].forEach(z=>AUZ[z]=AUC[k]);
-const AU=z=>AUON&&AUZ[z]?'<a-entity aura="color:'+AUZ[z]+'"></a-entity>':"";
-if(AUON)AFRAME.registerComponent("aura",{schema:{color:{default:"#3de6ff"}},
- init(){const T=AFRAME.THREE,c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d"),col=this.data.color;
-  const rr=()=>{x.beginPath();if(x.roundRect)x.roundRect(10,10,236,236,26);else x.rect(10,10,236,236)};
-  x.lineJoin="round";x.strokeStyle=col;x.shadowColor=col;x.shadowBlur=16;x.lineWidth=9;rr();x.stroke();rr();x.stroke();
-  x.shadowBlur=0;x.globalAlpha=.6;x.strokeStyle="#fff";x.lineWidth=3;rr();x.stroke();
-  const m=new T.Mesh(new T.PlaneGeometry(1.22,1.22),new T.MeshBasicMaterial({map:new T.CanvasTexture(c),transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide}));
-  m.rotation.x=-Math.PI/2;m.position.y=.012;this.m=m;this.ph=Math.random()*6.283;this.el.setObject3D("aura",m)},
- tick(t){if(this.m)this.m.material.opacity=.6+.4*Math.sin(t/420+this.ph)},
- remove(){this.el.removeObject3D("aura")}});
-ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity>'+AU(z)+'</a-marker>'));
+ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity></a-marker>'));
 </script>
 <a-entity camera></a-entity></a-scene>
 <script>
