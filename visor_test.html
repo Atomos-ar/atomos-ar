@@ -242,10 +242,11 @@ const CAPAS=(function(){
  setTimeout(todo,2500);setTimeout(todo,6000);
 })();
 
-/* ---------- Girar: un dedo arrastrando hacia los costados hace girar el átomo sobre un solo eje (Z del marcador).
-   Los otros dos ejes quedan bloqueados a propósito: se logran girando el marcador o moviendo el celular. ---------- */
+/* ---------- Girar: un dedo arrastrando hacia los costados gira el átomo sobre el eje Z del marcador; arrastrando hacia arriba/abajo, sobre el eje Y.
+   El eje X queda bloqueado a propósito: se logra girando el marcador o moviendo el celular.
+   La rotación automática (botón Rotación) gira en diagonal, entre los ejes Y y Z. ---------- */
 (function(){
- const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),K=.01,q=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
+ const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),EJY=new TH.Vector3(0,1,0),DIAG=new TH.Vector3(0,1,1).normalize(),K=.01,q=new TH.Quaternion(),qy=new TH.Quaternion(),qd=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),b2=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
  const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
  const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp");
  const marcadores=()=>[...document.querySelectorAll("a-marker")];
@@ -256,10 +257,13 @@ const CAPAS=(function(){
   marcadores().forEach(m=>{if(!m.object3D.visible)return;
    m.object3D.getWorldQuaternion(qm);ce.object3D.getWorldQuaternion(qc);a.copy(EJE).applyQuaternion(qm).applyQuaternion(qc.invert());
    const vx=a.y,vy=-a.x,n=Math.hypot(vx,vy),f=n<.25?4:1/n;
-   m.__tilt=(m.__tilt||0)+K*(dx*vx-dy*vy)*f})},true);
+   m.__tilt=(m.__tilt||0)+K*(dx*vx-dy*vy)*f;
+   /* eje Y: el sentido sale de hacia dónde mira el eje (hacia la cámara o alejándose), para que el giro en pantalla sea siempre el mismo */
+   const qz=q.setFromAxisAngle(EJE,m.__tilt);b2.copy(EJY).applyQuaternion(qz).applyQuaternion(qm).applyQuaternion(qc);
+   m.__ty=(m.__ty||0)-K*dy*(b2.z<0?-1:1)})},true);
  const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
  /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
- /* Rotar / detener: un solo ángulo compartido, así todos los átomos visibles giran sincronizados (se suma al giro hecho con el dedo) */
+ /* Rotar / detener: un solo ángulo compartido, así todos los átomos visibles giran sincronizados (gira en diagonal, entre los ejes Y y Z, y se suma al giro hecho con el dedo) */
  const GR=window.__giro={on:0,ang:0,vel:.7};
  try{GR.on=localStorage.getItem("giro")==="1"?1:0}catch(e){}
  {const cp=document.getElementById("capp");
@@ -270,7 +274,8 @@ const CAPAS=(function(){
  (function tk(now){requestAnimationFrame(tk);now=now||performance.now();const dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
   if(GR.on)GR.ang=(GR.ang+GR.vel*dt)%(Math.PI*2);
   for(const m of marcadores()){const w=m.querySelector(":scope > a-entity");if(!w||w.object3D.parent!==m.object3D)continue;
-   w.object3D.quaternion.copy(q.setFromAxisAngle(EJE,(m.__tilt||0)+GR.ang))}})();
+   q.setFromAxisAngle(EJE,m.__tilt||0);qy.setFromAxisAngle(EJY,m.__ty||0);qd.setFromAxisAngle(DIAG,GR.ang);
+   w.object3D.quaternion.copy(q.multiply(qy).multiply(qd))}})();
 })();
 
 /* ---------- Datos: banner translúcido a todo el ancho, desde arriba de la pantalla (por debajo de Grupos y Capas) ---------- */
