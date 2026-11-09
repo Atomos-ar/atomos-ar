@@ -123,10 +123,13 @@ const Q=new URLSearchParams(location.search),quiz=Q.get("quiz");
 const MIN=.25,MAX_M=4;let mult=1;
 try{mult=Math.min(MAX_M,Math.max(MIN,+localStorage.getItem("mult")||1))}catch(e){}
 const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend=0;
+/* Altura del átomo sobre el marcador: 0 = centrado justo sobre el marcador (anclado, el error de ángulo de la cámara casi no lo desplaza);
+   1 = levantado un radio como antes. Se cambia con ?alt=0.5 */
+const ALT=Q.get("alt")===null?0:Math.max(0,+Q.get("alt")||0);
 function aplicar(){pend=0;pc.textContent=Math.round(mult*100)+"%";
  if(document.activeElement!==sl)sl.value=Math.round(Math.log2(mult)*50);
  for(const z in D){const e=document.querySelector("#m"+z+" a-entity"),k=+(Q.get("s")||D[z][3])*mult;
-  e.setAttribute("scale",k+" "+k+" "+k);e.setAttribute("position","0 "+(D[z][5]*k+0.1)+" 0")}}
+  e.setAttribute("scale",k+" "+k+" "+k);e.setAttribute("position","0 "+(D[z][5]*k+0.1)*ALT+" 0")}}
 function cambiar(m){mult=Math.min(MAX_M,Math.max(MIN,m));try{localStorage.setItem("mult",mult)}catch(e){}if(!pend)pend=requestAnimationFrame(aplicar)}
 function repetir(btn,f){let t,iv;const go=()=>cambiar(mult*f),stop=()=>{clearTimeout(t);clearInterval(iv)};
  btn.addEventListener("pointerdown",ev=>{ev.preventDefault();stop();go();t=setTimeout(()=>{iv=setInterval(go,80)},350)});
@@ -389,7 +392,7 @@ const ITEMS=[
 (function(){
  const FIT=Q.get("fit")===null?.92:+Q.get("fit");if(!(FIT>0))return;
  /* tope: ningún átomo pasa de TOPE lados de marcador de diámetro. Con la hoja espaciada eso deja un hueco real entre átomos vecinos (con la hoja vieja no cambia nada). ?tope=0 lo quita */
- const TOPE=Q.get("tope")===null?1.15:(+Q.get("tope")>0?+Q.get("tope"):1e9);
+ const TOPE=Q.get("tope")===null?1.0:(+Q.get("tope")>0?+Q.get("tope"):1e9);
  const TH=AFRAME.THREE,vs=new TH.Vector3(),MINF=.1,SUAV=.22;
  const it=[];for(const z in D){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(w)it.push({z,m,w,p:new TH.Vector3(),s:1,f:1,on:0})}
  (function tk(){requestAnimationFrame(tk);
@@ -400,7 +403,7 @@ const ITEMS=[
    if(v.length>1&&v.includes(a)){let n=1e9;for(const b of v)if(b!==a)n=Math.min(n,a.p.distanceTo(b.p)/a.s);
     f=Math.max(MINF,Math.min(1,Math.max(.3,Math.min(FIT*n,TOPE))/(2*R0)))}
    a.f+=(f-a.f)*SUAV;if(Math.abs(f-a.f)<.002)a.f=f;
-   if(a.f<.999||a.on){a.on=a.f<.999?1:0;const g=a.on?a.f:1,k=k0*g;a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=d[5]*k+.1*g}}
+   if(a.f<.999||a.on){a.on=a.f<.999?1:0;const g=a.on?a.f:1,k=k0*g;a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}}
  })();
 })();
 
