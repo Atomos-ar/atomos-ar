@@ -47,11 +47,6 @@
 .ib[aria-expanded="true"]{box-shadow:0 0 0 2px rgba(255,255,255,.2)}
 .in{margin:-3px 0 4px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.07);font-size:12.5px;line-height:1.35;color:#d7e6ff}
 
-#capp details.cal{margin-top:10px;font:12.5px system-ui,sans-serif;color:#cfd8ee}
-#capp details.cal summary{cursor:pointer;padding:4px 0;color:#aab6d3}
-#capp .cal label{display:flex;align-items:center;gap:8px;margin:6px 0}
-#capp .cal label span{width:62px;flex:none}
-#capp .cal input{flex:1;min-width:0}
 </style></head>
 <body>
 <div id="intro" aria-hidden="true"><canvas id="mx"></canvas><p id="introT">Preparando la cámara…</p></div>
@@ -466,36 +461,5 @@ const ITEMS=[
      const sp=label(k);sp.position.copy(c).addScaledVector(u,2*s);sp.scale.set(3.6*s,.72*s,1);sp.visible=true;nom[k]=1}}}
   for(const k in lbl)if(!nom[k])lbl[k].visible=false;
  })();
-})();
-
-/* ---------- Alineación AR ----------
-   Si los átomos salen como elipses (más altos que anchos) o corridos hacia el centro de la pantalla respecto de su marcador, la proyección
-   de la cámara 3D no coincide con la del video. Con los controles de Capas > Alineación AR se corrige en vivo (se guarda en el teléfono):
-   · "Mostrar ejes" dibuja los ejes del marcador (rojo X, verde Y, azul Z): deben quedar justo sobre el marcador.
-   · Horizontal / Vertical estiran la vista 3D hasta que la nube sea redonda y esté centrada sobre el marcador.
-   También por dirección: ?kx=2&ky=1 */
-(function(){
- const TH=AFRAME.THREE,sc=document.querySelector("a-scene");
- let kx=1,ky=1,ej=0;
- try{const g=JSON.parse(localStorage.getItem("cal")||"null");if(g){kx=+g.kx||1;ky=+g.ky||1}}catch(e){}
- if(Q.get("kx")!==null)kx=+Q.get("kx")||1;if(Q.get("ky")!==null)ky=+Q.get("ky")||1;
- const cp=document.getElementById("capp");
- const ejes=[...document.querySelectorAll("a-marker")].map(m=>{const h=new TH.AxesHelper(.8);h.visible=false;h.renderOrder=30;
-  h.traverse(o=>{if(o.material){o.material.depthTest=false;o.material.depthWrite=false}});m.object3D.add(h);return h});
- if(cp){cp.insertAdjacentHTML("beforeend",'<details class="cal"><summary>Alineación AR (avanzado)</summary>'
-  +'<label><span>Horizontal</span><input type="range" id="calx" min=".5" max="4" step=".05"></label>'
-  +'<label><span>Vertical</span><input type="range" id="caly" min=".5" max="4" step=".05"></label>'
-  +'<div class="cg"><button type="button" class="tgl" id="calE">Mostrar ejes</button><button type="button" class="tgl" id="calR">Restablecer</button></div></details>');
-  const sx=cp.querySelector("#calx"),sy=cp.querySelector("#caly"),be=cp.querySelector("#calE"),br=cp.querySelector("#calR"),
-   gu=()=>{try{localStorage.setItem("cal",JSON.stringify({kx,ky}))}catch(e){}},
-   pint=()=>{sx.value=kx;sy.value=ky;be.classList.toggle("on",!!ej);be.setAttribute("aria-pressed",!!ej);ejes.forEach(h=>h.visible=!!ej)};
-  sx.addEventListener("input",()=>{kx=+sx.value;gu()});sy.addEventListener("input",()=>{ky=+sy.value;gu()});
-  be.addEventListener("click",()=>{ej=ej?0:1;pint()});br.addEventListener("click",()=>{kx=1;ky=1;gu();pint()});pint()}
- /* se aplica sobre la matriz de proyección cada cuadro; si AR.js o A-Frame la vuelven a calcular, se toma la nueva como base */
- let b0=0,b5=0,l0=null,l5=null;
- (function tk(){requestAnimationFrame(tk);const cam=sc&&sc.camera;if(!cam)return;const e=cam.projectionMatrix.elements;
-  if(e[0]!==l0||e[5]!==l5){b0=e[0];b5=e[5]}
-  e[0]=b0*kx;e[5]=b5*ky;l0=e[0];l5=e[5];
-  if(cam.projectionMatrixInverse)cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert()})();
 })();
 </script></body></html>
