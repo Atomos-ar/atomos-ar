@@ -155,13 +155,42 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  /* diagnóstico (?d=1): proyección de la cámara AR y dónde cae cada marcador en pantalla */
  window.__camInfo=function(c,v){try{const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,P=cam&&cam.projectionMatrix.elements;if(!P)return"cam: -";
   const T=AFRAME.THREE,r=c?c.getBoundingClientRect():null,vr=v?v.getBoundingClientRect():null,f=n=>Math.round(n);
-  let s="cam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
+  const J=window.__PJ||{};let s="AR.js "+(J.ok?"P0="+J.P0.toFixed(2)+" P5="+J.P5.toFixed(2)+" det "+J.cw+"x"+J.ch+" SINCRONIZADA":"NO ENCONTRADA ["+(J.keys||"-")+"]")+(window.__pjerr?" ERR "+window.__pjerr:"")+"\ncam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
   if(r)s+="\ncanvas css "+f(r.left)+","+f(r.top)+" "+f(r.width)+"x"+f(r.height);
   if(vr)s+="  video css "+f(vr.left)+","+f(vr.top)+" "+f(vr.width)+"x"+f(vr.height);
   for(const m of document.querySelectorAll("a-marker")){const st=window.__ST&&window.__ST[m.id]&&window.__ST[m.id]();if(!st||!st[0])continue;
    const o=m.object3D,p=new T.Vector3().setFromMatrixPosition(o.matrixWorld),q=p.clone().project(cam);
    s+="\n"+m.id+" pos "+p.x.toFixed(2)+","+p.y.toFixed(2)+","+p.z.toFixed(2)+" ndc "+q.x.toFixed(2)+","+q.y.toFixed(2)+" esc "+new T.Vector3().setFromMatrixScale(o.matrixWorld).x.toFixed(2)}
   return s}catch(e){return"cam err "+e.message}};
+})();
+(function(){
+ /* ---------- Cámara AR sincronizada ----------
+   La detección de AR.js se hace con una cámara calibrada, pero algo (el redimensionado de A-Frame) la reemplaza por una cámara
+   genérica de 80° 4:3. Los modelos se dibujaban con esa cámara y caían corridos hacia el centro de la pantalla y más chicos.
+   Acá, antes de dibujar cada cuadro, se vuelve a copiar la proyección calibrada de AR.js a la cámara.
+   ?proj=0 lo desactiva */
+ window.__PJ={ok:0,P0:0,P5:0,cw:0,ch:0,keys:""};
+ if(Q.get("proj")==="0")return;
+ const sc=document.querySelector("a-scene");let ctx=null,tries=0;
+ const ok=x=>x&&typeof x==="object"&&typeof x.getProjectionMatrix==="function";
+ function buscar(){const sy=sc.systems&&sc.systems.arjs;if(!sy)return null;
+  window.__PJ.keys=Object.keys(sy).filter(k=>k[0]!=="_"||k.length>1).slice(0,14).join(",");
+  const s=sy._arSession||sy.arSession;
+  if(s)for(const n of["arContext","arToolkitContext","_arContext"])if(ok(s[n]))return s[n];
+  for(const n of["_arToolkitContext","arToolkitContext","arContext"])if(ok(sy[n]))return sy[n];
+  for(const k in sy){if(k==="el"||k==="sceneEl")continue;let x;try{x=sy[k]}catch(e){continue}
+   if(ok(x))return x;
+   if(x&&typeof x==="object"&&!x.nodeType)for(const j in x){let y;try{y=x[j]}catch(e){continue}if(ok(y))return y}}
+  return null}
+ function sync(){const cam=sc.camera;if(!cam)return;
+  if(!ctx){if(tries++%30===0)ctx=buscar();if(!ctx)return}
+  if(!ctx.arController)return;
+  const m=ctx.getProjectionMatrix(),e=m&&m.elements;
+  if(!e||!(e[0]>0&&e[5]>0)||!isFinite(e[0]+e[5]))return;
+  cam.projectionMatrix.copy(m);if(cam.projectionMatrixInverse)cam.projectionMatrixInverse.copy(m).invert();
+  const P=window.__PJ;P.ok=1;P.P0=e[0];P.P5=e[5];const cv=ctx.arController.canvas;if(cv){P.cw=cv.width;P.ch=cv.height}}
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
+  r.render=function(a,b){try{sync()}catch(e){window.__pjerr=e.message}return o(a,b)}})();
 })();
 /* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
    Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
