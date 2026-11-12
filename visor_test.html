@@ -114,7 +114,8 @@ const G={"alc": [3, 11, 19, 37, 55, 87], "alt": [4, 12, 20, 38, 56, 88], "tr": [
 (Q0.get("g")||"").split(",").forEach(k=>{if(G[k]&&ZS.length+G[k].length<=MAX)ZS=ZS.concat(G[k])});
 window.__Z=ZS;document.getElementById("back").href="lector_test.html"+location.search;
 if(!ZS.length)location.replace("lector_test.html"+location.search);
-ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity></a-marker>'));
+const SMA=Q0.get("lock")==="0"?' smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"':' smooth="false"';
+ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt"'+SMA+'><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity></a-marker>'));
 </script>
 <a-entity camera></a-entity></a-scene>
 <script>
@@ -150,6 +151,55 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  Object.defineProperty(o,"visible",{configurable:true,
   get(){return real||performance.now()-last<HOLD},
   set(v){v=!!v;if(v){const n=performance.now(),h=n-last;if(h>150&&h<1e8){gaps++;if(h>maxgap)maxgap=h}last=n}real=v}})});
+/* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
+   Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
+   y los dos modelos terminan en el punto medio; además, como el ajuste de tamaño usa la distancia entre marcadores,
+   esa distancia "falsa" (casi 0) los achicaba.
+   Solución: antes de dibujar cada cuadro se revisa la posición que reportó el detector y se descarta si es imposible:
+     A) dos marcadores a menos de COL anchos de marcador (no caben así: un marcador mide 1 ancho),
+     B) una posición que cae justo donde otro marcador tiene anclado su modelo,
+     C) un salto de más de SALTO anchos en un solo cuadro (solo se acepta si se repite 4 cuadros seguidos).
+   Si se descarta, el modelo se queda en su último lugar bueno. Además suaviza el temblor (reemplaza el "smooth" de AR.js).
+   ?lock=0 lo desactiva y vuelve al comportamiento anterior · ?col=0.75 distancia mínima · ?salto=1 salto máximo por cuadro */
+(function(){
+ if(Q.get("lock")==="0")return;
+ const COL=Q.get("col")===null?.75:+Q.get("col"),SALTO=Q.get("salto")===null?1:+Q.get("salto"),GAP=400,CONF=4,TH=AFRAME.THREE,sc=document.querySelector("a-scene");
+ const V=()=>new TH.Vector3();
+ const L=[...document.querySelectorAll("a-marker")].map(m=>({id:m.id,o:m.object3D,w:m.querySelector(":scope > a-entity"),has:0,seen:-1e9,hid:0,snap:0,ok:0,u:1,cn:0,
+  p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V()}));
+ window.__LK={no:0};
+ const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
+ const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true};
+ function paso(){
+  const now=performance.now(),v=[];
+  for(const a of L){
+   const st=window.__ST&&window.__ST[a.id]?window.__ST[a.id]():null,real=st?st[0]:a.o.visible;
+   if(!real)continue;
+   if(now-a.seen>GAP){a.has=0;a.cn=0}/* estuvo perdido: la posición vieja ya no sirve */
+   a.seen=now;leer(a);v.push(a)}
+  for(const a of v){a.ok=1;a.u=a.rs.x>1e-6?a.rs.x:1;
+   for(const b of v){if(b===a)continue;
+    if(a.rp.distanceTo(b.rp)/a.u<COL){a.ok=0;break}/* A: encimados */
+    if(b.has&&a.rp.distanceTo(b.p)/a.u<COL){a.ok=0;break}}/* B: cayó donde está el modelo del otro */
+   if(a.ok&&a.has){const d=a.rp.distanceTo(a.p)/a.u;
+    if(d>SALTO){/* C: salto grande, solo vale si se mantiene */
+     if(a.cn>0&&a.rp.distanceTo(a.cp)/a.u<.4)a.cn++;else a.cn=1;a.cp.copy(a.rp);
+     if(a.cn>=CONF){a.snap=1;a.cn=0}else a.ok=0}
+    else a.cn=0}
+   else if(!a.ok)a.cn=0}
+  for(const a of v){
+   if(a.ok){
+    if(!a.has||a.snap){a.p.copy(a.rp);a.q.copy(a.rq);a.s.copy(a.rs);a.has=1;a.snap=0}
+    else{const k=Math.min(1,.18+2*a.rp.distanceTo(a.p)/a.u);a.p.lerp(a.rp,k);a.q.slerp(a.rq,k);a.s.lerp(a.rs,k)}
+    if(a.hid&&a.w){a.w.object3D.visible=true;a.hid=0}
+    poner(a)}
+   else{window.__LK.no++;
+    if(a.has)poner(a);/* rechazado: se queda donde estaba */
+    else if(a.w&&!a.hid){a.w.object3D.visible=false;a.hid=1}}}}/* primera vez y en conflicto: esperar a una posición creíble */
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
+  r.render=function(a,b){try{paso()}catch(e){window.__lkerr=e.message}return o(a,b)}})();
+})();
+
 (function f(){const v=document.querySelector("video"),st=v&&v.srcObject;if(!st)return setTimeout(f,500);
 const k=st.getVideoTracks()[0],cp=k.getCapabilities?k.getCapabilities():{};
 if(cp.focusMode&&cp.focusMode.includes("continuous"))k.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(()=>{})})();
@@ -178,7 +228,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
