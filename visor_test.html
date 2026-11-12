@@ -151,6 +151,18 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  Object.defineProperty(o,"visible",{configurable:true,
   get(){return real||performance.now()-last<HOLD},
   set(v){v=!!v;if(v){const n=performance.now(),h=n-last;if(h>150&&h<1e8){gaps++;if(h>maxgap)maxgap=h}last=n}real=v}})});
+(function(){
+ /* diagnóstico (?d=1): proyección de la cámara AR y dónde cae cada marcador en pantalla */
+ window.__camInfo=function(c,v){try{const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,P=cam&&cam.projectionMatrix.elements;if(!P)return"cam: -";
+  const T=AFRAME.THREE,r=c?c.getBoundingClientRect():null,vr=v?v.getBoundingClientRect():null,f=n=>Math.round(n);
+  let s="cam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
+  if(r)s+="\ncanvas css "+f(r.left)+","+f(r.top)+" "+f(r.width)+"x"+f(r.height);
+  if(vr)s+="  video css "+f(vr.left)+","+f(vr.top)+" "+f(vr.width)+"x"+f(vr.height);
+  for(const m of document.querySelectorAll("a-marker")){const st=window.__ST&&window.__ST[m.id]&&window.__ST[m.id]();if(!st||!st[0])continue;
+   const o=m.object3D,p=new T.Vector3().setFromMatrixPosition(o.matrixWorld),q=p.clone().project(cam);
+   s+="\n"+m.id+" pos "+p.x.toFixed(2)+","+p.y.toFixed(2)+","+p.z.toFixed(2)+" ndc "+q.x.toFixed(2)+","+q.y.toFixed(2)+" esc "+new T.Vector3().setFromMatrixScale(o.matrixWorld).x.toFixed(2)}
+  return s}catch(e){return"cam err "+e.message}};
+})();
 /* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
    Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
    y los dos modelos terminan en el punto medio; además, como el ajuste de tamaño usa la distancia entre marcadores,
@@ -228,7 +240,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
