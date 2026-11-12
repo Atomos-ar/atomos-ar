@@ -130,6 +130,9 @@ const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend
 const ALT=Q.get("alt")===null?0:Math.max(0,+Q.get("alt")||0);
 function aplicar(){pend=0;pc.textContent=Math.round(mult*100)+"%";
  if(document.activeElement!==sl)sl.value=Math.round(Math.log2(mult)*50);
+ /* Si el ajuste de tamaño (más abajo) está andando, ÉL escribe la escala en cada cuadro: escribirla también acá se pisaban y,
+    en los cuadros en que ganaba esta línea, se veía un destello con el átomo enorme y sin tope. */
+ if(window.__FITON)return;
  for(const z in D){const e=document.querySelector("#m"+z+" a-entity"),k=+(Q.get("s")||D[z][3])*mult;
   e.setAttribute("scale",k+" "+k+" "+k);e.setAttribute("position","0 "+(D[z][5]*k+0.1)*ALT+" 0")}}
 function cambiar(m){mult=Math.min(MAX_M,Math.max(MIN,m));try{localStorage.setItem("mult",mult)}catch(e){}if(!pend)pend=requestAnimationFrame(aplicar)}
@@ -523,7 +526,7 @@ const ITEMS=[
  /* tope: ningún átomo pasa de TOPE lados de marcador de diámetro. Con la hoja espaciada eso deja un hueco real entre átomos vecinos (con la hoja vieja no cambia nada). ?tope=0 lo quita */
  const TOPE=Q.get("tope")===null?1.0:(+Q.get("tope")>0?+Q.get("tope"):1e9);
  const TH=AFRAME.THREE,vs=new TH.Vector3(),MINF=.1,SUAV=.22;
- const it=[];for(const z in D){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(w)it.push({z,m,w,p:new TH.Vector3(),s:1,f:1,on:0,RG:0})}
+ const it=[];for(const z in D){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(w)it.push({z,m,w,p:new TH.Vector3(),s:1,K:null,RG:0})}
  /* radio real del átomo: se mide sobre el modelo cargado (nube, órbitas y electrones incluidos). El radio estimado de la tabla D se queda
     bastante corto, por eso los átomos terminaban más grandes que la distancia entre marcadores y se encimaban */
  {const m4=new TH.Matrix4(),iv=new TH.Matrix4(),c=new TH.Vector3(),pp=new TH.Vector3(),qq=new TH.Quaternion(),ss=new TH.Vector3();
@@ -533,17 +536,21 @@ const ITEMS=[
      m4.multiplyMatrices(iv,ob.matrixWorld);c.copy(bs.center).applyMatrix4(m4);m4.decompose(pp,qq,ss);R=Math.max(R,c.length()+bs.radius*Math.max(ss.x,ss.y,ss.z))});
     if(R>0&&isFinite(R))a.RG=R};
    inner.addEventListener("model-loaded",medir);if(inner.getObject3D("mesh"))medir()})}
+ /* Un solo escritor de la escala (este bucle), en cada cuadro:
+      ka   = tamaño del átomo solo, con su tope de TOPE lados de marcador, multiplicado por el slider (se puede agrandar y achicar);
+      tope = límite por el vecino más cercano (solo si hay 2 o más marcadores): ahí el slider solo puede achicar, así no se encimen.
+    Lo que se suaviza es únicamente el límite por el vecino, no el slider: el tamaño sigue al slider cuadro a cuadro y nunca pasa de ka. */
+ window.__FITON=1;
  (function tk(){requestAnimationFrame(tk);
   const v=it.filter(a=>a.m.object3D.visible);
   for(const a of v){a.m.object3D.getWorldPosition(a.p);a.m.object3D.getWorldScale(vs);a.s=vs.x>1e-6?vs.x:1}
   for(const a of it){
-   const d=D[a.z],k0=+(Q.get("s")||d[3])*mult,R0=(a.RG||d[5])*k0;let f=1;
-   /* sin vecino (un solo marcador, o el marcador no está a la vista) n queda enorme y rige solo el TOPE:
-      el átomo mide lo mismo que cuando hay dos marcadores y no vuelve al tamaño grande de antes */
+   const d=D[a.z],base=+(Q.get("s")||d[3]),RG=a.RG||d[5],kb=base*Math.min(1,Math.max(.3,TOPE)/(2*RG*base)),ka=kb*mult;
    let n=1e9;if(v.includes(a))for(const b of v)if(b!==a)n=Math.min(n,a.p.distanceTo(b.p)/a.s);
-   f=Math.max(MINF,Math.min(1,Math.max(.3,Math.min(FIT*n,TOPE))/(2*R0)));
-   a.f+=(f-a.f)*SUAV;if(Math.abs(f-a.f)<.002)a.f=f;
-   if(a.f<.999||a.on){a.on=a.f<.999?1:0;const g=a.on?a.f:1,k=k0*g;a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}}
+   const kt=n<1e9?Math.max(.3,Math.min(FIT*n,TOPE))/(2*RG):1e9,tg=Math.min(kt,ka*1.25);
+   a.K=a.K==null?tg:a.K+(tg-a.K)*SUAV;if(Math.abs(tg-a.K)<.002*tg)a.K=tg;
+   const k=Math.min(ka,Math.max(a.K,MINF*base*mult)),g=k/(base*mult);
+   a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}
  })();
 })();
 
