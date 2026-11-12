@@ -155,7 +155,7 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  /* diagnóstico (?d=1): proyección de la cámara AR y dónde cae cada marcador en pantalla */
  window.__camInfo=function(c,v){try{const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,P=cam&&cam.projectionMatrix.elements;if(!P)return"cam: -";
   const T=AFRAME.THREE,r=c?c.getBoundingClientRect():null,vr=v?v.getBoundingClientRect():null,f=n=>Math.round(n);
-  const J=window.__PJ||{};let s="AR.js "+(J.ok?"P0="+J.P0.toFixed(2)+" P5="+J.P5.toFixed(2)+" det "+J.cw+"x"+J.ch+" SINCRONIZADA":"NO ENCONTRADA ["+(J.keys||"-")+"]")+(window.__pjerr?" ERR "+window.__pjerr:"")+"\ncam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
+  const J=window.__PJ||{};let s="AR.js "+(J.ok?"P0="+J.P0.toFixed(2)+" P5="+J.P5.toFixed(2)+" det "+J.cw+"x"+J.ch+" SINCRONIZADA"+(J.vr?"\nvideo en det "+J.vr+" | corr x"+(J.kx||1).toFixed(2)+" y"+(J.ky||1).toFixed(2)+" (P0 orig "+(J.raw0||0).toFixed(2)+")":""):"NO ENCONTRADA ["+(J.keys||"-")+"]")+(window.__pjerr?" ERR "+window.__pjerr:"")+"\ncam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
   if(r)s+="\ncanvas css "+f(r.left)+","+f(r.top)+" "+f(r.width)+"x"+f(r.height);
   if(vr)s+="  video css "+f(vr.left)+","+f(vr.top)+" "+f(vr.width)+"x"+f(vr.height);
   for(const m of document.querySelectorAll("a-marker")){const st=window.__ST&&window.__ST[m.id]&&window.__ST[m.id]();if(!st||!st[0])continue;
@@ -182,13 +182,50 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
    if(ok(x))return x;
    if(x&&typeof x==="object"&&!x.nodeType)for(const j in x){let y;try{y=x[j]}catch(e){continue}if(ok(y))return y}}
   return null}
+ /* ---------- El video dentro del lienzo de detección ----------
+   El detector trabaja sobre un lienzo apaisado de 320x240, pero el video del celu es vertical (480x640). AR.js lo mete ENCAJADO sin deformar:
+   el video queda de ~180x240 px, centrado, con franjas negras a los costados. La proyección de AR.js está calculada para el lienzo
+   entero (320 de ancho), pero las posiciones que devuelve el detector están medidas sobre ese video angosto (180 de ancho).
+   Resultado: al dibujar, todo lo horizontal salía comprimido ~1,78 veces. Los átomos quedaban más angostos que altos y corridos hacia
+   el centro de la pantalla (a ~60% de la distancia real entre marcadores), y por eso parecían pegarse entre sí.
+   Acá se mide en qué rectángulo cae el video dentro del lienzo de detección y se reescala la proyección a ese rectángulo.
+   ?pk=0 lo desactiva (comportamiento anterior) · ?pk=1.78 fuerza a mano el factor horizontal */
+ const TH=AFRAME.THREE,PK=Q.get("pk"),PKN=PK===null||PK===""||isNaN(+PK)?null:+PK;let rc=null,rcT=-1e9,rcV="";
+ function medir(cv,v){
+  const w=cv.width,h=cv.height,vw=v&&v.videoWidth,vh=v&&v.videoHeight;
+  if(!w||!h||!vw||!vh)return null;
+  const va=vw/vh,ca=w/h;let rw,rh;
+  if(va<ca){rh=h;rw=h*va}else{rw=w;rh=w/va}
+  let r={x0:(w-rw)/2,x1:(w+rw)/2,y0:(h-rh)/2,y1:(h+rh)/2,src:"calc"};/* por cuentas: video encajado y centrado */
+  try{const g=ctx.arController.ctx||cv.getContext("2d");
+   if(g){let x0=w,x1=-1,y0=h,y1=-1;const px=(d,i)=>d[i+3]>0&&(d[i]|d[i+1]|d[i+2])>0;
+    for(const f of[.25,.5,.75]){const d=g.getImageData(0,Math.floor(h*f),w,1).data;for(let i=0;i<w;i++)if(px(d,i*4)){if(i<x0)x0=i;if(i>x1)x1=i}}
+    for(const f of[.25,.5,.75]){const d=g.getImageData(Math.floor(w*f),0,1,h).data;for(let i=0;i<h;i++)if(px(d,i*4)){if(i<y0)y0=i;if(i>y1)y1=i}}
+    if(x1>x0&&y1>y0){const mw=x1-x0+1,mh=y1-y0+1;
+     if(Math.abs(mw/mh/va-1)<.06)r={x0:x0,x1:x1+1,y0:y0,y1:y1+1,src:"medido"};/* se ve encajado: vale lo medido */
+     else if(mw>w*.97&&mh>h*.97)r={x0:0,x1:w,y0:0,y1:h,src:"estirado"}}}}/* estirado al lienzo entero: no hay qué corregir */
+  catch(e){}
+  return r}
  function sync(){const cam=sc.camera;if(!cam)return;
   if(!ctx){if(tries++%30===0)ctx=buscar();if(!ctx)return}
   if(!ctx.arController)return;
-  const m=ctx.getProjectionMatrix(),e=m&&m.elements;
-  if(!e||!(e[0]>0&&e[5]>0)||!isFinite(e[0]+e[5]))return;
+  const m0=ctx.getProjectionMatrix(),e0=m0&&m0.elements;
+  if(!e0||!(e0[0]>0&&e0[5]>0)||!isFinite(e0[0]+e0[5]))return;
+  const m=m0.clone(),cv=ctx.arController.canvas,P=window.__PJ;
+  /* Corrección del video dentro del lienzo de detección (ver nota arriba) */
+  let Ax=1,Bx=0,Ay=1,By=0;
+  if(PKN===null||PKN>0){
+   if(PKN>0){Ax=1/PKN}
+   else if(cv){const v=document.querySelector("video"),now=performance.now(),vk=v?v.videoWidth+"x"+v.videoHeight+"/"+cv.width+"x"+cv.height:"";
+    if((!rc&&now-rcT>400)||(rc&&vk!==rcV)||now-rcT>4000){rcT=now;const r=medir(cv,v);if(r){rc=r;rcV=vk}}
+    if(rc){const w=cv.width,h=cv.height;Ax=(rc.x1-rc.x0)/w;Bx=(rc.x0+rc.x1-w)/w;Ay=(rc.y1-rc.y0)/h;By=(h-rc.y0-rc.y1)/h}}
+   if(Ax>.05&&Ay>.05&&(Math.abs(Ax-1)>.005||Math.abs(Ay-1)>.005||Math.abs(Bx)>.005||Math.abs(By)>.005))
+    m.premultiply(new TH.Matrix4().set(1/Ax,0,0,-Bx/Ax, 0,1/Ay,0,-By/Ay, 0,0,1,0, 0,0,0,1));
+   else{Ax=1;Ay=1}}
+  const e=m.elements;
   cam.projectionMatrix.copy(m);if(cam.projectionMatrixInverse)cam.projectionMatrixInverse.copy(m).invert();
-  const P=window.__PJ;P.ok=1;P.P0=e[0];P.P5=e[5];const cv=ctx.arController.canvas;if(cv){P.cw=cv.width;P.ch=cv.height}}
+  P.ok=1;P.P0=e[0];P.P5=e[5];P.kx=1/Ax;P.ky=1/Ay;P.raw0=e0[0];
+  if(cv){P.cw=cv.width;P.ch=cv.height;P.vr=PKN>0?"manual":(rc?Math.round(rc.x1-rc.x0)+"x"+Math.round(rc.y1-rc.y0)+" "+rc.src:"-")}}
  (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
   r.render=function(a,b){try{sync()}catch(e){window.__pjerr=e.message}return o(a,b)}})();
 })();
