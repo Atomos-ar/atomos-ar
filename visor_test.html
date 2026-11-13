@@ -567,7 +567,7 @@ const ITEMS=[
  try{const g=JSON.parse(localStorage.getItem("hoja2")||"null");if(g)op.no=g.no?1:0}catch(e){}
  if(Q.get("nombre")==="0")op.no=0;
  const cp=document.getElementById("capp");
- if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Hoja de marcadores</div><button type="button" class="tgl" id="hoNo">Nombre de la familia</button>');
+ if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Destacar información</div><button type="button" class="tgl" id="hoNo">Nombre de la familia</button>');
   const bn=cp.querySelector("#hoNo"),gu=()=>{try{localStorage.setItem("hoja2",JSON.stringify(op))}catch(e){}},
    pint=()=>{bn.classList.toggle("on",!!op.no);bn.setAttribute("aria-pressed",!!op.no)};
   bn.addEventListener("click",()=>{op.no=op.no?0:1;gu();pint()});pint()}
@@ -622,20 +622,20 @@ const ITEMS=[
   const op={ne:1};
   try{const g=JSON.parse(localStorage.getItem("neon1")||"null");if(g)op.ne=g.ne?1:0}catch(e){}
   if(Q.get("neon")==="0")op.ne=0;
-  /* unión de dos marcadores: uc = contorno de color · us = cartel: flo (flotante) | ban (banner de arriba) | no (ninguno) */
-  const U={uc:1,us:"flo"};
-  try{const g=JSON.parse(localStorage.getItem("union1")||"null");if(g){U.uc=g.uc?1:0;if(["flo","ban","no"].includes(g.us))U.us=g.us}}catch(e){}
+  /* unión de dos marcadores · us = cartel: flo (flotante) | ban (banner de arriba) | no (ninguno). El contorno de neón (op.ne) es uno solo y rige tanto para los grupos como para las uniones */
+  const U={us:"flo"};
+  try{const g=JSON.parse(localStorage.getItem("union1")||"null");if(g&&["flo","ban","no"].includes(g.us))U.us=g.us}catch(e){}
   window.__UNI={flo:0};
   {const bn=document.getElementById("hoNo");
-   if(bn){bn.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="hoNe" style="margin-top:6px">Línea neón del grupo</button>');
+   if(bn){bn.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="hoNe" style="margin-top:6px">Contorno de neón</button>');
     const b=document.getElementById("hoNe"),gu=()=>{try{localStorage.setItem("neon1",JSON.stringify(op))}catch(e){}},
      pint=()=>{b.classList.toggle("on",!!op.ne);b.setAttribute("aria-pressed",!!op.ne)};
     b.addEventListener("click",()=>{op.ne=op.ne?0:1;gu();pint()});pint()}}
   {const b0=document.getElementById("hoNe");
-   if(b0){b0.insertAdjacentHTML("afterend",'<div class="ch sec">Unión de dos marcadores</div><button type="button" class="tgl" id="unC">Contorno de color de la unión</button><div class="ch" style="margin:10px 2px 5px">Cartel del tipo de unión</div><div class="cf" id="unS"><button type="button" class="tgl" data-s="flo">Flotante</button><button type="button" class="tgl" data-s="ban">Banner</button><button type="button" class="tgl" data-s="no">Ninguno</button></div>');
-    const c=document.getElementById("unC"),bs=[...document.querySelectorAll("#unS button")],gu=()=>{try{localStorage.setItem("union1",JSON.stringify(U))}catch(e){}},
-     pint=()=>{c.classList.toggle("on",!!U.uc);c.setAttribute("aria-pressed",!!U.uc);bs.forEach(x=>x.classList.toggle("on",x.dataset.s===U.us))};
-    c.addEventListener("click",()=>{U.uc=U.uc?0:1;gu();pint()});bs.forEach(x=>x.addEventListener("click",()=>{U.us=x.dataset.s;gu();pint()}));pint()}}
+   if(b0){b0.insertAdjacentHTML("afterend",'<div class="ch sec">Tipo de unión</div><div class="cf" id="unS"><button type="button" class="tgl" data-s="flo">Flotante</button><button type="button" class="tgl" data-s="ban">Banner</button><button type="button" class="tgl" data-s="no">Ninguno</button></div>');
+    const bs=[...document.querySelectorAll("#unS button")],gu=()=>{try{localStorage.setItem("union1",JSON.stringify(U))}catch(e){}},
+     pint=()=>{bs.forEach(x=>x.classList.toggle("on",x.dataset.s===U.us))};
+    bs.forEach(x=>x.addEventListener("click",()=>{U.us=x.dataset.s;gu();pint()}));pint()}}
   const VS=`attribute float aU;attribute float aV;attribute float aL;
 varying float vU;varying float vV;varying float vL;
 void main(){vU=aU;vV=aV;vL=aL;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
@@ -816,9 +816,9 @@ void main(){
     for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
     /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
        de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
-    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(U.uc)act[un.k]=c}}
-    /* con más de dos (o con el contorno de unión apagado) rige el neón de la familia */
-    if(op.ne&&!(un&&U.uc)){
+    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(op.ne)act[un.k]=c}}
+    /* con más de dos marcadores rige el neón de la familia */
+    if(op.ne&&!un){
       const por={};for(const a of V)(por[a.k]=por[a.k]||[]).push(a);
       for(const k in por){if(por[k].length<2)continue;const c=agrupar(por[k]);if(c)act[k]=c}}
     window.__UNI.flo=un&&U.us==="flo"?1:0;/* con el cartel flotante de la unión, el script del nombre de familia se aparta */
