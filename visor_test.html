@@ -605,14 +605,17 @@ const ITEMS=[
 /* ---------- Hoja: línea neón que envuelve al grupo ----------
    Cuando hay 2 o más marcadores de una misma familia a la vista (la tabla se está escaneando), una línea de color neón
    —el color de la familia— se traza alrededor de ellos y los envuelve juntos: con dos hace una "píldora", con un grupo entero
-   sigue la forma del grupo. Si solo hay dos marcadores a la vista y son de familias distintas, los envuelve una línea celeste.
+   sigue la forma del grupo. Si hay solo dos marcadores a la vista y están juntos, forman una UNIÓN: arriba sale si es iónica o covalente y la línea que los envuelve toma
+   el color del tipo de unión (naranja = iónica · celeste = covalente · violeta = metálica · gris = sin unión), sean o no de la misma familia.
    La línea se dibuja sobre el plano de la hoja, hija de uno de los marcadores: acompaña a los átomos sin retraso.
    Animación: al detectar el grupo la línea se traza con una chispa, hace un destello y queda con una luz que la recorre.
-   Se apaga desde el panel Capas, o con ?neon=0 · ?par=0 quita solo el caso de dos marcadores de familias distintas
+   Se apaga desde el panel Capas, o con ?neon=0 · ?par=0 quita lo de los dos marcadores (el cartel de unión y su color: vuelve a mandar el color de la familia)
    ?paso=1.55 = distancia entre marcadores de la hoja, en anchos de marcador */
 (function(){
   const TH=AFRAME.THREE;
-  const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff",par:"#3de6ff"};
+  const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff",
+   /* colores de la unión entre dos marcadores */
+   u_ion:"#ff6a00",u_cov:"#00d9ff",u_met:"#d24dff",u_gn:"#8e97ab"};
   const FAM={};for(const k in G)G[k].forEach(z=>FAM[z]=k);
   const PASO=+Q.get("paso")>0?+Q.get("paso"):1.55,MAXE=3.5,RAD=.25,HW=.2,GRACIA=450,PAR=Q.get("par")!=="0",
    RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -720,7 +723,7 @@ void main(){
     }
     return { P, U, V, L, I, loops: loops.length };
   }
-  const ms=[...document.querySelectorAll("a-marker")].map(m=>({o:m.object3D,id:m.id,k:FAM[+m.id.slice(1)],p:new TH.Vector3(),s:1})).filter(a=>a.k);
+  const ms=[...document.querySelectorAll("a-marker")].map(m=>({o:m.object3D,id:m.id,z:+m.id.slice(1),k:FAM[+m.id.slice(1)],p:new TH.Vector3(),s:1})).filter(a=>a.k);
   const vs=new TH.Vector3(),inv=new TH.Matrix4(),lp=new TH.Vector3(),ce=new TH.Vector3();
   /* el grupo más grande de marcadores cercanos entre sí (a lo sumo MAXE anchos de marcador de distancia con algún otro del grupo) */
   function agrupar(L){
@@ -729,6 +732,44 @@ void main(){
     const g={};L.forEach((a,i)=>{const r=f(i);(g[r]=g[r]||[]).push(a)});
     let best=null;for(const r in g)if(g[r].length>=2&&(!best||g[r].length>best.length))best=g[r];
     return best}
+  /* ---------- Unión entre dos marcadores ----------
+     Criterio de colegio, según el tipo de elemento (la familia de la hoja):
+       metal + no metal (o metaloide)  → iónica      · no metal + no metal (o metaloide) → covalente
+       metal + metal                   → metálica    · con un gas noble (capa externa completa) → sin unión */
+  const MET=new Set(["alc","alt","tr","lan","act","pt"]);
+  const TIPO=f=>f==="gn"?"gas noble":f==="mo"?"metaloide":MET.has(f)?"metal":"no metal";
+  const TITU={ion:"Unión iónica",cov:"Unión covalente",met:"Unión metálica",gn:"Sin unión"};
+  function union(a,b){
+    const ta=TIPO(a.k),tb=TIPO(b.k);
+    const t=ta==="gas noble"||tb==="gas noble"?"gn":ta==="metal"&&tb==="metal"?"met":ta==="metal"||tb==="metal"?"ion":"cov";
+    /* orden para mostrarlos: el metal primero; si no, el de menor número atómico */
+    const mf=x=>x==="metal"?0:1;let x=a,y=b,tx=ta,ty=tb;
+    if(mf(tb)<mf(ta)||(mf(ta)===mf(tb)&&b.z<a.z)){x=b;y=a;tx=tb;ty=ta}
+    const sy=z=>D[z]?D[z][1]:"?";
+    return{k:"u_"+t,titulo:TITU[t],sub:sy(x.z)+" + "+sy(y.z)+" · "+(t==="gn"?"gas noble: capa externa completa":tx+" + "+ty)}}
+  /* cartel de arriba: va dentro del banner de datos (debajo del nombre y la CEE), así se esconde y se acomoda junto con él */
+  {const st=document.createElement("style");st.textContent=
+   "#unib{box-sizing:border-box;width:max-content;max-width:100%;margin:6px auto 2px;padding:6px 16px 7px;border-radius:18px;border:1.5px solid var(--c,#00d9ff);background:rgba(5,7,13,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 0 12px var(--c,#00d9ff),inset 0 0 10px rgba(255,255,255,.05);text-align:center;text-shadow:none;animation:unin .5s ease-out}"
+   +"#unib[hidden]{display:none}"
+   +"#unib .ut{display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px/1.2 system-ui,sans-serif;color:#fff;text-shadow:0 0 6px var(--c),0 0 14px var(--c)}"
+   +"#unib .ut i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}"
+   +"#unib .us{margin-top:2px;font:12.5px/1.25 system-ui,sans-serif;color:#c3cfe8}"
+   +"body>#unib{position:fixed;top:calc(60px + env(safe-area-inset-top,0px));left:0;right:0;margin:0 auto;z-index:12}"
+   +"@keyframes unin{from{opacity:0;box-shadow:0 0 0 var(--c)}55%{box-shadow:0 0 26px var(--c)}}"
+   +"@media (prefers-reduced-motion:reduce){#unib{animation:none}}";
+   document.head.appendChild(st)}
+  const bx=document.createElement("div");bx.id="unib";bx.hidden=true;bx.setAttribute("role","status");
+  bx.innerHTML='<div class="ut"><i></i><b></b></div><div class="us"></div>';
+  {const dp=document.getElementById("datp"),dc=dp&&dp.querySelector(".dc");if(dc)dc.insertAdjacentElement("afterend",bx);else document.body.appendChild(bx)}
+  let ub=null,ubT=-1e9,ubK="";
+  /* el cartel aguanta GRACIA ms si la detección parpadea (igual que la línea) y solo se vuelve a dibujar cuando cambia la unión */
+  function banner(now,un){
+    if(un){ub=un;ubT=now}
+    const u=ub&&now-ubT<=GRACIA?ub:null,k=u?u.k+"|"+u.sub:"";
+    if(k===ubK)return;ubK=k;
+    if(!u){bx.hidden=true;return}
+    bx.style.setProperty("--c",FC[u.k]);bx.querySelector("b").textContent=u.titulo;bx.querySelector(".us").textContent=u.sub;
+    bx.hidden=false;bx.style.animation="none";void bx.offsetWidth;bx.style.animation=""}
   const OB={};
   function objeto(k){
     if(OB[k])return OB[k];
@@ -746,14 +787,16 @@ void main(){
   let tp=performance.now();
   (function tk(){requestAnimationFrame(tk);
     const now=performance.now(),dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
-    const act={};
-    if(op.ne){
-      const V=[];
-      for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
+    const act={};let un=null;
+    const V=[];
+    for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
+    /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
+       de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
+    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);if(op.ne)act[un.k]=c}}
+    else if(op.ne){
       const por={};for(const a of V)(por[a.k]=por[a.k]||[]).push(a);
-      for(const k in por){if(por[k].length<2)continue;const c=agrupar(por[k]);if(c)act[k]=c}
-      /* solo dos marcadores a la vista, de familias distintas: se envuelven juntos con la línea celeste */
-      if(PAR&&V.length===2&&!Object.keys(act).length){const c=agrupar(V);if(c)act.par=c}}
+      for(const k in por){if(por[k].length<2)continue;const c=agrupar(por[k]);if(c)act[k]=c}}
+    banner(now,un);
     for(const k in act){
       const c=act[k],ob=objeto(k);
       /* referencia: se mantiene mientras siga en el grupo; si no, el marcador más cercano al centro del grupo */
