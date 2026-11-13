@@ -389,7 +389,7 @@ const CAPAS=(function(){
 (function(){
  const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),EJX=new TH.Vector3(1,0,0),DIAG=new TH.Vector3(1,0,1).normalize(),K=.01,q=new TH.Quaternion(),qy=new TH.Quaternion(),qd=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),b2=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
  const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
- const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp");
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut");
  const marcadores=()=>[...document.querySelectorAll("a-marker")];
  let pid=null,x0=0,y0=0;
  addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix||GR.lock)return;pid=e.pointerId;x0=e.clientX;y0=e.clientY},true);
@@ -584,7 +584,7 @@ const ITEMS=[
  const sv=new TH.Vector3(),MAXE=3.5;
  (function tk(){requestAnimationFrame(tk);
   const nom={};
-  if(op.no){const por={};
+  if(op.no&&!(window.__UNI&&window.__UNI.flo)){const por={};
    for(const a of ms){const o=a.m.object3D;if(!o.visible)continue;o.updateWorldMatrix(true,false);
     sv.setFromMatrixScale(o.matrixWorld);a.s=sv.x>1e-6?sv.x:1;a.p.set(0,a.w.object3D.position.y,0);o.localToWorld(a.p);a.u.set(0,1,0).transformDirection(o.matrixWorld);
     (por[a.k]=por[a.k]||[]).push(a)}
@@ -622,11 +622,20 @@ const ITEMS=[
   const op={ne:1};
   try{const g=JSON.parse(localStorage.getItem("neon1")||"null");if(g)op.ne=g.ne?1:0}catch(e){}
   if(Q.get("neon")==="0")op.ne=0;
+  /* unión de dos marcadores: uc = contorno de color · us = cartel: flo (flotante) | ban (banner de arriba) | no (ninguno) */
+  const U={uc:1,us:"flo"};
+  try{const g=JSON.parse(localStorage.getItem("union1")||"null");if(g){U.uc=g.uc?1:0;if(["flo","ban","no"].includes(g.us))U.us=g.us}}catch(e){}
+  window.__UNI={flo:0};
   {const bn=document.getElementById("hoNo");
    if(bn){bn.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="hoNe" style="margin-top:6px">Línea neón del grupo</button>');
     const b=document.getElementById("hoNe"),gu=()=>{try{localStorage.setItem("neon1",JSON.stringify(op))}catch(e){}},
      pint=()=>{b.classList.toggle("on",!!op.ne);b.setAttribute("aria-pressed",!!op.ne)};
     b.addEventListener("click",()=>{op.ne=op.ne?0:1;gu();pint()});pint()}}
+  {const b0=document.getElementById("hoNe");
+   if(b0){b0.insertAdjacentHTML("afterend",'<div class="ch sec">Unión de dos marcadores</div><button type="button" class="tgl" id="unC">Contorno de color de la unión</button><div class="ch" style="margin:10px 2px 5px">Cartel del tipo de unión</div><div class="cf" id="unS"><button type="button" class="tgl" data-s="flo">Flotante</button><button type="button" class="tgl" data-s="ban">Banner</button><button type="button" class="tgl" data-s="no">Ninguno</button></div>');
+    const c=document.getElementById("unC"),bs=[...document.querySelectorAll("#unS button")],gu=()=>{try{localStorage.setItem("union1",JSON.stringify(U))}catch(e){}},
+     pint=()=>{c.classList.toggle("on",!!U.uc);c.setAttribute("aria-pressed",!!U.uc);bs.forEach(x=>x.classList.toggle("on",x.dataset.s===U.us))};
+    c.addEventListener("click",()=>{U.uc=U.uc?0:1;gu();pint()});bs.forEach(x=>x.addEventListener("click",()=>{U.us=x.dataset.s;gu();pint()}));pint()}}
   const VS=`attribute float aU;attribute float aV;attribute float aL;
 varying float vU;varying float vV;varying float vL;
 void main(){vU=aU;vV=aV;vL=aL;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
@@ -770,6 +779,21 @@ void main(){
     if(!u){bx.hidden=true;return}
     bx.style.setProperty("--c",FC[u.k]);bx.querySelector("b").textContent=u.titulo;bx.querySelector(".us").textContent=u.sub;
     bx.hidden=false;bx.style.animation="none";void bx.offsetWidth;bx.style.animation=""}
+  const rt=new TH.Group();document.querySelector("a-scene").object3D.add(rt);
+  const sps={},cc=new TH.Vector3(),uu=new TH.Vector3(),t3=new TH.Vector3();let fo=null,fSeen=-1e9,fc=null;
+  function sprite(k,txt){if(sps[k])return sps[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d"),f=n=>"700 "+n+"px system-ui,-apple-system,'Segoe UI',sans-serif";
+   x.font=f(62);const w=x.measureText(txt).width;if(w>590)x.font=f(Math.floor(62*590/w));
+   x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(txt,320,66);x.fillText(txt,320,66);x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(txt,320,66);
+   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.renderOrder=20;s.visible=false;rt.add(s);return sps[k]={s,t0:0,k}}
+  function flotante(now,un){
+    if(un){if(!fo||fo.k!==un.k){fo=sprite(un.k,un.titulo);fo.t0=now}fSeen=now;fc=un.c}
+    for(const k in sps)if(sps[k]!==fo)sps[k].s.visible=false;
+    if(!fo)return;
+    if(now-fSeen>GRACIA){fo.s.visible=false;fo=null;return}
+    cc.set(0,0,0);uu.set(0,0,0);let s=0;fc.forEach(a=>{cc.add(a.p);uu.add(t3.set(0,1,0).transformDirection(a.o.matrixWorld));s+=a.s});
+    cc.multiplyScalar(1/fc.length);uu.normalize();s/=fc.length;
+    const e=Math.min(1,(now-fo.t0)/380)-1,pop=1+2.70158*e*e*e+1.70158*e*e;/* entra con rebote */
+    fo.s.position.copy(cc).addScaledVector(uu,2*s+Math.sin(now/450)*.07*s);fo.s.scale.set(3.6*s*pop,.72*s*pop,1);fo.s.visible=pop>.01}
   const OB={};
   function objeto(k){
     if(OB[k])return OB[k];
@@ -792,11 +816,13 @@ void main(){
     for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
     /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
        de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
-    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);if(op.ne)act[un.k]=c}}
-    else if(op.ne){
+    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(U.uc)act[un.k]=c}}
+    /* con más de dos (o con el contorno de unión apagado) rige el neón de la familia */
+    if(op.ne&&!(un&&U.uc)){
       const por={};for(const a of V)(por[a.k]=por[a.k]||[]).push(a);
       for(const k in por){if(por[k].length<2)continue;const c=agrupar(por[k]);if(c)act[k]=c}}
-    banner(now,un);
+    window.__UNI.flo=un&&U.us==="flo"?1:0;/* con el cartel flotante de la unión, el script del nombre de familia se aparta */
+    banner(now,U.us==="ban"?un:null);flotante(now,U.us==="flo"?un:null);
     for(const k in act){
       const c=act[k],ob=objeto(k);
       /* referencia: se mantiene mientras siga en el grupo; si no, el marcador más cercano al centro del grupo */
@@ -828,5 +854,68 @@ void main(){
       if(!ob.fin&&age>.9){ob.fin=1;if(!RM)ob.fl=.9}/* destello al terminar de trazarse */
       ob.fl*=Math.exp(-dt*4);
       const u=ob.mat.uniforms;u.uT.value=RM?0:(now/1000)%900;u.uAge.value=age;u.uA.value=ob.al*grande;u.uFl.value=ob.fl}})();
+})();
+</script>
+<script>
+/* ---------- Tutorial: cartelitos animados que guían a quien lo usa por primera vez ----------
+   Sale solo la primera vez (cuando termina la pantalla de entrada) · se repite desde Capas → Ayuda · ?tut=1 lo fuerza · ?tut=0 lo desactiva */
+(function(){
+ const Q=new URLSearchParams(location.search);
+ const PASOS=[
+  {h:"¡Bienvenido!",p:"Te muestro cómo se usa en un minuto. Tocá «Siguiente»."},
+  {h:"Apuntá a un marcador",p:"Poné la cámara frente a un marcador de la hoja y aparece su átomo en 3D. Podés enfocar varios a la vez.",d:"mk"},
+  {t:"#ui",h:"Tamaño",p:"Con − y + (o el deslizador) agrandás o achicás los átomos. Tocá el porcentaje para volver al tamaño inicial."},
+  {h:"Girar",p:"Arrastrá un dedo por la pantalla para girar el átomo. ¡Probalo ahora!",d:"hand",libre:1},
+  {t:"#datp",h:"Datos del elemento",p:"Arriba ves el nombre, el símbolo y la configuración electrónica externa. «Ver más» abre la ficha completa."},
+  {t:"#capb",h:"Capas",p:"Mostrá u ocultá protones, neutrones, electrones, niveles y subniveles. Ahí también elegís cómo se muestran las uniones y podés volver a ver este tutorial."},
+  {h:"Dos marcadores = una unión",p:"Acercá solo dos: arriba de ellos flota si la unión es iónica, covalente o metálica, y un neón de color los rodea.",d:"par"},
+  {h:"Tres o más: el grupo",p:"Con varios de una misma familia flota el nombre del grupo y un neón los envuelve.",d:"grp"},
+  {t:"#back",h:"Grupos",p:"Volvé acá para elegir otras familias de la tabla."}];
+ const DEM={mk:'<i class="q"></i><span class="at">⚛</span>',hand:'<span class="hd">👆</span>',par:'<i class="gl"></i><i class="q a"></i><i class="q b"></i><span class="pl p1">Unión iónica</span><span class="pl p2">Unión covalente</span>',grp:'<i class="gl g"></i><i class="q"></i><i class="q"></i><i class="q"></i><span class="pl p3">Halógenos</span>'};
+ const st=document.createElement("style");st.textContent=`
+#tut{position:fixed;inset:0;z-index:60;pointer-events:none;font:14px system-ui,sans-serif;color:#fff}#tut[hidden]{display:none}
+#tut .sp{position:absolute;border-radius:14px;box-shadow:0 0 0 100vmax rgba(5,7,13,.62);transition:left .4s,top .4s,width .4s,height .4s,opacity .3s}
+#tut .sp::after{content:"";position:absolute;inset:0;border-radius:inherit;border:2px solid #3de6ff;box-shadow:0 0 14px #3de6ff;animation:tpu 1.4s ease-in-out infinite}#tut .sp.nt::after{display:none}
+#tut .cd{position:absolute;width:min(300px,calc(100vw - 20px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(8,12,24,.95);border:1.5px solid rgba(61,230,255,.6);box-shadow:0 0 18px rgba(61,230,255,.3),0 8px 24px rgba(0,0,0,.5);pointer-events:auto;animation:tin .4s cubic-bezier(.2,1.3,.4,1)}
+#tut .th{font:700 16px system-ui,sans-serif;margin-bottom:4px;text-shadow:0 0 8px rgba(61,230,255,.8)}#tut .tp{color:#d7e6ff;line-height:1.35}
+#tut .dt{display:flex;gap:5px;margin-top:10px}#tut .dt i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:.3s}#tut .dt i.on{background:#3de6ff;box-shadow:0 0 8px #3de6ff;transform:scale(1.35)}
+#tut .tf{display:flex;align-items:center;gap:6px;margin-top:8px}#tut .tf button{padding:7px 12px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}
+#tut .tf .sk{margin-right:auto;background:none;color:#9fb0d0;padding-left:0}#tut .tf .nx{background:rgba(61,230,255,.3);box-shadow:0 0 8px rgba(61,230,255,.4)}
+#tut .dm{position:relative;height:56px;margin-top:8px;display:flex;align-items:flex-end;justify-content:center;gap:6px;padding-bottom:4px}
+#tut .q{width:24px;height:24px;border-radius:4px;background:#fff;border:3px solid #111;box-sizing:border-box;flex:none}#tut .a{animation:qa 4s ease-in-out infinite}#tut .b{animation:qb 4s ease-in-out infinite}
+#tut .gl{position:absolute;bottom:0;left:50%;width:92px;height:34px;margin-left:-46px;border-radius:12px;border:2px solid #ff6a00;animation:gc 4s infinite}#tut .gl.g{width:104px;margin-left:-52px;border-color:#b8ff3d;box-shadow:0 0 10px #b8ff3d;animation:tpu 1.4s infinite}
+#tut .pl{position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 13px system-ui,sans-serif;text-shadow:0 0 8px currentColor}
+#tut .p1{color:#ff6a00;animation:p1k 4s infinite}#tut .p2{color:#00d9ff;animation:p2k 4s infinite}#tut .p3{color:#b8ff3d}
+#tut .at{font-size:26px;color:#3de6ff;animation:spin 3s linear infinite;margin-left:6px}#tut .hd{font-size:30px;animation:hs 1.6s ease-in-out infinite}
+@keyframes tin{from{opacity:0;transform:translateY(12px) scale(.94)}}@keyframes tpu{50%{opacity:.4;transform:scale(1.03)}}
+@keyframes qa{0%,12%{transform:translateX(-30px)}38%,100%{transform:translateX(0)}}@keyframes qb{0%,12%{transform:translateX(30px)}38%,100%{transform:translateX(0)}}
+@keyframes gc{0%,45%{border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}55%,100%{border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
+@keyframes p1k{0%,10%{opacity:0}20%,45%{opacity:1}55%,100%{opacity:0}}@keyframes p2k{0%,50%{opacity:0}60%,95%{opacity:1}100%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes hs{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
+@media (prefers-reduced-motion:reduce){#tut *{animation:none!important;transition:none!important}#tut .p2{display:none}}`;
+ document.head.appendChild(st);
+ const t=document.createElement("div");t.id="tut";t.hidden=true;t.innerHTML='<div class="sp"></div><div class="cd"></div>';document.body.appendChild(t);
+ const sp=t.firstChild,cd=t.lastChild;let n=0,on=0;
+ function show(i){n=i;const s=PASOS[i];cd.style.animation="none";void cd.offsetWidth;cd.style.animation="";
+  cd.innerHTML='<div class="th">'+s.h+'</div><div class="tp">'+s.p+'</div>'+(s.d?'<div class="dm">'+DEM[s.d]+'</div>':'')
+   +'<div class="dt">'+PASOS.map((_,j)=>'<i'+(j===i?' class="on"':'')+'></i>').join("")+'</div>'
+   +'<div class="tf"><button class="sk" data-a="x">Saltar</button>'+(i?'<button data-a="p">‹ Atrás</button>':'')+'<button class="nx" data-a="n">'+(i===PASOS.length-1?"¡Listo!":"Siguiente")+'</button></div>'}
+ function lay(){if(!on)return;requestAnimationFrame(lay);const s=PASOS[n],el=s.t&&document.querySelector(s.t),W=innerWidth,H=innerHeight;
+  if(s.t==="#ui"&&el)el.classList.add("act");
+  const r=el&&el.offsetWidth&&el.offsetHeight?el.getBoundingClientRect():(s.t==="#datp"?{left:8,top:8,width:W-16,height:84}:null),cw=cd.offsetWidth,ch=cd.offsetHeight;let x,y;
+  if(r){sp.style.left=r.left-6+"px";sp.style.top=r.top-6+"px";sp.style.width=r.width+12+"px";sp.style.height=r.height+12+"px";
+   y=r.top+r.height+ch+24<H?r.top+r.height+14:Math.max(8,r.top-ch-14);x=r.left+r.width/2-cw/2}
+  else{sp.style.left=W/2+"px";sp.style.top=H/2+"px";sp.style.width=sp.style.height="0px";x=(W-cw)/2;y=s.libre?H*.55:(H-ch)/2}
+  sp.style.opacity=s.libre?0:1;sp.classList.toggle("nt",!r);
+  cd.style.left=Math.min(W-cw-10,Math.max(10,x))+"px";cd.style.top=y+"px"}
+ function fin(){on=0;t.hidden=true;try{localStorage.setItem("tut1","1")}catch(e){}}
+ function ini(){on=1;t.hidden=false;show(0);requestAnimationFrame(lay)}
+ t.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;if(a==="n")n<PASOS.length-1?show(n+1):fin();else if(a==="p")show(n-1);else fin()});
+ const cp=document.getElementById("capp");
+ if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Ayuda</div><button type="button" class="tgl" id="tutB">Ver el tutorial</button>');
+  document.getElementById("tutB").addEventListener("click",()=>{document.getElementById("capb").click();ini()})}/* el clic en Capas cierra el panel y destapa el banner */
+ let visto=0;try{visto=localStorage.getItem("tut1")==="1"}catch(e){}
+ const f=Q.get("tut");
+ if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(ini,600)})();
 })();
 </script></body></html>
