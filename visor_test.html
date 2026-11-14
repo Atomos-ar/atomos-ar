@@ -341,21 +341,25 @@ const CAPAS=(function(){
   for(const m of mats(o)){const k=porNombre(m.name)||porColor(m);if(k)return k}return null}
  function nivel(o){for(let x=o,i=0;x&&i<3;x=x.parent,i++){const k=nivelNombre(x.name);if(k!==null)return k}return null}
  const guarda=m=>{if(!m.userData.__c)m.userData.__c={op:m.opacity,tr:m.transparent,dw:m.depthWrite};return m.userData.__c};
- /* Volumen de los lóbulos s, p, d y f: efecto burbuja de jabón. Solo se modifica el alfa del lóbulo según cuánto mira su superficie hacia la cámara:
-    el centro (el que mira de frente) queda más transparente, el borde más opaco, y a media inclinación (45°) la opacidad es igual a la original.
-    Núcleo, electrones, anillos y la esfera de oclusión no se tocan. Se ajusta con centro (alfa de frente, 1 = igual que antes), exp (qué tan marcado es el borde) y tope (alfa máximo en el borde). */
- const BURB={centro:.4,exp:1.5,tope:.9};
+ /* Volumen de los lóbulos s, p, d y f: efecto burbuja de jabón. Según cuánto mira cada punto de la superficie hacia la cámara (0° = de frente, 90° = de canto):
+    - el centro (de frente) queda más transparente y el borde más opaco; a media inclinación (45°) la opacidad y el color son exactamente los originales.
+    - en el borde, además, el color se avanza un poco hacia su versión más viva (brillo), para que el contorno de cada lóbulo se marque con color y no se pierda.
+    Núcleo, electrones, anillos y la esfera de oclusión no se tocan.
+    Ajustes: centro = fracción de la opacidad original de frente (1 = igual que antes); exp = qué tan rápido crece hacia el borde; tope = opacidad máxima; brillo = color extra en el borde (0 = nada). */
+ const BURB={centro:.35,exp:2,tope:.92,brillo:.65};
  const BURB_VS="vBubN=normalize(normalMatrix*normal);vBubP=(modelViewMatrix*vec4(transformed,1.0)).xyz;";
+ /* va justo antes del tonemapping: gl_FragColor ya tiene la luz aplicada y el alfa final; diffuseColor sigue siendo el color base del material */
  const BURB_FS="{float bl=length(vBubN);if(bl>0.0001){float bc=clamp(abs(dot(vBubN/bl,normalize(-vBubP))),0.0,1.0);float bt=acos(bc)*0.63662;"
   +"float bf="+BURB.centro.toFixed(4)+"+"+(1-BURB.centro).toFixed(4)+"*pow(max(bt*2.0,0.0001),"+BURB.exp.toFixed(4)+");"
-  +"diffuseColor.a=min(diffuseColor.a*bf,max(diffuseColor.a,"+BURB.tope.toFixed(4)+"));}}";
- function bubOBC(sh){const A="#include <begin_vertex>",B="#include <alphatest_fragment>";
+  +"gl_FragColor.a=min(gl_FragColor.a*bf,max(gl_FragColor.a,"+BURB.tope.toFixed(4)+"));"
+  +"gl_FragColor.rgb+=diffuseColor.rgb*smoothstep(0.5,1.0,bt)*"+BURB.brillo.toFixed(4)+";}}";
+ function bubOBC(sh){const A="#include <begin_vertex>",B="#include <tonemapping_fragment>";
   if(sh.vertexShader.indexOf(A)<0||sh.fragmentShader.indexOf(B)<0)return;
   sh.vertexShader="varying vec3 vBubN;\nvarying vec3 vBubP;\n"+sh.vertexShader.replace(A,A+"\n"+BURB_VS);
-  sh.fragmentShader="varying vec3 vBubN;\nvarying vec3 vBubP;\n"+sh.fragmentShader.replace(B,B+"\n"+BURB_FS)}
+  sh.fragmentShader="varying vec3 vBubN;\nvarying vec3 vBubP;\n"+sh.fragmentShader.replace(B,BURB_FS+"\n"+B)}
  /* un material clonado (al atenuar) pierde el onBeforeCompile: por eso se reaplica en cada pasada y se reconoce por la función, no por una marca en userData */
  function burbuja(m){if(!m||m.isShaderMaterial||m.colorWrite===false||m.onBeforeCompile===bubOBC)return;
-  m.onBeforeCompile=bubOBC;m.customProgramCacheKey=()=>"burbuja1";m.needsUpdate=true}
+  m.onBeforeCompile=bubOBC;m.customProgramCacheKey=()=>"burbuja2";m.needsUpdate=true}
  function esOcl(o){for(let x=o,i=0;x&&i<3;x=x.parent,i++){if(/oclu|occl|^esfera/i.test(x.name||""))return true}return false}
  function aplicarModelo(root){root.traverse(o=>{if(!o.isMesh)return;const u=o.userData;
   if(u.__cat===undefined){u.__cat=categoria(o);u.__niv=nivel(o)}const k=u.__cat;if(!k)return;
