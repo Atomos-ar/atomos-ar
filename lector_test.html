@@ -88,39 +88,7 @@ body{padding-bottom:190px}
 .ib{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;margin-left:8px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:var(--c,#8fe9ff);font:700 12px/1 Georgia,"Times New Roman",serif;vertical-align:middle;cursor:pointer;touch-action:manipulation}
 .ib[aria-expanded="true"]{box-shadow:0 0 0 2px rgba(255,255,255,.2)}
 .in{margin:-3px 0 4px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.07);font-size:12.5px;line-height:1.35;color:#d7e6ff}
-</style></head><body><script>
-/* ---------- Animación de entrada a pantalla completa: solo la primera vez que se abre el lector (?intro=1 la fuerza). Un toque la saltea. ---------- */
-(function(){
- try{if(localStorage.getItem("intL")==="1"&&!/[?&]intro=1/.test(location.search))return}catch(e){}
- const C=["#ff4d6a","#ff9a3d","#3da5ff","#b07dff","#ff4fc3","#2dff9c","#2de8e0","#ffd84a","#b8ff3d","#7f8cff"],rm=matchMedia("(prefers-reduced-motion:reduce)").matches,R=Math.random;
- const st=document.createElement("style");st.textContent="#ia{position:fixed;inset:0;z-index:200;background:#05070d;transition:opacity .7s ease,transform .7s cubic-bezier(.6,0,.2,1)}#ia.out{opacity:0;transform:scale(1.4);pointer-events:none}#ia canvas{position:absolute;inset:0;width:100%;height:100%}";
- document.head.appendChild(st);
- const o=document.createElement("div");o.id="ia";o.innerHTML="<canvas></canvas>";document.body.appendChild(o);document.documentElement.style.overflow="hidden";
- const cv=o.firstChild,cx=cv.getContext("2d"),dpr=Math.min(devicePixelRatio||1,1.5);let W=0,H=0,fin=0;
- const rs=()=>{W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0)};rs();addEventListener("resize",rs);
- const P=[];for(let i=0;i<100;i++)P.push({a:R()*6.2832,v:.35+R()*.65,c:C[i%10],r:1.6+R()*2.6,d:R()*.3});
- const sm=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)},t0=performance.now(),DUR=rm?1.4:3.8;
- function end(){if(fin)return;fin=1;o.classList.add("out");document.documentElement.style.overflow="";try{localStorage.setItem("intL","1")}catch(e){}
-  document.querySelectorAll(".lay").forEach(l=>{l.style.animation="none";void l.offsetWidth;l.style.animation=""});/* los grupos aparecen de nuevo, con su «plop», al abrirse la pantalla */
-  setTimeout(()=>o.remove(),800)}
- o.addEventListener("pointerdown",end);
- (function fr(now){if(fin)return;requestAnimationFrame(fr);const t=(now-t0)/1000,x0=W/2,y0=H*.42,S=Math.min(W,H)*.3;
-  cx.globalCompositeOperation="source-over";cx.fillStyle="rgba(5,7,13,.26)";cx.fillRect(0,0,W,H);/* estela */
-  cx.globalCompositeOperation="lighter";
-  const g=sm(t/.9),pu=1+.08*Math.sin(t*7),nr=S*.16*(.25+g)*pu,q=cx.createRadialGradient(x0,y0,0,x0,y0,nr*2.6);
-  q.addColorStop(0,"rgba(255,255,255,1)");q.addColorStop(.25,"rgba(61,230,255,.85)");q.addColorStop(1,"rgba(61,230,255,0)");cx.fillStyle=q;cx.beginPath();cx.arc(x0,y0,nr*2.6,0,6.2832);cx.fill();
-  const og=sm((t-.3)/1)*(1-sm((t-2.3)/.5));/* las órbitas crecen y se disuelven cuando estalla el núcleo */
-  if(og>.01)for(let i=0;i<3;i++){const rot=i*1.0472,rx=S*og,ry=rx*.38;
-   cx.save();cx.translate(x0,y0);cx.rotate(rot);cx.strokeStyle="rgba(61,230,255,"+.35*og+")";cx.lineWidth=1.2;cx.beginPath();cx.ellipse(0,0,rx,ry,0,0,6.2832);cx.stroke();
-   const a=t*2.4+i*2.1;cx.shadowColor="#3de6ff";cx.shadowBlur=14;cx.fillStyle="#bff6ff";cx.beginPath();cx.arc(Math.cos(a)*rx,Math.sin(a)*ry,4.5,0,6.2832);cx.fill();cx.restore()}
-  if(t>2.3)for(const p of P){const u=Math.min(1,Math.max(0,(t-2.3-p.d)/1.1));if(u<=0||u>=1)continue;const e=1-Math.pow(1-u,3),d=S*2.6*e*p.v;
-   cx.globalAlpha=1-u;cx.fillStyle=p.c;cx.shadowColor=p.c;cx.shadowBlur=10;cx.beginPath();cx.arc(x0+Math.cos(p.a)*d,y0+Math.sin(p.a)*d,p.r*(1-.5*u),0,6.2832);cx.fill();cx.globalAlpha=1;cx.shadowBlur=0}
-  cx.globalCompositeOperation="source-over";cx.shadowBlur=0;
-  const ta=sm((t-1)/.7);if(ta>0){cx.globalAlpha=ta;cx.textAlign="center";cx.shadowColor="#3de6ff";cx.shadowBlur=16;cx.fillStyle="#f2f9ff";cx.font="300 "+Math.min(42,W*.09)+"px system-ui,-apple-system,sans-serif";cx.fillText("Lector de átomos",x0,H*.74);
-   cx.shadowBlur=0;cx.fillStyle="#7f8aa8";cx.font="13px system-ui,sans-serif";cx.fillText("Tocá para continuar",x0,H*.74+30);cx.globalAlpha=1}
-  if(t>DUR)end()})(performance.now());
-})();
-</script>
+</style></head><body>
 <main><h1>¿Qué vamos a ver hoy?</h1>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="gl" filterUnits="userSpaceOnUse" x="-20" y="-20" width="400" height="277.5"><feGaussianBlur stdDeviation="1.7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
 <div id="tabla" role="group" aria-label="Grupos de la tabla periódica" style="aspect-ratio:372/249.5">
@@ -247,6 +215,6 @@ if(Q.get("v")=="clasica")ir(true);
  w.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;
   try{localStorage.setItem("tutL","1");if(a==="x")localStorage.setItem("tut1","1")}catch(x){}
   w.classList.add("out");setTimeout(()=>w.remove(),350)});
- (function f(){if(document.getElementById("ia"))return setTimeout(f,200);setTimeout(()=>{w.hidden=false},1200)})();/* espera a la animación de entrada y a que aparezcan los grupos */
+ setTimeout(()=>{w.hidden=false},1500);/* espera a que terminen de aparecer los grupos */
 })();
 </script></body></html>
