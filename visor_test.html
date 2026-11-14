@@ -878,8 +878,8 @@ void main(){
 (function(){
  const Q=new URLSearchParams(location.search);
  const PASOS=[
-  {h:"Apuntá a un marcador",p:"Poné la cámara frente a un marcador de la hoja y aparece su átomo en 3D. Podés enfocar varios a la vez.",d:"mk",esp:1,libre:1},
-  {p:"Si eres lo suficientemente curioso, ¡anímate a saltear el tutorial y diviértete descubriendo! (el tutorial siempre estará disponible)",dec:1,libre:1,t:"#tutq"},
+  {h:"Apuntá a un marcador",p:"Poné la cámara frente a un marcador de la hoja y aparece su átomo en 3D. Podés enfocar varios a la vez.",d:"mk",esp:1,libre:1,big:1},
+  {p:"Si eres lo suficientemente curioso, ¡anímate a saltear el tutorial y diviértete descubriendo! (el tutorial siempre estará disponible)",dec:1,big:1},
   {t:"#ui",h:"Tamaño",p:"Con − y + (o el deslizador) agrandás o achicás los átomos. Tocá el porcentaje para volver al tamaño inicial."},
   {h:"Girar",p:"Arrastrá un dedo por la pantalla para girar el átomo. ¡Probalo ahora!",d:"hand",libre:1},
   {t:"#datp",h:"Datos del elemento",p:"Arriba ves el nombre, el símbolo y la configuración electrónica externa. «Ver más» abre la ficha completa y «Tutorial» te muestra estos pasos otra vez."},
@@ -889,8 +889,8 @@ void main(){
   {cat:"Movimiento",h:"Movimiento",p:"«Rotación» hace girar solo al átomo. «Posición original» lo deja en su orientación inicial, frena la rotación y bloquea el arrastre."},
   {cat:"Destacar información",h:"Destacar información",p:"«Nombre de la familia» muestra flotando el nombre del grupo, y «Contorno de neón» dibuja una línea de color alrededor de los grupos y de las uniones."},
   {cat:"Tipo de unión",h:"Tipo de unión",p:"Con dos marcadores juntos, el visor dice si la unión es iónica, covalente o metálica. Elegí si el cartel flota sobre ellos, va en el banner de arriba o no se muestra."},
-  {h:"Dos marcadores = una unión",p:"Acercá solo dos: arriba de ellos flota si la unión es iónica, covalente o metálica, y un neón de color los rodea.",d:"par"},
-  {h:"Tres o más: el grupo",p:"Con varios de una misma familia flota el nombre del grupo y un neón los envuelve.",d:"grp"},
+  {h:"Dos marcadores = una unión",p:"Acercá solo dos: arriba de ellos flota si la unión es iónica, covalente o metálica, y un neón de color los rodea.",d:"par",big:1},
+  {h:"Tres o más: el grupo",p:"Con varios de una misma familia flota el nombre del grupo y un neón los envuelve.",d:"grp",big:1},
   {t:"#back",h:"Grupos",p:"Volvé acá para elegir otras familias de la tabla."}];
  const DEM={mk:'<i class="q"></i><span class="at">⚛</span>',hand:'<span class="hd">👆</span>',par:'<i class="gl"></i><i class="q a"></i><i class="q b"></i><span class="pl p1">Unión iónica</span><span class="pl p2">Unión covalente</span>',grp:'<i class="gl g"></i><i class="q"></i><i class="q"></i><i class="q"></i><span class="pl p3">Halógenos</span>'};
  const st=document.createElement("style");st.textContent=`
@@ -913,15 +913,20 @@ void main(){
 @keyframes gc{0%,45%{border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}55%,100%{border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
 @keyframes p1k{0%,10%{opacity:0}20%,45%{opacity:1}55%,100%{opacity:0}}@keyframes p2k{0%,50%{opacity:0}60%,95%{opacity:1}100%{opacity:0}}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes hs{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
-#tut .qq{position:absolute;padding:6px 14px;border-radius:999px;border:1.5px solid #3de6ff;background:rgba(8,12,24,.92);color:#fff;font:700 14px system-ui,sans-serif;text-shadow:0 0 8px #3de6ff;box-shadow:0 0 14px #3de6ff;transform:translate(-50%,-100%);animation:qin .5s cubic-bezier(.2,1.4,.4,1),qbo 1.6s .5s ease-in-out infinite}#tut .qq[hidden]{display:none}
 #tutb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;left:-4px;bottom:0;min-width:70px;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #datp.vacia #tutb{top:calc(44px + env(safe-area-inset-top,0px));bottom:auto;position:fixed;left:8px;background:rgba(8,12,24,.7)}
 #tut.dec .tf .sk{background:rgba(255,255,255,.14);color:#fff;padding-left:12px}#tut .nx:disabled{opacity:.75;animation:tpu 1.4s ease-in-out infinite}#tut .tf button{white-space:nowrap}
-@keyframes qin{from{opacity:0;transform:translate(-50%,-60%) scale(.4)}}@keyframes qbo{50%{transform:translate(-50%,calc(-100% - 6px))}}
+#tut .bg{position:absolute;inset:0;background:rgba(2,4,10,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .35s}
+#tut.big .cd{width:min(340px,calc(100vw - 32px));padding:18px 18px 14px;border-radius:18px;box-shadow:0 0 22px rgba(61,230,255,.32),0 10px 30px rgba(0,0,0,.5)}
+#tut.big .th{font:300 24px system-ui,sans-serif;letter-spacing:.5px;color:#f2f9ff;text-shadow:0 0 6px #3de6ff,0 0 18px rgba(61,230,255,.4);margin-bottom:6px}
+#tut.big .tp{font-size:14.5px;line-height:1.4}#tut.dec .tp{font-size:16px;line-height:1.45}
+#tut.big .dm{transform:scale(1.2);margin:16px 0 8px}
+#tut.big .tf{margin-top:12px}#tut.big .tf button{padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px}
+#tut.big .tf .nx{background:none;border:1.5px solid #3de6ff;color:#3de6ff;text-shadow:0 0 8px rgba(61,230,255,.7);box-shadow:0 0 10px rgba(61,230,255,.35)}
 @media (prefers-reduced-motion:reduce){#tut *{animation:none!important;transition:none!important}#tut .p2{display:none}}`;
  document.head.appendChild(st);
- const t=document.createElement("div");t.id="tut";t.hidden=true;t.innerHTML='<div class="sp"></div><div class="cd"></div><div class="qq" hidden>¿tutorial?</div>';document.body.appendChild(t);
- const sp=t.children[0],cd=t.children[1],qq=t.children[2];let n=0,on=0,manual=0,wt=0,ab=0;
+ const t=document.createElement("div");t.id="tut";t.hidden=true;t.innerHTML='<div class="bg"></div><div class="sp"></div><div class="cd"></div>';document.body.appendChild(t);
+ const bgE=t.children[0],sp=t.children[1],cd=t.children[2];let n=0,on=0,manual=0,wt=0,ab=0;
  const vis=()=>[...document.querySelectorAll("a-marker")].some(m=>m.object3D.visible);
  const sig=()=>n===0&&manual?2:n+1;/* abierto a mano desde Capas se salta la pregunta «¿tutorial?» */
  /* pasos de categoría: el tutorial abre el panel Capas (y lo cierra al salir) y resalta el bloque de cada categoría */
@@ -934,22 +939,22 @@ void main(){
   for(let e=h.nextElementSibling;e&&!e.classList.contains("ch");e=e.nextElementSibling){const q=e.getBoundingClientRect();if(q.height){t=Math.min(t,q.top);b=Math.max(b,q.bottom)}}
   t=Math.max(t,c.top+2);b=Math.min(b,c.bottom-2);return b>t?{left:c.left+4,top:t,width:c.width-8,height:b-t}:null}
  function show(i){n=i;const s=PASOS[i],at=i>2||(i===2&&!manual);panel(s);cd.style.animation="none";void cd.offsetWidth;cd.style.animation="";
-  t.classList.toggle("dec",!!s.dec);qq.hidden=!s.dec;
+  t.classList.toggle("dec",!!s.dec);t.classList.toggle("big",!!s.big);
   cd.innerHTML=(s.h?'<div class="th">'+s.h+'</div>':"")+'<div class="tp">'+s.p+'</div>'+(s.d?'<div class="dm">'+DEM[s.d]+'</div>':'')
    +'<div class="dt">'+PASOS.map((_,j)=>'<i'+(j===i?' class="on"':'')+'></i>').join("")+'</div>'
    +'<div class="tf"><button class="sk" data-a="x">'+(s.dec?"¡Descubrir solo!":"Saltar")+'</button>'+(at?'<button data-a="p">‹ Atrás</button>':'')
-   +(s.esp?'<button class="nx" disabled>Esperando un marcador…</button>':'<button class="nx" data-a="n">'+(s.dec?"Siguiente paso":i===PASOS.length-1?"¡Listo!":"Siguiente")+'</button>')+'</div>'}
+   +(s.esp?'<button class="nx" disabled>Esperando un marcador…</button>':'<button class="nx" data-a="n">'+(s.dec?"Guíame":i===PASOS.length-1?"¡Listo!":"Siguiente")+'</button>')+'</div>'}
  function lay(){if(!on)return;requestAnimationFrame(lay);const s=PASOS[n],W=innerWidth,H=innerHeight,ui=document.getElementById("ui");
   /* el cartel de «Apuntá a un marcador» no se quita hasta que aparece un modelo (y se mantiene 0,8 s a la vista) */
   if(s.esp){if(vis()){const now=performance.now();if(!wt)wt=now;else if(now-wt>800){wt=0;show(sig());return}}else wt=0}
-  if(ui){const u=ui.getBoundingClientRect();qq.style.left=u.left+u.width/2+"px";qq.style.top=u.top-8+"px";if(s.t==="#ui"||s.dec)ui.classList.add("act")}
+  if(ui&&s.t==="#ui")ui.classList.add("act");
   const el=s.t&&document.querySelector(s.t),r=s.cat?catRect(s.cat):(el&&el.offsetWidth&&el.offsetHeight?el.getBoundingClientRect():(s.t==="#datp"?{left:8,top:8,width:W-16,height:84}:null)),cw=cd.offsetWidth,ch=cd.offsetHeight;let x,y;
   if(r){sp.style.left=r.left-6+"px";sp.style.top=r.top-6+"px";sp.style.width=r.width+12+"px";sp.style.height=r.height+12+"px";
    y=r.top+r.height+ch+24<H?r.top+r.height+14:r.top-ch-24>8?r.top-ch-14:(r.top+r.height/2<H/2?H-ch-12:96);x=r.left+r.width/2-cw/2}/* el cartel nunca tapa lo que explica: abajo, arriba o, si no entra, del lado opuesto de la pantalla */
-  else{sp.style.left=W/2+"px";sp.style.top=H/2+"px";sp.style.width=sp.style.height="0px";x=(W-cw)/2;y=s.libre?H-ch-96:(H-ch)/2}/* sin oscurecer: la cámara y el modelo se ven limpios */
-  sp.style.opacity=s.libre?0:1;sp.classList.toggle("nt",!r);
+  else{sp.style.left=W/2+"px";sp.style.top=H/2+"px";sp.style.width=sp.style.height="0px";x=(W-cw)/2;y=s.libre&&!s.big?H-ch-96:(H-ch)/2}/* sin oscurecer: la cámara y el modelo se ven limpios */
+  sp.style.opacity=s.libre||s.big?0:1;sp.classList.toggle("nt",!r);bgE.style.opacity=s.big&&!s.libre?1:0;/* fondo oscurecido y desenfocado en los carteles grandes (menos en «Apuntá», para ver la cámara) */
   cd.style.left=Math.min(W-cw-10,Math.max(10,x))+"px";cd.style.top=y+"px"}
- function fin(){on=0;t.hidden=true;qq.hidden=true;panel({});try{localStorage.setItem("tut1","1")}catch(e){}}
+ function fin(){on=0;t.hidden=true;panel({});try{localStorage.setItem("tut1","1")}catch(e){}}
  function ini(m){if(on)return;manual=m?1:0;on=1;wt=0;t.hidden=false;show(manual&&vis()?2:0);requestAnimationFrame(lay)}
  t.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;if(a==="n")n<PASOS.length-1?show(sig()):fin();else if(a==="p")show(n-1);else fin()});
  /* botón «Tutorial» dentro del banner de datos, debajo de «Grupos» (del otro lado, «Ver más» queda debajo de «Capas») */
