@@ -920,7 +920,7 @@ void main(){
 #tut.big .cd{width:min(340px,calc(100vw - 32px));padding:18px 18px 14px;border-radius:18px;box-shadow:0 0 22px rgba(61,230,255,.32),0 10px 30px rgba(0,0,0,.5)}
 #tut.big .th{font:300 24px system-ui,sans-serif;letter-spacing:.5px;color:#f2f9ff;text-shadow:0 0 6px #3de6ff,0 0 18px rgba(61,230,255,.4);margin-bottom:6px}
 #tut.big .tp{font-size:14.5px;line-height:1.4}#tut.dec .tp{font-size:16px;line-height:1.45}
-#tut.big .dm{transform:scale(1.2);margin:16px 0 14px}
+#tut.big .dm{transform:scale(1.2);margin:16px 0 14px}#tut .dm.mk{height:32px}#tut.big .dm.mk{margin:14px 0 12px}
 #tut.big .tf{margin-top:12px}#tut.big .tf button{padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px}
 #tut.big .tf .nx{background:none;border:1.5px solid #3de6ff;color:#3de6ff;text-shadow:0 0 8px rgba(61,230,255,.7);box-shadow:0 0 10px rgba(61,230,255,.35)}
 @media (prefers-reduced-motion:reduce){#tut *{animation:none!important;transition:none!important}#tut .p2{display:none}}`;
@@ -940,7 +940,7 @@ void main(){
   t=Math.max(t,c.top+2);b=Math.min(b,c.bottom-2);return b>t?{left:c.left+4,top:t,width:c.width-8,height:b-t}:null}
  function show(i){n=i;const s=PASOS[i],at=i>2||(i===2&&!manual);panel(s);cd.style.animation="none";void cd.offsetWidth;cd.style.animation="";
   t.classList.toggle("dec",!!s.dec);t.classList.toggle("big",!!s.big);
-  cd.innerHTML=(s.h?'<div class="th">'+s.h+'</div>':"")+'<div class="tp">'+s.p+'</div>'+(s.d?'<div class="dm">'+DEM[s.d]+'</div>':'')
+  cd.innerHTML=(s.h?'<div class="th">'+s.h+'</div>':"")+'<div class="tp">'+s.p+'</div>'+(s.d?'<div class="dm'+(s.d==="mk"?' mk':'')+'">'+DEM[s.d]+'</div>':'')
    +'<div class="dt">'+PASOS.map((_,j)=>'<i'+(j===i?' class="on"':'')+'></i>').join("")+'</div>'
    +'<div class="tf"><button class="sk" data-a="x">'+(s.dec?"¡Descubrir solo!":"Saltar")+'</button>'+(at?'<button data-a="p">‹ Atrás</button>':'')
    +(s.esp?'<button class="nx" disabled>Esperando un marcador…</button>':'<button class="nx" data-a="n">'+(s.dec?"Guíame":i===PASOS.length-1?"¡Listo!":"Siguiente")+'</button>')+'</div>'}
