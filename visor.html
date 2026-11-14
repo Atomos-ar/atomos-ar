@@ -11,7 +11,7 @@
 #ui.act{opacity:1}
 #ui button{width:30px;height:30px;flex:none;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font:600 18px/1 system-ui;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #ui button:active{background:rgba(255,255,255,.45)}
-#ui input{width:min(24vw,96px);min-width:56px;height:20px;margin:0}
+#ui input{width:min(30vw,130px);min-width:56px;height:20px;margin:0}
 #pc{min-width:38px;text-align:center;font:600 11px system-ui;cursor:pointer}
 /* ---------- Pantalla de entrada: átomo de nube de probabilidad hecho de 0 y 1 (estilo Matrix) ---------- */
 #intro{position:fixed;inset:0;z-index:100;background:#05070d;transition:opacity .7s ease,transform .7s cubic-bezier(.6,0,.2,1)}
@@ -101,7 +101,7 @@ requestAnimationFrame(draw)})();
  (function w(){const t=performance.now()-t0;if((listo()&&t>MIN)||t>10000)fin();else setTimeout(w,120)})()})();
 </script>
 <a id="back" href="lector_test.html">‹ Grupos</a><div id="info"><b id="t">Apunta la cámara a un marcador</b><small id="s">Si el video se ve con mucho zoom, prueba agregar ?c=1 o ?c=2 a la dirección</small></div>
-<div id="ui"><button id="mn" aria-label="Más pequeño">−</button><input id="sl" type="range" min="-100" max="100" step="1" value="0" aria-label="Tamaño"><button id="mp" aria-label="Más grande">+</button><span id="pc" title="Toca para volver al 100%">100%</span></div>
+<div id="ui"><button id="mn" aria-label="Más pequeño">−</button><input id="sl" type="range" min="16.1" max="266.1" step="any" value="29.2" aria-label="Tamaño"><button id="mp" aria-label="Más grande">+</button><span id="pc" title="Toca para volver al tamaño inicial">5%</span></div>
 <script>
 window.addEventListener("error",e=>{window.__err=(e.message||"")+" "+String(e.filename||"").split("/").pop()});
 {const c=new URLSearchParams(location.search).get("c")||"3",p=innerWidth<innerHeight;
@@ -114,30 +114,35 @@ const G={"alc": [3, 11, 19, 37, 55, 87], "alt": [4, 12, 20, 38, 56, 88], "tr": [
 (Q0.get("g")||"").split(",").forEach(k=>{if(G[k]&&ZS.length+G[k].length<=MAX)ZS=ZS.concat(G[k])});
 window.__Z=ZS;document.getElementById("back").href="lector_test.html"+location.search;
 if(!ZS.length)location.replace("lector_test.html"+location.search);
-ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity></a-marker>'));
+const SMA=Q0.get("lock")==="0"?' smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"':' smooth="false"';
+ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt"'+SMA+'><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity></a-marker>'));
 </script>
 <a-entity camera></a-entity></a-scene>
 <script>
 const D0={"1": ["Hidrógeno", "H", "1s¹", 17, [], 0.08], "2": ["Helio", "He", "1s²", 17, [], 0.08], "3": ["Litio", "Li", "1s² 2s¹", 17, [], 0.1], "4": ["Berilio", "Be", "1s² 2s²", 17, [], 0.1], "5": ["Boro", "B", "1s² 2s² 2p¹", 17, [], 0.12], "6": ["Carbono", "C", "1s² 2s² 2p²", 17, [], 0.12], "7": ["Nitrógeno", "N", "1s² 2s² 2p³", 17, [], 0.12], "8": ["Oxígeno", "O", "1s² 2s² 2p⁴", 17, [], 0.12], "9": ["Flúor", "F", "1s² 2s² 2p⁵", 17, [], 0.12], "10": ["Neón", "Ne", "1s² 2s² 2p⁶", 17, [], 0.12], "11": ["Sodio", "Na", "1s² 2s² 2p⁶ 3s¹", 15.0, [], 0.14], "12": ["Magnesio", "Mg", "1s² 2s² 2p⁶ 3s²", 15.0, [], 0.14], "13": ["Aluminio", "Al", "1s² 2s² 2p⁶ 3s² 3p¹", 13.12, [], 0.16], "14": ["Silicio", "Si", "1s² 2s² 2p⁶ 3s² 3p²", 13.12, [], 0.16], "15": ["Fósforo", "P", "1s² 2s² 2p⁶ 3s² 3p³", 13.12, [], 0.16], "16": ["Azufre", "S", "1s² 2s² 2p⁶ 3s² 3p⁴", 13.12, [], 0.16], "17": ["Cloro", "Cl", "1s² 2s² 2p⁶ 3s² 3p⁵", 13.12, [], 0.16], "18": ["Argón", "Ar", "1s² 2s² 2p⁶ 3s² 3p⁶", 13.12, [], 0.16], "19": ["Potasio", "K", "1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹", 11.67, [], 0.18], "20": ["Calcio", "Ca", "1s² 2s² 2p⁶ 3s² 3p⁶ 4s²", 11.67, [], 0.18], "21": ["Escandio", "Sc", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹ 4s²", 10.5, [], 0.2], "22": ["Titanio", "Ti", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d² 4s²", 10.5, [], 0.2], "23": ["Vanadio", "V", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d³ 4s²", 10.5, [], 0.2], "24": ["Cromo", "Cr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s¹", 10.5, [], 0.2], "25": ["Manganeso", "Mn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s²", 10.5, [], 0.2], "26": ["Hierro", "Fe", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁶ 4s²", 10.5, [], 0.2], "27": ["Cobalto", "Co", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁷ 4s²", 10.5, [], 0.2], "28": ["Níquel", "Ni", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁸ 4s²", 10.5, [], 0.2], "29": ["Cobre", "Cu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s¹", 10.5, [], 0.2], "30": ["Zinc", "Zn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s²", 10.5, [], 0.2], "31": ["Galio", "Ga", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p¹", 9.55, [], 0.22], "32": ["Germanio", "Ge", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p²", 9.55, [], 0.22], "33": ["Arsénico", "As", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p³", 9.55, [], 0.22], "34": ["Selenio", "Se", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁴", 9.55, [], 0.22], "35": ["Bromo", "Br", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁵", 9.55, [], 0.22], "36": ["Kriptón", "Kr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶", 9.55, [], 0.22], "37": ["Rubidio", "Rb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 5s¹", 8.75, [], 0.24], "38": ["Estroncio", "Sr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 5s²", 8.75, [], 0.24], "39": ["Itrio", "Y", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹ 5s²", 8.08, [], 0.26], "40": ["Circonio", "Zr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d² 5s²", 8.08, [], 0.26], "41": ["Niobio", "Nb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁴ 5s¹", 8.08, [], 0.26], "42": ["Molibdeno", "Mo", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁵ 5s¹", 8.08, [], 0.26], "43": ["Tecnecio", "Tc", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁵ 5s²", 8.08, [], 0.26], "44": ["Rutenio", "Ru", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁷ 5s¹", 8.08, [], 0.26], "45": ["Rodio", "Rh", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁸ 5s¹", 8.08, [], 0.26], "46": ["Paladio", "Pd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰", 8.75, [], 0.24], "47": ["Plata", "Ag", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s¹", 8.08, [], 0.26], "48": ["Cadmio", "Cd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s²", 8.08, [], 0.26], "49": ["Indio", "In", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p¹", 7.5, [], 0.28], "50": ["Estaño", "Sn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p²", 7.5, [], 0.28], "51": ["Antimonio", "Sb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p³", 7.5, [], 0.28], "52": ["Telurio", "Te", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁴", 7.5, [], 0.28], "53": ["Yodo", "I", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁵", 7.5, [], 0.28], "54": ["Xenón", "Xe", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶", 7.5, [], 0.28], "55": ["Cesio", "Cs", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 6s¹", 7.0, [], 0.3], "56": ["Bario", "Ba", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 6s²", 7.0, [], 0.3], "57": ["Lantano", "La", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 5d¹ 6s²", 6.56, [], 0.32], "58": ["Cerio", "Ce", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹ 5s² 5p⁶ 5d¹ 6s²", 6.18, [], 0.34], "59": ["Praseodimio", "Pr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f³ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "60": ["Neodimio", "Nd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁴ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "61": ["Prometio", "Pm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁵ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "62": ["Samario", "Sm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁶ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "63": ["Europio", "Eu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁷ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "64": ["Gadolinio", "Gd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁷ 5s² 5p⁶ 5d¹ 6s²", 6.18, [], 0.34], "65": ["Terbio", "Tb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁹ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "66": ["Disprosio", "Dy", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁰ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "67": ["Holmio", "Ho", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹¹ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "68": ["Erbio", "Er", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹² 5s² 5p⁶ 6s²", 6.56, [], 0.32], "69": ["Tulio", "Tm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹³ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "70": ["Iterbio", "Yb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "71": ["Lutecio", "Lu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹ 6s²", 6.18, [], 0.34], "72": ["Hafnio", "Hf", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d² 6s²", 6.18, [], 0.34], "73": ["Tántalo", "Ta", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d³ 6s²", 6.18, [], 0.34], "74": ["Wolframio", "W", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁴ 6s²", 6.18, [], 0.34], "75": ["Renio", "Re", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁵ 6s²", 6.18, [], 0.34], "76": ["Osmio", "Os", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁶ 6s²", 6.18, [], 0.34], "77": ["Iridio", "Ir", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁷ 6s²", 6.18, [], 0.34], "78": ["Platino", "Pt", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁹ 6s¹", 6.18, [], 0.34], "79": ["Oro", "Au", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s¹", 6.18, [], 0.34], "80": ["Mercurio", "Hg", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s²", 6.18, [], 0.34], "81": ["Talio", "Tl", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p¹", 5.83, [], 0.36], "82": ["Plomo", "Pb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p²", 5.83, [], 0.36], "83": ["Bismuto", "Bi", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p³", 5.83, [], 0.36], "84": ["Polonio", "Po", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁴", 5.83, [], 0.36], "85": ["Astato", "At", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁵", 5.83, [], 0.36], "86": ["Radón", "Rn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶", 5.83, [], 0.36], "87": ["Francio", "Fr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 7s¹", 5.53, [], 0.38], "88": ["Radio", "Ra", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 7s²", 5.53, [], 0.38], "89": ["Actinio", "Ac", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 6d¹ 7s²", 5.25, [], 0.4], "90": ["Torio", "Th", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 6d² 7s²", 5.25, [], 0.4], "91": ["Protactinio", "Pa", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f² 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "92": ["Uranio", "U", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f³ 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "93": ["Neptunio", "Np", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁴ 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "94": ["Plutonio", "Pu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁶ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "95": ["Americio", "Am", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁷ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "96": ["Curio", "Cm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁷ 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "97": ["Berkelio", "Bk", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁹ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "98": ["Californio", "Cf", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁰ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "99": ["Einstenio", "Es", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹¹ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "100": ["Fermio", "Fm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹² 6s² 6p⁶ 7s²", 5.25, [], 0.4], "101": ["Mendelevio", "Md", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹³ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "102": ["Nobelio", "No", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "103": ["Lawrencio", "Lr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 7s² 7p¹", 5.0, [], 0.42], "104": ["Rutherfordio", "Rf", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d² 7s²", 5.0, [], 0.42], "105": ["Dubnio", "Db", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d³ 7s²", 5.0, [], 0.42], "106": ["Seaborgio", "Sg", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁴ 7s²", 5.0, [], 0.42], "107": ["Bohrio", "Bh", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁵ 7s²", 5.0, [], 0.42], "108": ["Hasio", "Hs", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁶ 7s²", 5.0, [], 0.42], "109": ["Meitnerio", "Mt", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁷ 7s²", 5.0, [], 0.42], "110": ["Darmstatio", "Ds", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁸ 7s²", 5.0, [], 0.42], "111": ["Roentgenio", "Rg", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁹ 7s²", 5.0, [], 0.42], "112": ["Copernicio", "Cn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s²", 5.0, [], 0.42], "113": ["Nihonio", "Nh", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p¹", 4.77, [], 0.44], "114": ["Flerovio", "Fl", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p²", 4.77, [], 0.44], "115": ["Moscovio", "Mc", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p³", 4.77, [], 0.44], "116": ["Livermorio", "Lv", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁴", 4.77, [], 0.44], "117": ["Teneso", "Ts", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁵", 4.77, [], 0.44], "118": ["Oganesón", "Og", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁶", 4.77, [], 0.44]},D={};for(const z of window.__Z)D[z]=D0[z];
 const Q=new URLSearchParams(location.search),quiz=Q.get("quiz");
 /* ---------- Tamaño del modelo: botones y slider ---------- */
-const MIN=.25,MAX_M=4;let mult=1;
-try{mult=Math.min(MAX_M,Math.max(MIN,+localStorage.getItem("mult")||1))}catch(e){}
-const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend=0;
+/* Escala real: mínimo 125% (se muestra 0%), tamaño inicial 150%, máximo 4000% (se muestra 100%). El porcentaje que se ve es el recorrido del slider. */
+const MIN=1.25,MAX_M=40,DEF=1.5,PMIN=Math.log2(MIN)*50,PMAX=Math.log2(MAX_M)*50;let mult=DEF;
+try{const g=+localStorage.getItem("mult2");mult=g>0?Math.min(MAX_M,Math.max(MIN,g)):DEF}catch(e){}
+const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend=0;sl.min=PMIN;sl.max=PMAX;sl.step="any";
 /* Altura del átomo sobre el marcador: 0 = centrado justo sobre el marcador (anclado, el error de ángulo de la cámara casi no lo desplaza);
    1 = levantado un radio como antes. Se cambia con ?alt=0.5 */
 const ALT=Q.get("alt")===null?0:Math.max(0,+Q.get("alt")||0);
-function aplicar(){pend=0;pc.textContent=Math.round(mult*100)+"%";
- if(document.activeElement!==sl)sl.value=Math.round(Math.log2(mult)*50);
+function aplicar(){pend=0;pc.textContent=Math.round((Math.log2(mult)*50-PMIN)/(PMAX-PMIN)*100)+"%";
+ if(document.activeElement!==sl)sl.value=Math.log2(mult)*50;
+ /* Si el ajuste de tamaño (más abajo) está andando, ÉL escribe la escala en cada cuadro: escribirla también acá se pisaban y,
+    en los cuadros en que ganaba esta línea, se veía un destello con el átomo enorme y sin tope. */
+ if(window.__FITON)return;
  for(const z in D){const e=document.querySelector("#m"+z+" a-entity"),k=+(Q.get("s")||D[z][3])*mult;
   e.setAttribute("scale",k+" "+k+" "+k);e.setAttribute("position","0 "+(D[z][5]*k+0.1)*ALT+" 0")}}
-function cambiar(m){mult=Math.min(MAX_M,Math.max(MIN,m));try{localStorage.setItem("mult",mult)}catch(e){}if(!pend)pend=requestAnimationFrame(aplicar)}
+function cambiar(m){mult=Math.min(MAX_M,Math.max(MIN,m));try{localStorage.setItem("mult2",mult)}catch(e){}if(!pend)pend=requestAnimationFrame(aplicar)}
 function repetir(btn,f){let t,iv;const go=()=>cambiar(mult*f),stop=()=>{clearTimeout(t);clearInterval(iv)};
  btn.addEventListener("pointerdown",ev=>{ev.preventDefault();stop();go();t=setTimeout(()=>{iv=setInterval(go,80)},350)});
  ["pointerup","pointerleave","pointercancel"].forEach(n=>btn.addEventListener(n,stop))}
 repetir(document.getElementById("mn"),1/1.1);repetir(document.getElementById("mp"),1.1);
 sl.addEventListener("input",()=>cambiar(Math.pow(2,sl.value/50)));
-pc.addEventListener("click",()=>cambiar(1));
+pc.addEventListener("click",()=>cambiar(DEF));
 aplicar();
 if(!Q.get("info"))document.getElementById("info").style.display="none";else document.getElementById("ui").style.bottom="100px";
 {const u=document.getElementById("ui");let ta;const act=()=>{u.classList.add("act");clearTimeout(ta);ta=setTimeout(()=>u.classList.remove("act"),2200)};
@@ -150,6 +155,133 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  Object.defineProperty(o,"visible",{configurable:true,
   get(){return real||performance.now()-last<HOLD},
   set(v){v=!!v;if(v){const n=performance.now(),h=n-last;if(h>150&&h<1e8){gaps++;if(h>maxgap)maxgap=h}last=n}real=v}})});
+(function(){
+ /* diagnóstico (?d=1): proyección de la cámara AR y dónde cae cada marcador en pantalla */
+ window.__camInfo=function(c,v){try{const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,P=cam&&cam.projectionMatrix.elements;if(!P)return"cam: -";
+  const T=AFRAME.THREE,r=c?c.getBoundingClientRect():null,vr=v?v.getBoundingClientRect():null,f=n=>Math.round(n);
+  const J=window.__PJ||{};let s="AR.js "+(J.ok?"P0="+J.P0.toFixed(2)+" P5="+J.P5.toFixed(2)+" det "+J.cw+"x"+J.ch+" SINCRONIZADA"+(J.vr?"\nvideo en det "+J.vr+" | corr x"+(J.kx||1).toFixed(2)+" y"+(J.ky||1).toFixed(2)+" (P0 orig "+(J.raw0||0).toFixed(2)+")":""):"NO ENCONTRADA ["+(J.keys||"-")+"]")+(window.__pjerr?" ERR "+window.__pjerr:"")+"\ncam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
+  if(r)s+="\ncanvas css "+f(r.left)+","+f(r.top)+" "+f(r.width)+"x"+f(r.height);
+  if(vr)s+="  video css "+f(vr.left)+","+f(vr.top)+" "+f(vr.width)+"x"+f(vr.height);
+  for(const m of document.querySelectorAll("a-marker")){const st=window.__ST&&window.__ST[m.id]&&window.__ST[m.id]();if(!st||!st[0])continue;
+   const o=m.object3D,p=new T.Vector3().setFromMatrixPosition(o.matrixWorld),q=p.clone().project(cam);
+   s+="\n"+m.id+" pos "+p.x.toFixed(2)+","+p.y.toFixed(2)+","+p.z.toFixed(2)+" ndc "+q.x.toFixed(2)+","+q.y.toFixed(2)+" esc "+new T.Vector3().setFromMatrixScale(o.matrixWorld).x.toFixed(2)}
+  return s}catch(e){return"cam err "+e.message}};
+})();
+(function(){
+ /* ---------- Cámara AR sincronizada ----------
+   La detección de AR.js se hace con una cámara calibrada, pero algo (el redimensionado de A-Frame) la reemplaza por una cámara
+   genérica de 80° 4:3. Los modelos se dibujaban con esa cámara y caían corridos hacia el centro de la pantalla y más chicos.
+   Acá, antes de dibujar cada cuadro, se vuelve a copiar la proyección calibrada de AR.js a la cámara.
+   ?proj=0 lo desactiva */
+ window.__PJ={ok:0,P0:0,P5:0,cw:0,ch:0,keys:""};
+ if(Q.get("proj")==="0")return;
+ const sc=document.querySelector("a-scene");let ctx=null,tries=0;
+ const ok=x=>x&&typeof x==="object"&&typeof x.getProjectionMatrix==="function";
+ function buscar(){const sy=sc.systems&&sc.systems.arjs;if(!sy)return null;
+  window.__PJ.keys=Object.keys(sy).filter(k=>k[0]!=="_"||k.length>1).slice(0,14).join(",");
+  const s=sy._arSession||sy.arSession;
+  if(s)for(const n of["arContext","arToolkitContext","_arContext"])if(ok(s[n]))return s[n];
+  for(const n of["_arToolkitContext","arToolkitContext","arContext"])if(ok(sy[n]))return sy[n];
+  for(const k in sy){if(k==="el"||k==="sceneEl")continue;let x;try{x=sy[k]}catch(e){continue}
+   if(ok(x))return x;
+   if(x&&typeof x==="object"&&!x.nodeType)for(const j in x){let y;try{y=x[j]}catch(e){continue}if(ok(y))return y}}
+  return null}
+ /* ---------- El video dentro del lienzo de detección ----------
+   El detector trabaja sobre un lienzo apaisado de 320x240, pero el video del celu es vertical (480x640). AR.js lo mete ENCAJADO sin deformar:
+   el video queda de ~180x240 px, centrado, con franjas negras a los costados. La proyección de AR.js está calculada para el lienzo
+   entero (320 de ancho), pero las posiciones que devuelve el detector están medidas sobre ese video angosto (180 de ancho).
+   Resultado: al dibujar, todo lo horizontal salía comprimido ~1,78 veces. Los átomos quedaban más angostos que altos y corridos hacia
+   el centro de la pantalla (a ~60% de la distancia real entre marcadores), y por eso parecían pegarse entre sí.
+   Acá se mide en qué rectángulo cae el video dentro del lienzo de detección y se reescala la proyección a ese rectángulo.
+   ?pk=0 lo desactiva (comportamiento anterior) · ?pk=1.78 fuerza a mano el factor horizontal */
+ const TH=AFRAME.THREE,PK=Q.get("pk"),PKN=PK===null||PK===""||isNaN(+PK)?null:+PK;let rc=null,rcT=-1e9,rcV="";
+ function medir(cv,v){
+  const w=cv.width,h=cv.height,vw=v&&v.videoWidth,vh=v&&v.videoHeight;
+  if(!w||!h||!vw||!vh)return null;
+  const va=vw/vh,ca=w/h;let rw,rh;
+  if(va<ca){rh=h;rw=h*va}else{rw=w;rh=w/va}
+  let r={x0:(w-rw)/2,x1:(w+rw)/2,y0:(h-rh)/2,y1:(h+rh)/2,src:"calc"};/* por cuentas: video encajado y centrado */
+  try{const g=ctx.arController.ctx||cv.getContext("2d");
+   if(g){let x0=w,x1=-1,y0=h,y1=-1;const px=(d,i)=>d[i+3]>0&&(d[i]|d[i+1]|d[i+2])>0;
+    for(const f of[.25,.5,.75]){const d=g.getImageData(0,Math.floor(h*f),w,1).data;for(let i=0;i<w;i++)if(px(d,i*4)){if(i<x0)x0=i;if(i>x1)x1=i}}
+    for(const f of[.25,.5,.75]){const d=g.getImageData(Math.floor(w*f),0,1,h).data;for(let i=0;i<h;i++)if(px(d,i*4)){if(i<y0)y0=i;if(i>y1)y1=i}}
+    if(x1>x0&&y1>y0){const mw=x1-x0+1,mh=y1-y0+1;
+     if(Math.abs(mw/mh/va-1)<.06)r={x0:x0,x1:x1+1,y0:y0,y1:y1+1,src:"medido"};/* se ve encajado: vale lo medido */
+     else if(mw>w*.97&&mh>h*.97)r={x0:0,x1:w,y0:0,y1:h,src:"estirado"}}}}/* estirado al lienzo entero: no hay qué corregir */
+  catch(e){}
+  return r}
+ function sync(){const cam=sc.camera;if(!cam)return;
+  if(!ctx){if(tries++%30===0)ctx=buscar();if(!ctx)return}
+  if(!ctx.arController)return;
+  const m0=ctx.getProjectionMatrix(),e0=m0&&m0.elements;
+  if(!e0||!(e0[0]>0&&e0[5]>0)||!isFinite(e0[0]+e0[5]))return;
+  const m=m0.clone(),cv=ctx.arController.canvas,P=window.__PJ;
+  /* Corrección del video dentro del lienzo de detección (ver nota arriba) */
+  let Ax=1,Bx=0,Ay=1,By=0;
+  if(PKN===null||PKN>0){
+   if(PKN>0){Ax=1/PKN}
+   else if(cv){const v=document.querySelector("video"),now=performance.now(),vk=v?v.videoWidth+"x"+v.videoHeight+"/"+cv.width+"x"+cv.height:"";
+    if((!rc&&now-rcT>400)||(rc&&vk!==rcV)||now-rcT>4000){rcT=now;const r=medir(cv,v);if(r){rc=r;rcV=vk}}
+    if(rc){const w=cv.width,h=cv.height;Ax=(rc.x1-rc.x0)/w;Bx=(rc.x0+rc.x1-w)/w;Ay=(rc.y1-rc.y0)/h;By=(h-rc.y0-rc.y1)/h}}
+   if(Ax>.05&&Ay>.05&&(Math.abs(Ax-1)>.005||Math.abs(Ay-1)>.005||Math.abs(Bx)>.005||Math.abs(By)>.005))
+    m.premultiply(new TH.Matrix4().set(1/Ax,0,0,-Bx/Ax, 0,1/Ay,0,-By/Ay, 0,0,1,0, 0,0,0,1));
+   else{Ax=1;Ay=1}}
+  const e=m.elements;
+  cam.projectionMatrix.copy(m);if(cam.projectionMatrixInverse)cam.projectionMatrixInverse.copy(m).invert();
+  P.ok=1;P.P0=e[0];P.P5=e[5];P.kx=1/Ax;P.ky=1/Ay;P.raw0=e0[0];
+  if(cv){P.cw=cv.width;P.ch=cv.height;P.vr=PKN>0?"manual":(rc?Math.round(rc.x1-rc.x0)+"x"+Math.round(rc.y1-rc.y0)+" "+rc.src:"-")}}
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
+  r.render=function(a,b){try{sync()}catch(e){window.__pjerr=e.message}return o(a,b)}})();
+})();
+/* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
+   Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
+   y los dos modelos terminan en el punto medio; además, como el ajuste de tamaño usa la distancia entre marcadores,
+   esa distancia "falsa" (casi 0) los achicaba.
+   Solución: antes de dibujar cada cuadro se revisa la posición que reportó el detector y se descarta si es imposible:
+     A) dos marcadores a menos de COL anchos de marcador (no caben así: un marcador mide 1 ancho),
+     B) una posición que cae justo donde otro marcador tiene anclado su modelo,
+     C) un salto de más de SALTO anchos en un solo cuadro (solo se acepta si se repite 4 cuadros seguidos).
+   Si se descarta, el modelo se queda en su último lugar bueno. Además suaviza el temblor (reemplaza el "smooth" de AR.js).
+   ?lock=0 lo desactiva y vuelve al comportamiento anterior · ?col=0.75 distancia mínima · ?salto=1 salto máximo por cuadro */
+(function(){
+ if(Q.get("lock")==="0")return;
+ const COL=Q.get("col")===null?.75:+Q.get("col"),SALTO=Q.get("salto")===null?1:+Q.get("salto"),GAP=400,CONF=4,TH=AFRAME.THREE,sc=document.querySelector("a-scene");
+ const V=()=>new TH.Vector3();
+ const L=[...document.querySelectorAll("a-marker")].map(m=>({id:m.id,o:m.object3D,w:m.querySelector(":scope > a-entity"),has:0,seen:-1e9,hid:0,snap:0,ok:0,u:1,cn:0,
+  p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V()}));
+ window.__LK={no:0};
+ const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
+ const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true};
+ function paso(){
+  const now=performance.now(),v=[];
+  for(const a of L){
+   const st=window.__ST&&window.__ST[a.id]?window.__ST[a.id]():null,real=st?st[0]:a.o.visible;
+   if(!real)continue;
+   if(now-a.seen>GAP){a.has=0;a.cn=0}/* estuvo perdido: la posición vieja ya no sirve */
+   a.seen=now;leer(a);v.push(a)}
+  for(const a of v){a.ok=1;a.u=a.rs.x>1e-6?a.rs.x:1;
+   for(const b of v){if(b===a)continue;
+    if(a.rp.distanceTo(b.rp)/a.u<COL){a.ok=0;break}/* A: encimados */
+    if(b.has&&a.rp.distanceTo(b.p)/a.u<COL){a.ok=0;break}}/* B: cayó donde está el modelo del otro */
+   if(a.ok&&a.has){const d=a.rp.distanceTo(a.p)/a.u;
+    if(d>SALTO){/* C: salto grande, solo vale si se mantiene */
+     if(a.cn>0&&a.rp.distanceTo(a.cp)/a.u<.4)a.cn++;else a.cn=1;a.cp.copy(a.rp);
+     if(a.cn>=CONF){a.snap=1;a.cn=0}else a.ok=0}
+    else a.cn=0}
+   else if(!a.ok)a.cn=0}
+  for(const a of v){
+   if(a.ok){
+    if(!a.has||a.snap){a.p.copy(a.rp);a.q.copy(a.rq);a.s.copy(a.rs);a.has=1;a.snap=0}
+    else{const k=Math.min(1,.18+2*a.rp.distanceTo(a.p)/a.u);a.p.lerp(a.rp,k);a.q.slerp(a.rq,k);a.s.lerp(a.rs,k)}
+    if(a.hid&&a.w){a.w.object3D.visible=true;a.hid=0}
+    poner(a)}
+   else{window.__LK.no++;
+    if(a.has)poner(a);/* rechazado: se queda donde estaba */
+    else if(a.w&&!a.hid){a.w.object3D.visible=false;a.hid=1}}}}/* primera vez y en conflicto: esperar a una posición creíble */
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
+  r.render=function(a,b){try{paso()}catch(e){window.__lkerr=e.message}return o(a,b)}})();
+})();
+
 (function f(){const v=document.querySelector("video"),st=v&&v.srcObject;if(!st)return setTimeout(f,500);
 const k=st.getVideoTracks()[0],cp=k.getCapabilities?k.getCapabilities():{};
 if(cp.focusMode&&cp.focusMode.includes("continuous"))k.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(()=>{})})();
@@ -178,7 +310,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
@@ -257,7 +389,7 @@ const CAPAS=(function(){
 (function(){
  const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),EJX=new TH.Vector3(1,0,0),DIAG=new TH.Vector3(1,0,1).normalize(),K=.01,q=new TH.Quaternion(),qy=new TH.Quaternion(),qd=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),b2=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
  const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
- const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp");
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut");
  const marcadores=()=>[...document.querySelectorAll("a-marker")];
  let pid=null,x0=0,y0=0;
  addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix||GR.lock)return;pid=e.pointerId;x0=e.clientX;y0=e.clientY},true);
@@ -303,7 +435,7 @@ const CAPAS=(function(){
  +"#datp[hidden]{display:none}#datp.tapa{visibility:hidden}#datp.vacia{background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}#datp.ex{background:rgba(8,12,24,.9);border-radius:0 0 16px 16px}"
  +"#datp .dc{position:relative}#datp.off .rw{opacity:.6}#datp .rw{transition:opacity .25s}"
  +"#datp .t{height:36px;line-height:36px;padding:0 96px;font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#datp .sy{color:#c3cfe8;font-weight:600}"
- +"#datp .f{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;min-height:30px;font-size:14.5px}#datp .f.ul{padding:0 92px 0 8px}#datp .f.c{padding:0}"
+ +"#datp .f{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;min-height:30px;font-size:14.5px}#datp .f.ul{padding:0 92px}#datp .f.c{padding:0}"
  +"#datp .f.g{display:grid;grid-template-columns:1fr auto 1fr;column-gap:12px;padding:0}#datp .f.g .l{justify-self:end}#datp .f.g .rr{justify-self:start}#datp.bajo .dc{padding-bottom:34px}#datp .f span{white-space:nowrap}#datp .f i{font-style:normal;color:#c3cfe8;margin-right:5px}#datp .f b{font-weight:600}"
  +"#datb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;right:-4px;bottom:0;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}"
  +"#datp.ex #datb{border-color:#3de6ff;background:rgba(61,230,255,.22)}"
@@ -388,14 +520,14 @@ const ITEMS=[
 
 /* ---------- Varios átomos a la vez: cada uno se ajusta a su marcador para que no se mezclen ----------
    Con 2 o más marcadores a la vista, el diámetro de cada átomo se limita a FIT × la distancia a su marcador vecino más cercano
-   (queda centrado sobre su marcador y apoyado en él). Con uno solo vuelve al tamaño normal.
+   (queda centrado sobre su marcador y apoyado en él). Con uno solo rige el mismo tope de TOPE lados de marcador: se ve igual que con dos.
    ?fit=0 lo desactiva · ?fit=1.1 deja los átomos algo más grandes · el slider de tamaño solo puede achicarlos más. */
 (function(){
  const FIT=Q.get("fit")===null?.92:+Q.get("fit");if(!(FIT>0))return;
  /* tope: ningún átomo pasa de TOPE lados de marcador de diámetro. Con la hoja espaciada eso deja un hueco real entre átomos vecinos (con la hoja vieja no cambia nada). ?tope=0 lo quita */
  const TOPE=Q.get("tope")===null?1.0:(+Q.get("tope")>0?+Q.get("tope"):1e9);
  const TH=AFRAME.THREE,vs=new TH.Vector3(),MINF=.1,SUAV=.22;
- const it=[];for(const z in D){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(w)it.push({z,m,w,p:new TH.Vector3(),s:1,f:1,on:0,RG:0})}
+ const it=[];for(const z in D){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(w)it.push({z,m,w,p:new TH.Vector3(),s:1,K:null,RG:0})}
  /* radio real del átomo: se mide sobre el modelo cargado (nube, órbitas y electrones incluidos). El radio estimado de la tabla D se queda
     bastante corto, por eso los átomos terminaban más grandes que la distancia entre marcadores y se encimaban */
  {const m4=new TH.Matrix4(),iv=new TH.Matrix4(),c=new TH.Vector3(),pp=new TH.Vector3(),qq=new TH.Quaternion(),ss=new TH.Vector3();
@@ -405,15 +537,21 @@ const ITEMS=[
      m4.multiplyMatrices(iv,ob.matrixWorld);c.copy(bs.center).applyMatrix4(m4);m4.decompose(pp,qq,ss);R=Math.max(R,c.length()+bs.radius*Math.max(ss.x,ss.y,ss.z))});
     if(R>0&&isFinite(R))a.RG=R};
    inner.addEventListener("model-loaded",medir);if(inner.getObject3D("mesh"))medir()})}
+ /* Un solo escritor de la escala (este bucle), en cada cuadro:
+      ka   = tamaño del átomo solo, con su tope de TOPE lados de marcador, multiplicado por el slider (se puede agrandar y achicar);
+      tope = límite por el vecino más cercano (solo si hay 2 o más marcadores): al 100% o menos evita que se encimen; si se agranda a propósito (slider por encima del 100%), el límite crece con el slider.
+    Lo que se suaviza es únicamente el límite por el vecino, no el slider: el tamaño sigue al slider cuadro a cuadro y nunca pasa de ka. */
+ window.__FITON=1;
  (function tk(){requestAnimationFrame(tk);
   const v=it.filter(a=>a.m.object3D.visible);
   for(const a of v){a.m.object3D.getWorldPosition(a.p);a.m.object3D.getWorldScale(vs);a.s=vs.x>1e-6?vs.x:1}
   for(const a of it){
-   const d=D[a.z],k0=+(Q.get("s")||d[3])*mult,R0=(a.RG||d[5])*k0;let f=1;
-   if(v.length>1&&v.includes(a)){let n=1e9;for(const b of v)if(b!==a)n=Math.min(n,a.p.distanceTo(b.p)/a.s);
-    f=Math.max(MINF,Math.min(1,Math.max(.3,Math.min(FIT*n,TOPE))/(2*R0)))}
-   a.f+=(f-a.f)*SUAV;if(Math.abs(f-a.f)<.002)a.f=f;
-   if(a.f<.999||a.on){a.on=a.f<.999?1:0;const g=a.on?a.f:1,k=k0*g;a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}}
+   const d=D[a.z],base=+(Q.get("s")||d[3]),RG=a.RG||d[5],kb=base*Math.min(1,Math.max(.3,TOPE)/(2*RG*base)),ka=kb*mult;
+   let n=1e9;if(v.includes(a))for(const b of v)if(b!==a)n=Math.min(n,a.p.distanceTo(b.p)/a.s);
+   const kt=n<1e9?Math.max(.3,Math.min(FIT*n,TOPE))/(2*RG)*Math.max(1,mult):1e9,tg=Math.min(kt,ka*1.25);
+   a.K=a.K==null?tg:a.K+(tg-a.K)*SUAV;if(Math.abs(tg-a.K)<.002*tg)a.K=tg;
+   const k=Math.min(ka,Math.max(a.K,MINF*base*mult)),g=k/(base*mult);
+   a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}
  })();
 })();
 
@@ -429,7 +567,7 @@ const ITEMS=[
  try{const g=JSON.parse(localStorage.getItem("hoja2")||"null");if(g)op.no=g.no?1:0}catch(e){}
  if(Q.get("nombre")==="0")op.no=0;
  const cp=document.getElementById("capp");
- if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Hoja de marcadores</div><button type="button" class="tgl" id="hoNo">Nombre de la familia</button>');
+ if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Destacar información</div><button type="button" class="tgl" id="hoNo">Nombre de la familia</button>');
   const bn=cp.querySelector("#hoNo"),gu=()=>{try{localStorage.setItem("hoja2",JSON.stringify(op))}catch(e){}},
    pint=()=>{bn.classList.toggle("on",!!op.no);bn.setAttribute("aria-pressed",!!op.no)};
   bn.addEventListener("click",()=>{op.no=op.no?0:1;gu();pint()});pint()}
@@ -443,10 +581,10 @@ const ITEMS=[
   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));
   s.renderOrder=20;s.scale.set(3.6,.72,1);s.visible=false;root.add(s);return lbl[k]=s}
  const ms=[...document.querySelectorAll("a-marker")].map(m=>{const z=+m.id.slice(1);return{m,w:m.querySelector(":scope > a-entity"),k:FAM[z],p:new TH.Vector3(),u:new TH.Vector3(),s:1}}).filter(a=>a.k&&a.w);
- const sv=new TH.Vector3(),MAXE=3.5;
+ const sv=new TH.Vector3(),MAXE=3.5,cq=new TH.Quaternion(),cr=new TH.Vector3(),cu=new TH.Vector3(),off={};
  (function tk(){requestAnimationFrame(tk);
   const nom={};
-  if(op.no){const por={};
+  if(op.no&&!(window.__UNI&&window.__UNI.flo)){const por={};
    for(const a of ms){const o=a.m.object3D;if(!o.visible)continue;o.updateWorldMatrix(true,false);
     sv.setFromMatrixScale(o.matrixWorld);a.s=sv.x>1e-6?sv.x:1;a.p.set(0,a.w.object3D.position.y,0);o.localToWorld(a.p);a.u.set(0,1,0).transformDirection(o.matrixWorld);
     (por[a.k]=por[a.k]||[]).push(a)}
@@ -459,7 +597,372 @@ const ITEMS=[
     if(bn>=2){const c=new TH.Vector3(),u=new TH.Vector3();let s=0,n=0;
      L.forEach((a,i)=>{if(f(i)===best){c.add(a.p);u.add(a.u);s+=a.s;n++}});c.multiplyScalar(1/n);u.normalize();s/=n;
      const sp=label(k);sp.position.copy(c).addScaledVector(u,2*s);sp.scale.set(3.6*s,.72*s,1);sp.visible=true;nom[k]=1}}}
-  for(const k in lbl)if(!nom[k])lbl[k].visible=false;
+  /* los nombres no se pisan: si dos se superponen en pantalla, el de arriba sube lo justo (suavizado, para que no salte) */
+  {const cam=sc.camera;if(cam){cam.getWorldQuaternion(cq);cr.set(1,0,0).applyQuaternion(cq);cu.set(0,1,0).applyQuaternion(cq);
+   const A=[];for(const k in nom){const s=lbl[k];A.push({k,s,x:s.position.dot(cr),y:s.position.dot(cu),w:s.scale.x,h:s.scale.y})}
+   A.sort((a,b)=>a.y-b.y);const ok=[];
+   for(const e of A){let y=e.y;
+    for(let it=0;it<4;it++){let mv=0;for(const q of ok)if(Math.abs(e.x-q.x)<(e.w+q.w)*.46&&Math.abs(y-q.y)<(e.h+q.h)*.52){y=q.y+(e.h+q.h)*.52;mv=1}if(!mv)break}
+    ok.push({x:e.x,y,w:e.w,h:e.h});const o=off[e.k]||0;off[e.k]=o+(y-e.y-o)*.3;e.s.position.addScaledVector(cu,off[e.k])}}}
+  for(const k in lbl)if(!nom[k]){lbl[k].visible=false;off[k]=0}
  })();
+})();
+</script>
+<script>
+/* ---------- Hoja: línea neón que envuelve al grupo ----------
+   Cuando hay 2 o más marcadores de una misma familia a la vista (la tabla se está escaneando), una línea de color neón
+   —el color de la familia— se traza alrededor de ellos y los envuelve juntos: con dos hace una "píldora", con un grupo entero
+   sigue la forma del grupo. Si hay solo dos marcadores a la vista y están juntos, forman una UNIÓN: arriba sale si es iónica o covalente y la línea que los envuelve toma
+   el color del tipo de unión (naranja = iónica · celeste = covalente · violeta = metálica · gris = sin unión), sean o no de la misma familia.
+   La línea se dibuja sobre el plano de la hoja, hija de uno de los marcadores: acompaña a los átomos sin retraso.
+   Animación: al detectar el grupo la línea se traza con una chispa, hace un destello y queda con una luz que la recorre.
+   Se apaga desde el panel Capas, o con ?neon=0 · ?par=0 quita lo de los dos marcadores (el cartel de unión y su color: vuelve a mandar el color de la familia)
+   ?paso=1.55 = distancia entre marcadores de la hoja, en anchos de marcador */
+(function(){
+  const TH=AFRAME.THREE;
+  const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff",
+   /* colores de la unión entre dos marcadores */
+   u_ion:"#ff6a00",u_cov:"#00d9ff",u_met:"#d24dff",u_gn:"#8e97ab"};
+  const FAM={};for(const k in G)G[k].forEach(z=>FAM[z]=k);
+  const PASO=+Q.get("paso")>0?+Q.get("paso"):1.55,MAXE=3.5,RAD=.25,HW=.2,GRACIA=450,PAR=Q.get("par")!=="0",
+   RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const op={ne:1};
+  try{const g=JSON.parse(localStorage.getItem("neon1")||"null");if(g)op.ne=g.ne?1:0}catch(e){}
+  if(Q.get("neon")==="0")op.ne=0;
+  /* unión de dos marcadores · us = cartel: flo (flotante) | ban (banner de arriba) | no (ninguno). El contorno de neón (op.ne) es uno solo y rige tanto para los grupos como para las uniones */
+  const U={us:"flo"};
+  try{const g=JSON.parse(localStorage.getItem("union1")||"null");if(g&&["flo","ban","no"].includes(g.us))U.us=g.us}catch(e){}
+  window.__UNI={flo:0};
+  {const bn=document.getElementById("hoNo");
+   if(bn){bn.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="hoNe" style="margin-top:6px">Contorno de neón</button>');
+    const b=document.getElementById("hoNe"),gu=()=>{try{localStorage.setItem("neon1",JSON.stringify(op))}catch(e){}},
+     pint=()=>{b.classList.toggle("on",!!op.ne);b.setAttribute("aria-pressed",!!op.ne)};
+    b.addEventListener("click",()=>{op.ne=op.ne?0:1;gu();pint()});pint()}}
+  {const b0=document.getElementById("hoNe");
+   if(b0){b0.insertAdjacentHTML("afterend",'<div class="ch sec">Tipo de unión</div><div class="cf" id="unS"><button type="button" class="tgl" data-s="flo">Flotante</button><button type="button" class="tgl" data-s="ban">Banner</button><button type="button" class="tgl" data-s="no">Ninguno</button></div>');
+    const bs=[...document.querySelectorAll("#unS button")],gu=()=>{try{localStorage.setItem("union1",JSON.stringify(U))}catch(e){}},
+     pint=()=>{bs.forEach(x=>x.classList.toggle("on",x.dataset.s===U.us))};
+    bs.forEach(x=>x.addEventListener("click",()=>{U.us=x.dataset.s;gu();pint()}));pint()}}
+  const VS=`attribute float aU;attribute float aV;attribute float aL;
+varying float vU;varying float vV;varying float vL;
+void main(){vU=aU;vV=aV;vL=aL;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+  const FS=`uniform vec3 uCol;uniform float uT;uniform float uAge;uniform float uA;uniform float uFl;uniform float uAni;
+varying float vU;varying float vV;varying float vL;
+void main(){
+ float d=abs(vV);float rv=1.0;float sp=0.0;float cm=0.0;
+ if(uAni>0.5){
+  float tr=clamp(uAge/0.9,0.0,1.0);tr=1.0-pow(1.0-tr,2.2);
+  float head=tr*(vL+0.6);
+  rv=1.0-smoothstep(head-0.2,head,vU);
+  float q=(vU-head+0.12)*2.2;
+  sp=exp(-q*q)*(1.0-step(0.999,tr));
+  cm=exp(-mod(uT*1.8-vU,vL)*0.8)*smoothstep(0.9,1.4,uAge);
+ }
+ float br=0.9+0.1*sin(uT*2.6);
+ float cas=0.34*(1.0-smoothstep(0.45,1.0,d));
+ float g=d/0.5;
+ float glo=exp(-g*g)*(0.95*br+0.5*cm+0.5*sp+0.6*uFl);
+ float cor=(1.0-smoothstep(0.14,0.26,d))*(0.95+0.4*cm+0.6*sp+0.5*uFl);
+ vec3 hot=mix(uCol,vec3(1.0),0.5);
+ float ag=clamp(glo,0.0,1.0);float ac=clamp(cor,0.0,1.0);
+ vec4 o=vec4(vec3(0.02,0.03,0.07)*cas,cas);
+ o=vec4(uCol*ag,ag)+o*(1.0-ag);
+ o=vec4(hot*ac,ac)+o*(1.0-ac);
+ gl_FragColor=o*(rv*uA);
+}`;
+  function construir(S, PITCH, RAD, HW) {
+    /* 1) bordes de las celdas que dan al vacío; el interior queda a la izquierda (sentido antihorario) */
+    const E = new Map();
+    const add = (x0, y0, x1, y1) => { const k = x0 + "," + y0; let a = E.get(k); if (!a) E.set(k, a = []); a.push([x1, y1]) };
+    for (const s of S) {
+      const [i, j] = s.split(",").map(Number);
+      if (!S.has(i + "," + (j - 1))) add(i - .5, j - .5, i + .5, j - .5);
+      if (!S.has((i + 1) + "," + j)) add(i + .5, j - .5, i + .5, j + .5);
+      if (!S.has(i + "," + (j + 1))) add(i + .5, j + .5, i - .5, j + .5);
+      if (!S.has((i - 1) + "," + j)) add(i - .5, j + .5, i - .5, j - .5);
+    }
+    /* 2) se encadenan en lazos; si dos celdas se tocan solo por una esquina, cada una sigue siendo su propio lazo (giro más a la izquierda) */
+    const loops = [];
+    for (const k0 of [...E.keys()]) {
+      while (E.get(k0) && E.get(k0).length) {
+        const [sx, sy] = k0.split(",").map(Number);
+        const pts = [];
+        let cx = sx, cy = sy, dx = 0, dy = 0, first = true, guard = 0;
+        do {
+          const k = cx + "," + cy, op = E.get(k);
+          if (!op || !op.length) break;
+          let bi = 0;
+          if (!first && op.length > 1) {
+            let bs = -9;
+            op.forEach((o, i) => { const ox = o[0] - cx, oy = o[1] - cy, sc = Math.atan2(dx * oy - dy * ox, dx * ox + dy * oy); if (sc > bs) { bs = sc; bi = i } });
+          }
+          const o = op.splice(bi, 1)[0];
+          if (!op.length) E.delete(k);
+          pts.push([cx, cy]);
+          dx = o[0] - cx; dy = o[1] - cy; cx = o[0]; cy = o[1]; first = false;
+        } while ((cx !== sx || cy !== sy) && ++guard < 5000);
+        if (pts.length >= 4) loops.push(pts);
+      }
+    }
+    /* 3) solo las esquinas, con los giros redondeados con arcos */
+    const P = [], U = [], V = [], L = [], I = [];
+    for (const lp of loops) {
+      const c = [], n = lp.length;
+      for (let i = 0; i < n; i++) {
+        const a = lp[(i + n - 1) % n], b = lp[i], d = lp[(i + 1) % n];
+        if ((b[0] - a[0]) * (d[1] - b[1]) - (b[1] - a[1]) * (d[0] - b[0]) !== 0) c.push(b);
+      }
+      const m = c.length, path = [];
+      for (let i = 0; i < m; i++) {
+        const a = c[(i + m - 1) % m], b = c[i], d = c[(i + 1) % m];
+        const l0 = Math.hypot(b[0] - a[0], b[1] - a[1]), l1 = Math.hypot(d[0] - b[0], d[1] - b[1]);
+        const d0x = (b[0] - a[0]) / l0, d0y = (b[1] - a[1]) / l0, d1x = (d[0] - b[0]) / l1, d1y = (d[1] - b[1]) / l1;
+        const cx = b[0] - RAD * d0x + RAD * d1x, cy = b[1] - RAD * d0y + RAD * d1y;
+        for (let t = 0; t <= 6; t++) {
+          const q = t / 6 * Math.PI / 2, co = Math.cos(q), si = Math.sin(q);
+          path.push([cx - RAD * co * d1x + RAD * si * d0x, cy - RAD * co * d1y + RAD * si * d0y]);
+        }
+      }
+      /* 4) cinta: dos vértices por punto (a cada lado de la línea), u = distancia recorrida en anchos de marcador */
+      const q = path.map(p => [p[0] * PITCH, p[1] * PITCH]), N = q.length;
+      let tot = 0; const cum = [0];
+      for (let i = 1; i <= N; i++) { tot += Math.hypot(q[i % N][0] - q[i - 1][0], q[i % N][1] - q[i - 1][1]); cum.push(tot) }
+      const base = P.length / 3;
+      for (let i = 0; i <= N; i++) {
+        const a = q[(i + N - 1) % N], b = q[(i + 1) % N];
+        let tx = b[0] - a[0], ty = b[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+        const nx = -ty, ny = tx, p = q[i % N];
+        P.push(p[0] + nx * HW, 0, p[1] + ny * HW, p[0] - nx * HW, 0, p[1] - ny * HW);
+        U.push(cum[i], cum[i]); V.push(1, -1); L.push(tot, tot);
+      }
+      for (let i = 0; i < N; i++) { const a = base + 2 * i; I.push(a, a + 1, a + 2, a + 1, a + 3, a + 2) }
+    }
+    return { P, U, V, L, I, loops: loops.length };
+  }
+  const ms=[...document.querySelectorAll("a-marker")].map(m=>({o:m.object3D,id:m.id,z:+m.id.slice(1),k:FAM[+m.id.slice(1)],p:new TH.Vector3(),s:1})).filter(a=>a.k);
+  const vs=new TH.Vector3(),inv=new TH.Matrix4(),lp=new TH.Vector3(),ce=new TH.Vector3();
+  /* el grupo más grande de marcadores cercanos entre sí (a lo sumo MAXE anchos de marcador de distancia con algún otro del grupo) */
+  const LIG=new Map();/* histéresis: dos marcadores ya unidos siguen unidos hasta que se alejan un 15 % más, así el grupo no parpadea en el borde */
+  function agrupar(L){
+    const pa=L.map((_,i)=>i),f=i=>{while(pa[i]!==i)i=pa[i]=pa[pa[i]];return i};
+    for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const x=L[i],y=L[j],kk=x.id<y.id?x.id+"|"+y.id:y.id+"|"+x.id,ok=x.p.distanceTo(y.p)/x.s<=(LIG.get(kk)?MAXE*1.15:MAXE);LIG.set(kk,ok);if(ok){const a=f(i),b=f(j);if(a!==b)pa[a]=b}}
+    const g={};L.forEach((a,i)=>{const r=f(i);(g[r]=g[r]||[]).push(a)});
+    let best=null;for(const r in g)if(g[r].length>=2&&(!best||g[r].length>best.length))best=g[r];
+    return best}
+  /* ---------- Unión entre dos marcadores ----------
+     Criterio de colegio, según el tipo de elemento (la familia de la hoja):
+       metal + no metal (o metaloide)  → iónica      · no metal + no metal (o metaloide) → covalente
+       metal + metal                   → metálica    · con un gas noble (capa externa completa) → sin unión */
+  const MET=new Set(["alc","alt","tr","lan","act","pt"]);
+  const TIPO=f=>f==="gn"?"gas noble":f==="mo"?"metaloide":MET.has(f)?"metal":"no metal";
+  const TITU={ion:"Unión iónica",cov:"Unión covalente",met:"Unión metálica",gn:"Sin unión"};
+  function union(a,b){
+    const ta=TIPO(a.k),tb=TIPO(b.k);
+    const t=ta==="gas noble"||tb==="gas noble"?"gn":ta==="metal"&&tb==="metal"?"met":ta==="metal"||tb==="metal"?"ion":"cov";
+    /* orden para mostrarlos: el metal primero; si no, el de menor número atómico */
+    const mf=x=>x==="metal"?0:1;let x=a,y=b,tx=ta,ty=tb;
+    if(mf(tb)<mf(ta)||(mf(ta)===mf(tb)&&b.z<a.z)){x=b;y=a;tx=tb;ty=ta}
+    const sy=z=>D[z]?D[z][1]:"?";
+    return{k:"u_"+t,titulo:TITU[t],sub:sy(x.z)+" + "+sy(y.z)+" · "+(t==="gn"?"gas noble: capa externa completa":tx+" + "+ty)}}
+  /* cartel de arriba: va dentro del banner de datos (debajo del nombre y la CEE), así se esconde y se acomoda junto con él */
+  {const st=document.createElement("style");st.textContent=
+   "#unib{box-sizing:border-box;width:max-content;max-width:100%;margin:6px auto 2px;padding:6px 16px 7px;border-radius:18px;border:1.5px solid var(--c,#00d9ff);background:rgba(5,7,13,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 0 12px var(--c,#00d9ff),inset 0 0 10px rgba(255,255,255,.05);text-align:center;text-shadow:none;animation:unin .5s ease-out}"
+   +"#unib[hidden]{display:none}"
+   +"#unib .ut{display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px/1.2 system-ui,sans-serif;color:#fff;text-shadow:0 0 6px var(--c),0 0 14px var(--c)}"
+   +"#unib .ut i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}"
+   +"#unib .us{margin-top:2px;font:12.5px/1.25 system-ui,sans-serif;color:#c3cfe8}"
+   +"body>#unib{position:fixed;top:calc(60px + env(safe-area-inset-top,0px));left:0;right:0;margin:0 auto;z-index:12}"
+   +"@keyframes unin{from{opacity:0;box-shadow:0 0 0 var(--c)}55%{box-shadow:0 0 26px var(--c)}}"
+   +"@media (prefers-reduced-motion:reduce){#unib{animation:none}}";
+   document.head.appendChild(st)}
+  const bx=document.createElement("div");bx.id="unib";bx.hidden=true;bx.setAttribute("role","status");
+  bx.innerHTML='<div class="ut"><i></i><b></b></div><div class="us"></div>';
+  {const dp=document.getElementById("datp"),dc=dp&&dp.querySelector(".dc");if(dc)dc.insertAdjacentElement("afterend",bx);else document.body.appendChild(bx)}
+  let ub=null,ubT=-1e9,ubK="";
+  /* el cartel aguanta GRACIA ms si la detección parpadea (igual que la línea) y solo se vuelve a dibujar cuando cambia la unión */
+  function banner(now,un){
+    if(un){ub=un;ubT=now}
+    const u=ub&&now-ubT<=GRACIA?ub:null,k=u?u.k+"|"+u.sub:"";
+    if(k===ubK)return;ubK=k;
+    if(!u){bx.hidden=true;return}
+    bx.style.setProperty("--c",FC[u.k]);bx.querySelector("b").textContent=u.titulo;bx.querySelector(".us").textContent=u.sub;
+    bx.hidden=false;bx.style.animation="none";void bx.offsetWidth;bx.style.animation=""}
+  const rt=new TH.Group();document.querySelector("a-scene").object3D.add(rt);
+  const sps={},cc=new TH.Vector3(),uu=new TH.Vector3(),t3=new TH.Vector3();let fo=null,fSeen=-1e9,fc=null;
+  function sprite(k,txt){if(sps[k])return sps[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d"),f=n=>"700 "+n+"px system-ui,-apple-system,'Segoe UI',sans-serif";
+   x.font=f(62);const w=x.measureText(txt).width;if(w>590)x.font=f(Math.floor(62*590/w));
+   x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(txt,320,66);x.fillText(txt,320,66);x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(txt,320,66);
+   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.renderOrder=20;s.visible=false;rt.add(s);return sps[k]={s,t0:0,k}}
+  function flotante(now,un){
+    if(un){if(!fo||fo.k!==un.k){fo=sprite(un.k,un.titulo);fo.t0=now}fSeen=now;fc=un.c}
+    for(const k in sps)if(sps[k]!==fo)sps[k].s.visible=false;
+    if(!fo)return;
+    if(now-fSeen>GRACIA){fo.s.visible=false;fo=null;return}
+    cc.set(0,0,0);uu.set(0,0,0);let s=0;fc.forEach(a=>{cc.add(a.p);uu.add(t3.set(0,1,0).transformDirection(a.o.matrixWorld));s+=a.s});
+    cc.multiplyScalar(1/fc.length);uu.normalize();s/=fc.length;
+    const e=Math.min(1,(now-fo.t0)/380)-1,pop=1+2.70158*e*e*e+1.70158*e*e;/* entra con rebote */
+    fo.s.position.copy(cc).addScaledVector(uu,2*s+Math.sin(now/450)*.07*s);fo.s.scale.set(3.6*s*pop,.72*s*pop,1);fo.s.visible=pop>.01}
+  const nQa=new TH.Quaternion(),nQ1=new TH.Quaternion(),nVo=new TH.Vector3(),nVv=new TH.Vector3();
+  const OB={};
+  function objeto(k){
+    if(OB[k])return OB[k];
+    const h=FC[k],col=new TH.Vector3(parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255);
+    const mat=new TH.ShaderMaterial({uniforms:{uCol:{value:col},uT:{value:0},uAge:{value:0},uA:{value:0},uFl:{value:0},uAni:{value:RM?0:1}},
+     vertexShader:VS,fragmentShader:FS,transparent:true,depthTest:false,depthWrite:false,side:TH.DoubleSide});
+    mat.premultipliedAlpha=true;
+    const mesh=new TH.Mesh(new TH.BufferGeometry(),mat);mesh.frustumCulled=false;mesh.renderOrder=18;mesh.visible=false;
+    return OB[k]={k,mesh,mat,ref:null,key:"",n:0,on:0,t0:0,seen:0,al:0,fl:0,fin:0,sx:0,sz:0}}
+  function geometria(ob,S){
+    const r=construir(S,PASO,RAD,HW),g=new TH.BufferGeometry();
+    g.setAttribute("position",new TH.Float32BufferAttribute(r.P,3));g.setAttribute("aU",new TH.Float32BufferAttribute(r.U,1));
+    g.setAttribute("aV",new TH.Float32BufferAttribute(r.V,1));g.setAttribute("aL",new TH.Float32BufferAttribute(r.L,1));g.setIndex(r.I);
+    ob.mesh.geometry.dispose();ob.mesh.geometry=g}
+  let tp=performance.now();
+  (function tk(){requestAnimationFrame(tk);
+    const now=performance.now(),dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
+    const act={};let un=null;
+    const V=[];
+    for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
+    /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
+       de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
+    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(op.ne)act[un.k]=c}}
+    /* con más de dos marcadores rige el neón de la familia */
+    if(op.ne&&!un){
+      const por={};for(const a of V)(por[a.k]=por[a.k]||[]).push(a);
+      for(const k in por){if(por[k].length<2)continue;const c=agrupar(por[k]);if(c)act[k]=c}}
+    window.__UNI.flo=un&&U.us==="flo"?1:0;/* con el cartel flotante de la unión, el script del nombre de familia se aparta */
+    banner(now,U.us==="ban"?un:null);flotante(now,U.us==="flo"?un:null);
+    for(const k in act){
+      const c=act[k],ob=objeto(k);
+      /* referencia: se mantiene mientras siga en el grupo; si no, el marcador más cercano al centro del grupo */
+      let ref=ob.ref&&c.includes(ob.ref)?ob.ref:null;
+      if(!ref){ce.set(0,0,0);c.forEach(a=>ce.add(a.p));ce.multiplyScalar(1/c.length);let bd=1e9;c.forEach(a=>{const d=a.p.distanceTo(ce);if(d<bd){bd=d;ref=a}})}
+      /* cada marcador cae en una celda de la hoja (medida con el sistema de coordenadas del marcador de referencia, en anchos de marcador) */
+      inv.copy(ref.o.matrixWorld).invert();
+      const S=new Set(),cel=[];
+      for(const a of c){lp.copy(a.p).applyMatrix4(inv);const x=lp.x/PASO,z=lp.z/PASO;let i=Math.round(x),j=Math.round(z);
+        /* histéresis: un marcador no cambia de celda por un temblor de la medición (hace falta alejarse más de 0,65 pasos de su celda) */
+        if(a.cr===ref.id&&Math.abs(x-a.ci)<.65&&Math.abs(z-a.cj)<.65){i=a.ci;j=a.cj}
+        a.cr=ref.id;a.ci=i;a.cj=j;cel.push([i,j]);S.add(i+","+j)}
+      /* un hueco de una sola celda entre dos marcadores en línea se rellena, para que queden envueltos juntos */
+      for(const [i,j] of cel)for(const [di,dj] of [[2,0],[0,2]])if(S.has((i+di)+","+(j+dj)))S.add((i+di/2)+","+(j+dj/2));
+      const key=ref.id+"|"+[...S].sort().join(";"),nuevo=!ob.on;
+      if(nuevo){ob.on=1;ob.t0=now;ob.fl=0;ob.fin=0;ob.al=0;ob.n=0;ob.ref=null}
+      if(key!==ob.key){ob.key=key;geometria(ob,S);if(!nuevo&&S.size>ob.n&&!RM)ob.fl=.8;ob.n=S.size}
+      /* marco de la línea = promedio de TODOS los marcadores del grupo (el ruido de uno solo ya no la desalinea): orientación = promedio de las
+         rotaciones; origen = lo que "vota" cada marcador según su celda. Se filtra bastante cuando está quieto y casi nada cuando se mueve */
+      nQa.set(0,0,0,0);let ss=0;
+      for(const a of c){a.o.getWorldQuaternion(nQ1);const sg=nQa.dot(nQ1)<0?-1:1;nQa.x+=sg*nQ1.x;nQa.y+=sg*nQ1.y;nQa.z+=sg*nQ1.z;nQa.w+=sg*nQ1.w;ss+=a.s}
+      nQa.normalize();ss/=c.length;nVo.set(0,0,0);
+      c.forEach((a,q)=>{nVv.set(cel[q][0]*PASO*ss,0,cel[q][1]*PASO*ss).applyQuaternion(nQa);nVo.add(a.p).sub(nVv)});
+      nVo.multiplyScalar(1/c.length);
+      if(ref!==ob.ref||!ob.O){ob.ref=ref;ob.O=ob.O||new TH.Vector3();ob.Q=ob.Q||new TH.Quaternion();ob.O.copy(nVo);ob.Q.copy(nQa);ob.S=ss}
+      else{const al=Math.min(1,.18+3*(ob.O.distanceTo(nVo)/ss)+2.5*2*Math.acos(Math.min(1,Math.abs(ob.Q.dot(nQa)))));ob.O.lerp(nVo,al);ob.Q.slerp(nQa,al);ob.S+=(ss-ob.S)*al}
+      if(ob.mesh.parent!==rt)rt.add(ob.mesh);
+      ob.mesh.position.copy(ob.O);ob.mesh.quaternion.copy(ob.Q);ob.mesh.scale.setScalar(ob.S);ob.mesh.visible=true;ob.seen=now}
+    /* si se agranda mucho el átomo (el slider de tamaño) la línea se desvanece, para no tapar el modelo */
+    const grande=Math.min(1,Math.max(0,(6-mult)/3));
+    for(const k in OB){const ob=OB[k];if(!ob.on)continue;
+      if(!act[k]&&now-ob.seen>GRACIA){ob.al=Math.max(0,ob.al-dt*3);
+        if(ob.al<=0){ob.on=0;ob.mesh.visible=false;ob.key="";if(ob.mesh.parent)ob.mesh.parent.remove(ob.mesh);continue}}
+      else ob.al=Math.min(1,ob.al+dt*8);
+      const age=(now-ob.t0)/1000;
+      if(!ob.fin&&age>.9){ob.fin=1;if(!RM)ob.fl=.9}/* destello al terminar de trazarse */
+      ob.fl*=Math.exp(-dt*4);
+      const u=ob.mat.uniforms;u.uT.value=RM?0:(now/1000)%900;u.uAge.value=age;u.uA.value=ob.al*grande;u.uFl.value=ob.fl}})();
+})();
+</script>
+<script>
+/* ---------- Tutorial: cartelitos animados que guían a quien lo usa por primera vez ----------
+   Sale solo la primera vez (cuando termina la pantalla de entrada) · se repite con el botón «Tutorial» del banner · ?tut=1 lo fuerza · ?tut=0 lo desactiva */
+(function(){
+ const Q=new URLSearchParams(location.search);
+ const PASOS=[
+  {h:"Apuntá a un marcador",p:"Poné la cámara frente a un marcador de la hoja y aparece su átomo en 3D. Podés enfocar varios a la vez.",d:"mk",esp:1,libre:1,big:1},
+  {p:"Si eres lo suficientemente curioso, ¡anímate a saltear el tutorial y diviértete descubriendo! (el tutorial siempre estará disponible)",dec:1,big:1},
+  {t:"#ui",h:"Tamaño",p:"Con − y + (o el deslizador) agrandás o achicás los átomos. Tocá el porcentaje para volver al tamaño inicial."},
+  {h:"Girar",p:"Arrastrá un dedo por la pantalla para girar el átomo. ¡Probalo ahora!",d:"hand",libre:1},
+  {t:"#datp",h:"Datos del elemento",p:"Arriba ves el nombre, el símbolo y la configuración electrónica externa. «Ver más» abre la ficha completa y «Tutorial» te muestra estos pasos otra vez."},
+  {t:"#capb",h:"Capas",p:"Acá personalizás lo que ves. Te muestro qué hay en cada categoría del menú."},
+  {cat:"Capas del átomo",h:"Capas del átomo",p:"Elegí qué partes del átomo se dibujan: protones, neutrones, electrones, los niveles de energía y los subniveles s, p, d y f. «Todo» y «Nada» los activan o apagan de una vez."},
+  {cat:"Niveles de energía",h:"Niveles de energía",p:"Mostrá solo los niveles (n) que quieras, del 1 al 7. Con «Atenuar en vez de ocultar», los que apagues quedan tenues en lugar de desaparecer."},
+  {cat:"Movimiento",h:"Movimiento",p:"«Rotación» hace girar solo al átomo. «Posición original» lo deja en su orientación inicial, frena la rotación y bloquea el arrastre."},
+  {cat:"Destacar información",h:"Destacar información",p:"«Nombre de la familia» muestra flotando el nombre del grupo, y «Contorno de neón» dibuja una línea de color alrededor de los grupos y de las uniones."},
+  {cat:"Tipo de unión",h:"Tipo de unión",p:"Con dos marcadores juntos, el visor dice si la unión es iónica, covalente o metálica. Elegí si el cartel flota sobre ellos, va en el banner de arriba o no se muestra."},
+  {h:"Dos marcadores = una unión",p:"Acercá solo dos: arriba de ellos flota si la unión es iónica, covalente o metálica, y un neón de color los rodea.",d:"par",big:1},
+  {h:"Tres o más: el grupo",p:"Con varios de una misma familia flota el nombre del grupo y un neón los envuelve.",d:"grp",big:1},
+  {t:"#back",h:"Grupos",p:"Volvé acá para elegir otras familias de la tabla."}];
+ const DEM={mk:'<i class="q"></i><svg class="at" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><ellipse cx="12" cy="12" rx="10.5" ry="4.2"/><ellipse cx="12" cy="12" rx="10.5" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10.5" ry="4.2" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>',hand:'<span class="hd">👆</span>',par:'<i class="gl"></i><i class="q a"></i><i class="q b"></i><span class="pl p1">Unión iónica</span><span class="pl p2">Unión covalente</span>',grp:'<i class="gl g"></i><i class="q"></i><i class="q"></i><i class="q"></i><span class="pl p3">Halógenos</span>'};
+ const st=document.createElement("style");st.textContent=`
+#tut{position:fixed;inset:0;z-index:60;pointer-events:none;font:14px system-ui,sans-serif;color:#fff}#tut[hidden]{display:none}
+#tut .sp{position:absolute;border-radius:14px;box-shadow:0 0 0 100vmax rgba(5,7,13,.62);transition:left .4s,top .4s,width .4s,height .4s,opacity .3s}
+#tut .sp::after{content:"";position:absolute;inset:0;border-radius:inherit;border:2px solid #3de6ff;box-shadow:0 0 14px #3de6ff;animation:tpu 1.4s ease-in-out infinite}#tut .sp.nt::after{display:none}
+#tut .cd{position:absolute;width:min(300px,calc(100vw - 20px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(8,12,24,.95);border:1.5px solid rgba(61,230,255,.6);box-shadow:0 0 18px rgba(61,230,255,.3),0 8px 24px rgba(0,0,0,.5);pointer-events:auto;animation:tin .4s cubic-bezier(.2,1.3,.4,1)}
+#tut .th{font:700 16px system-ui,sans-serif;margin-bottom:4px;text-shadow:0 0 8px rgba(61,230,255,.8)}#tut .tp{color:#d7e6ff;line-height:1.35}
+#tut .dt{display:flex;justify-content:center;flex-wrap:wrap;gap:5px;margin-top:10px}#tut .dt i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:.3s}#tut .dt i.on{background:#3de6ff;box-shadow:0 0 8px #3de6ff;transform:scale(1.35)}
+#tut .tf{display:flex;align-items:center;gap:6px;margin-top:8px}#tut .tf button{padding:7px 12px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}
+#tut .tf .sk{margin-right:auto;background:none;color:#9fb0d0;padding-left:0}#tut .tf .nx{background:rgba(61,230,255,.3);box-shadow:0 0 8px rgba(61,230,255,.4)}
+#tut .dm{position:relative;height:56px;margin-top:8px;display:flex;align-items:flex-end;justify-content:center;gap:6px;padding-bottom:4px}
+#tut .q{width:24px;height:24px;border-radius:4px;background:#fff;border:3px solid #111;box-sizing:border-box;flex:none}#tut .a{animation:qa 6s ease-in-out .3s infinite backwards}#tut .b{animation:qb 6s ease-in-out .3s infinite backwards}
+#tut .gl{position:absolute;bottom:0;left:50%;box-sizing:border-box;width:92px;height:32px;margin-left:-46px;border-radius:12px;border:2px solid #ff6a00;box-shadow:0 0 10px #ff6a00;animation:gc 6s ease-in-out .3s infinite backwards}#tut .gl.g{width:104px;margin-left:-52px;border-color:#b8ff3d;box-shadow:0 0 10px #b8ff3d;animation:tpu 1.4s infinite}
+#tut .pl{position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 13px system-ui,sans-serif;text-shadow:0 0 8px currentColor}
+#tut .p1{color:#ff6a00;animation:p1k 6s ease-in-out .3s infinite backwards}#tut .p2{color:#00d9ff;animation:p2k 6s ease-in-out .3s infinite backwards}#tut .p3{color:#b8ff3d}
+#tut .at{display:block;flex:none;width:24px;height:24px;color:#3de6ff;animation:spin 3s linear infinite;margin-left:8px}#tut .hd{font-size:30px;animation:hs 1.6s ease-in-out infinite}
+@keyframes tin{from{opacity:0;transform:translateY(12px) scale(.94)}}@keyframes tpu{50%{opacity:.4;transform:scale(1.03)}}
+@keyframes qa{0%,6%{transform:translateX(-34px)}28%,88%{transform:translateX(0)}96%,100%{transform:translateX(-34px)}}@keyframes qb{0%,6%{transform:translateX(34px)}28%,88%{transform:translateX(0)}96%,100%{transform:translateX(34px)}}
+@keyframes gc{0%,26%{opacity:0;transform:scale(.85);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}34%,48%{opacity:1;transform:scale(1);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}56%,86%{opacity:1;transform:scale(1);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}92%,100%{opacity:0;transform:scale(.85);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
+@keyframes p1k{0%,30%{opacity:0}36%,46%{opacity:1}51%,100%{opacity:0}}@keyframes p2k{0%,55%{opacity:0}61%,86%{opacity:1}92%,100%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes hs{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
+#tutb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;left:-4px;bottom:0;min-width:70px;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#datp.vacia #tutb{top:calc(44px + env(safe-area-inset-top,0px));bottom:auto;position:fixed;left:8px;background:rgba(8,12,24,.7)}
+#tut.dec .tf .sk{background:rgba(255,255,255,.14);color:#fff;padding-left:12px}#tut .nx:disabled{opacity:.75;animation:tpu 1.4s ease-in-out infinite}#tut .tf button{white-space:nowrap}
+#tut .bg{position:absolute;inset:0;background:rgba(2,4,10,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .35s}
+#tut.big .cd{width:min(340px,calc(100vw - 32px));padding:18px 18px 14px;border-radius:18px;box-shadow:0 0 22px rgba(61,230,255,.32),0 10px 30px rgba(0,0,0,.5)}
+#tut.big .th{font:300 24px system-ui,sans-serif;letter-spacing:.5px;color:#f2f9ff;text-shadow:0 0 6px #3de6ff,0 0 18px rgba(61,230,255,.4);margin-bottom:6px}
+#tut.big .tp{font-size:14.5px;line-height:1.4}#tut.dec .tp{font-size:16px;line-height:1.45}
+#tut.big .dm{transform:scale(1.2);margin:16px 0 14px}#tut .dm.mk{height:32px}#tut.big .dm.mk{margin:14px 0 12px}
+#tut.big .tf{margin-top:12px}#tut.big .tf button{padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px}
+#tut.big .tf .nx{background:none;border:1.5px solid #3de6ff;color:#3de6ff;text-shadow:0 0 8px rgba(61,230,255,.7);box-shadow:0 0 10px rgba(61,230,255,.35)}
+@media (prefers-reduced-motion:reduce){#tut *{animation:none!important;transition:none!important}#tut .p2{display:none}}`;
+ document.head.appendChild(st);
+ const t=document.createElement("div");t.id="tut";t.hidden=true;t.innerHTML='<div class="bg"></div><div class="sp"></div><div class="cd"></div>';document.body.appendChild(t);
+ const bgE=t.children[0],sp=t.children[1],cd=t.children[2];let n=0,on=0,manual=0,wt=0,ab=0;
+ const vis=()=>[...document.querySelectorAll("a-marker")].some(m=>m.object3D.visible);
+ const sig=()=>n===0&&manual?2:n+1;/* abierto a mano desde Capas se salta la pregunta «¿tutorial?» */
+ /* pasos de categoría: el tutorial abre el panel Capas (y lo cierra al salir) y resalta el bloque de cada categoría */
+ const cpn=()=>document.getElementById("capp"),cbn=()=>document.getElementById("capb");
+ function panel(s){const cp=cpn(),cb=cbn();if(!cp||!cb)return;
+  if(s.cat){if(cp.hidden){cb.click();ab=1}setTimeout(()=>{const h=[...cp.querySelectorAll(".ch")].find(e=>e.textContent.trim().startsWith(s.cat));if(h)cp.scrollTo({top:Math.max(0,h.offsetTop-10),behavior:"smooth"})},90)}
+  else if(ab){if(!cp.hidden)cb.click();ab=0}}
+ function catRect(nom){const cp=cpn();if(!cp||cp.hidden)return null;const h=[...cp.querySelectorAll(".ch")].find(e=>e.textContent.trim().startsWith(nom));if(!h)return null;
+  const c=cp.getBoundingClientRect(),a=h.getBoundingClientRect();let t=a.top,b=a.bottom;
+  for(let e=h.nextElementSibling;e&&!e.classList.contains("ch");e=e.nextElementSibling){const q=e.getBoundingClientRect();if(q.height){t=Math.min(t,q.top);b=Math.max(b,q.bottom)}}
+  t=Math.max(t,c.top+2);b=Math.min(b,c.bottom-2);return b>t?{left:c.left+4,top:t,width:c.width-8,height:b-t}:null}
+ function show(i){n=i;const s=PASOS[i],at=i>2||(i===2&&!manual);panel(s);cd.style.animation="none";void cd.offsetWidth;cd.style.animation="";
+  t.classList.toggle("dec",!!s.dec);t.classList.toggle("big",!!s.big);
+  cd.innerHTML=(s.h?'<div class="th">'+s.h+'</div>':"")+'<div class="tp">'+s.p+'</div>'+(s.d?'<div class="dm'+(s.d==="mk"?' mk':'')+'">'+DEM[s.d]+'</div>':'')
+   +'<div class="dt">'+PASOS.map((_,j)=>'<i'+(j===i?' class="on"':'')+'></i>').join("")+'</div>'
+   +'<div class="tf"><button class="sk" data-a="x">'+(s.dec?"¡Descubrir solo!":"Saltar")+'</button>'+(at?'<button data-a="p">‹ Atrás</button>':'')
+   +(s.esp?'<button class="nx" disabled>Esperando un marcador…</button>':'<button class="nx" data-a="n">'+(s.dec?"Guíame":i===PASOS.length-1?"¡Listo!":"Siguiente")+'</button>')+'</div>'}
+ function lay(){if(!on)return;requestAnimationFrame(lay);const s=PASOS[n],W=innerWidth,H=innerHeight,ui=document.getElementById("ui");
+  /* el cartel de «Apuntá a un marcador» no se quita hasta que aparece un modelo (y se mantiene 0,8 s a la vista) */
+  if(s.esp){if(vis()){const now=performance.now();if(!wt)wt=now;else if(now-wt>800){wt=0;show(sig());return}}else wt=0}
+  if(ui&&s.t==="#ui")ui.classList.add("act");
+  const el=s.t&&document.querySelector(s.t),r=s.cat?catRect(s.cat):(el&&el.offsetWidth&&el.offsetHeight?el.getBoundingClientRect():(s.t==="#datp"?{left:8,top:8,width:W-16,height:84}:null)),cw=cd.offsetWidth,ch=cd.offsetHeight;let x,y;
+  if(r){sp.style.left=r.left-6+"px";sp.style.top=r.top-6+"px";sp.style.width=r.width+12+"px";sp.style.height=r.height+12+"px";
+   y=r.top+r.height+ch+24<H?r.top+r.height+14:r.top-ch-24>8?r.top-ch-14:(r.top+r.height/2<H/2?H-ch-12:96);x=r.left+r.width/2-cw/2}/* el cartel nunca tapa lo que explica: abajo, arriba o, si no entra, del lado opuesto de la pantalla */
+  else{sp.style.left=W/2+"px";sp.style.top=H/2+"px";sp.style.width=sp.style.height="0px";x=(W-cw)/2;y=s.libre&&!s.big?H-ch-96:(H-ch)/2}/* sin oscurecer: la cámara y el modelo se ven limpios */
+  sp.style.opacity=s.libre||s.big?0:1;sp.classList.toggle("nt",!r);bgE.style.opacity=s.big&&!s.libre?1:0;/* fondo oscurecido y desenfocado en los carteles grandes (menos en «Apuntá», para ver la cámara) */
+  cd.style.left=Math.min(W-cw-10,Math.max(10,x))+"px";cd.style.top=y+"px"}
+ function fin(){on=0;t.hidden=true;panel({});try{localStorage.setItem("tut1","1")}catch(e){}}
+ function ini(m){if(on)return;manual=m?1:0;on=1;wt=0;t.hidden=false;show(manual&&vis()?2:0);requestAnimationFrame(lay)}
+ t.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;if(a==="n")n<PASOS.length-1?show(sig()):fin();else if(a==="p")show(n-1);else fin()});
+ /* botón «Tutorial» dentro del banner de datos, debajo de «Grupos» (del otro lado, «Ver más» queda debajo de «Capas») */
+ const dc=document.querySelector("#datp .dc"),bk=document.getElementById("back");
+ if(dc){dc.insertAdjacentHTML("beforeend",'<button id="tutb" type="button">Tutorial</button>');const tb=document.getElementById("tutb"),fit=()=>{if(bk&&bk.offsetWidth)tb.style.width=bk.offsetWidth+"px"};
+  fit();addEventListener("resize",fit);addEventListener("load",fit);tb.addEventListener("click",()=>ini(1))}
+ let visto=0;try{visto=localStorage.getItem("tut1")==="1"}catch(e){}
+ const f=Q.get("tut");
+ if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
 })();
 </script></body></html>
