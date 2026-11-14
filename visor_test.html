@@ -244,38 +244,16 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
      B) una posición que cae justo donde otro marcador tiene anclado su modelo,
      C) un salto de más de SALTO anchos en un solo cuadro (solo se acepta si se repite 4 cuadros seguidos).
    Si se descarta, el modelo se queda en su último lugar bueno. Además suaviza el temblor (reemplaza el "smooth" de AR.js).
-   El suavizado es un filtro One Euro (Casiez et al., 2012): cuando el marcador está quieto el corte es muy bajo (casi no tiembla) y sube solo
-   con la velocidad, así que al mover el celu el modelo casi no se retrasa. Posición, rotación y escala tienen cada una su propia velocidad.
-   ?oe=0 vuelve al suavizado anterior · ?mc=0.5 y ?beta=4 (posición y escala) · ?mcr=0.5 y ?betar=2 (rotación):
-   mc más bajo = más quieto en reposo; beta más alto = menos retraso al moverse.
    ?lock=0 lo desactiva y vuelve al comportamiento anterior · ?col=0.75 distancia mínima · ?salto=1 salto máximo por cuadro */
 (function(){
  if(Q.get("lock")==="0")return;
  const COL=Q.get("col")===null?.75:+Q.get("col"),SALTO=Q.get("salto")===null?1:+Q.get("salto"),GAP=400,CONF=4,TH=AFRAME.THREE,sc=document.querySelector("a-scene");
- const OE=Q.get("oe")!=="0",MC=Q.get("mc")===null?.5:+Q.get("mc"),BE=Q.get("beta")===null?4:+Q.get("beta"),MR=Q.get("mcr")===null?.5:+Q.get("mcr"),BR=Q.get("betar")===null?2:+Q.get("betar"),DCUT=1;
  const V=()=>new TH.Vector3();
  const L=[...document.querySelectorAll("a-marker")].map(m=>({id:m.id,o:m.object3D,w:m.querySelector(":scope > a-entity"),has:0,seen:-1e9,hid:0,snap:0,ok:0,u:1,cn:0,
-  p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V(),
-  t:0,dV:V(),dR:V(),dS:0}));
+  p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V()}));
  window.__LK={no:0};
  const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
  const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true};
- /* Filtro One Euro: alfa = 2π·fc·dt / (2π·fc·dt + 1), con fc = mc + beta·|velocidad filtrada|.
-    La velocidad se mide contra el último valor filtrado y se suaviza como vector (el ruido se promedia a cero y el movimiento real queda). */
- const oA=(fc,dt)=>{const r=6.2831853*fc*dt;return r/(r+1)},dq=new TH.Quaternion(),dv=V();
- function suavizar(a,now){
-  const dt=Math.min(.1,Math.max(.004,(now-a.t)/1000)),ad=oA(DCUT,dt);
-  /* posición, en anchos de marcador por segundo */
-  dv.copy(a.rp).sub(a.p).multiplyScalar(1/(a.u*dt));a.dV.lerp(dv,ad);
-  const kp=oA(MC+BE*a.dV.length(),dt);
-  /* rotación, en radianes por segundo (rotación relativa del valor filtrado al medido, por el camino corto) */
-  dq.copy(a.q).invert().multiply(a.rq);const sg=dq.w<0?-1:1;
-  dv.set(dq.x,dq.y,dq.z).multiplyScalar(2*sg/dt);a.dR.lerp(dv,ad);
-  const kr=oA(MR+BR*a.dR.length(),dt);
-  /* escala, variación relativa por segundo */
-  const sx=a.s.x>1e-6?a.s.x:1;a.dS+=((a.rs.x-a.s.x)/(sx*dt)-a.dS)*ad;
-  const ks=oA(MC+BE*Math.abs(a.dS),dt);
-  a.p.lerp(a.rp,kp);a.q.slerp(a.rq,kr);a.s.lerp(a.rs,ks)}
  function paso(){
   const now=performance.now(),v=[];
   for(const a of L){
@@ -295,15 +273,13 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
    else if(!a.ok)a.cn=0}
   for(const a of v){
    if(a.ok){
-    if(!a.has||a.snap){a.p.copy(a.rp);a.q.copy(a.rq);a.s.copy(a.rs);a.has=1;a.snap=0;a.dV.set(0,0,0);a.dR.set(0,0,0);a.dS=0}
-    else if(OE)suavizar(a,now);
+    if(!a.has||a.snap){a.p.copy(a.rp);a.q.copy(a.rq);a.s.copy(a.rs);a.has=1;a.snap=0}
     else{const k=Math.min(1,.18+2*a.rp.distanceTo(a.p)/a.u);a.p.lerp(a.rp,k);a.q.slerp(a.rq,k);a.s.lerp(a.rs,k)}
     if(a.hid&&a.w){a.w.object3D.visible=true;a.hid=0}
     poner(a)}
    else{window.__LK.no++;
     if(a.has)poner(a);/* rechazado: se queda donde estaba */
-    else if(a.w&&!a.hid){a.w.object3D.visible=false;a.hid=1}}/* primera vez y en conflicto: esperar a una posición creíble */
-   a.t=now}}
+    else if(a.w&&!a.hid){a.w.object3D.visible=false;a.hid=1}}}}/* primera vez y en conflicto: esperar a una posición creíble */
  (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
   r.render=function(a,b){try{paso()}catch(e){window.__lkerr=e.message}return o(a,b)}})();
 })();
@@ -567,17 +543,6 @@ const ITEMS=[
       ka   = tamaño del átomo solo, con su tope de TOPE lados de marcador, multiplicado por el slider (se puede agrandar y achicar);
       tope = límite por el vecino más cercano (solo si hay 2 o más marcadores): al 100% o menos evita que se encimen; si se agranda a propósito (slider por encima del 100%), el límite crece con el slider.
     Lo que se suaviza es únicamente el límite por el vecino, no el slider: el tamaño sigue al slider cuadro a cuadro y nunca pasa de ka. */
- /* Sombra de contacto: un disco suave y oscuro sobre el plano del marcador, justo debajo del átomo. Es la pista de profundidad que falta
-    (un átomo translúcido sobre el video se ve como una calcomanía) y deja ver a qué altura flota. ?sombra=0 la quita */
- const SOM=Q.get("sombra")!=="0";let somM=null,somG=null;
- function sombra(a,R){
-  if(!SOM)return;
-  if(!a.sh){
-   if(!somM){const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),g=x.createRadialGradient(64,64,0,64,64,64);
-    g.addColorStop(0,"rgba(0,0,0,.55)");g.addColorStop(.55,"rgba(0,0,0,.32)");g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(0,0,128,128);
-    somM=new TH.MeshBasicMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false,side:TH.DoubleSide});somG=new TH.PlaneGeometry(2,2).rotateX(-Math.PI/2)}
-   const m=new TH.Mesh(somG,somM);m.renderOrder=-1;m.frustumCulled=false;a.m.object3D.add(m);a.sh=m}
-  a.sh.position.y=.004;a.sh.scale.setScalar(Math.max(.01,R))}
  window.__FITON=1;
  (function tk(){requestAnimationFrame(tk);
   const v=it.filter(a=>a.m.object3D.visible);
@@ -588,7 +553,7 @@ const ITEMS=[
    const kt=n<1e9?Math.max(.3,Math.min(FIT*n,TOPE))/(2*RG)*Math.max(1,mult):1e9,tg=Math.min(kt,ka*1.25);
    a.K=a.K==null?tg:a.K+(tg-a.K)*SUAV;if(Math.abs(tg-a.K)<.002*tg)a.K=tg;
    const k=Math.min(ka,Math.max(a.K,MINF*base*mult)),g=k/(base*mult);
-   a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(RG*k+.1*g)*ALT;sombra(a,RG*k*.9)}
+   a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(RG*k+.1*g)*ALT}
  })();
 })();
 
@@ -1002,4 +967,32 @@ void main(){
  const f=Q.get("tut");
  if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
 })();
-</script></body></html>
+</script>
+<script>
+/* ---------- Volumen: efecto Fresnel en los lóbulos ----------
+   Los lóbulos (subniveles s, p, d, f) son translúcidos y de un solo color, así que sobre el video se ven como una calcomanía plana.
+   Acá se modula su opacidad según el ángulo con que se los mira: el centro (de cara a la cámara) se vuelve más transparente y el borde (de canto)
+   más opaco, como una burbuja de jabón. El contorno marca la forma de cada lóbulo y se nota qué parte está adelante y cuál atrás; a media
+   inclinación la opacidad queda igual a la original, así que no tapa más los detalles.
+   ?vol=0 lo apaga · ?vol=1 es el valor por defecto · ?vol=2 lo exagera · ?vol=0.5 lo suaviza */
+(function(){
+ const Q=new URLSearchParams(location.search),VOL=Q.get("vol")===null?1:Math.max(0,+Q.get("vol")||0);
+ if(!VOL)return;
+ const A=(1-.5*VOL).toFixed(3),B=(1.5*VOL).toFixed(3);
+ const FN=function(sh){
+  const f=sh.fragmentShader;
+  if(f.indexOf("vViewPosition")<0||f.indexOf("normal_fragment_begin")<0||f.indexOf("#include <dithering_fragment>")<0)return;/* si el material no tiene lo necesario, queda como estaba */
+  sh.fragmentShader=f.replace("#include <dithering_fragment>","#include <dithering_fragment>\n gl_FragColor.a*=clamp(("+A+")+("+B+")*pow(1.0-abs(dot(normalize(normal),normalize(vViewPosition))),2.0),0.0,3.0);")};
+ const esLobulo=o=>{for(let x=o,i=0;x&&i<3;x=x.parent,i++)if(/^orbital_?\d+[spdf]/i.test(x.name||""))return true;return false};
+ function aplicar(root){root.traverse(o=>{if(!o.isMesh||!esLobulo(o))return;
+  for(const m of Array.isArray(o.material)?o.material:[o.material]){
+   if(!m||!m.isMeshStandardMaterial||!m.transparent||m.opacity>=.95||m.onBeforeCompile===FN)continue;/* un clon (al atenuar) pierde el efecto: se vuelve a poner */
+   m.onBeforeCompile=FN;m.needsUpdate=true}})}
+ const todo=()=>document.querySelectorAll("[gltf-model]").forEach(e=>{if(e.object3D)aplicar(e.object3D)});
+ document.addEventListener("model-loaded",e=>{const o=e.target&&e.target.object3D;if(o)aplicar(o)});
+ document.querySelectorAll("a-marker").forEach(m=>m.addEventListener("markerFound",()=>{const e=m.querySelector("[gltf-model]");if(e&&e.object3D)aplicar(e.object3D)}));
+ document.addEventListener("click",()=>setTimeout(todo,60));
+ setTimeout(todo,2500);setTimeout(todo,6000);
+})();
+</script>
+</body></html>
