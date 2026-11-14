@@ -128,7 +128,9 @@ try{const g=+localStorage.getItem("mult2");mult=g>0?Math.min(MAX_M,Math.max(MIN,
 const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend=0;sl.min=PMIN;sl.max=PMAX;sl.step="any";
 /* Altura del átomo sobre el marcador: 0 = centrado justo sobre el marcador (anclado, el error de ángulo de la cámara casi no lo desplaza);
    1 = levantado un radio como antes. Se cambia con ?alt=0.5 */
-const ALT=Q.get("alt")===null?0:Math.max(0,+Q.get("alt")||0);
+/* Altura del átomo sobre el marcador: 0 = centrado en el plano del marcador · 1 = apoyado encima (el borde de abajo toca el marcador).
+   Por defecto 0.5, así no queda pegado al marcador. ?alt=0 lo deja como antes · ?alt=1 lo apoya encima */
+const ALT=Q.get("alt")===null?.5:Math.max(0,+Q.get("alt")||0);
 function aplicar(){pend=0;pc.textContent=Math.round((Math.log2(mult)*50-PMIN)/(PMAX-PMIN)*100)+"%";
  if(document.activeElement!==sl)sl.value=Math.log2(mult)*50;
  /* Si el ajuste de tamaño (más abajo) está andando, ÉL escribe la escala en cada cuadro: escribirla también acá se pisaban y,
@@ -301,9 +303,7 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
    else{window.__LK.no++;
     if(a.has)poner(a);/* rechazado: se queda donde estaba */
     else if(a.w&&!a.hid){a.w.object3D.visible=false;a.hid=1}}/* primera vez y en conflicto: esperar a una posición creíble */
-   a.t=now}
-  /* ya con las poses de ESTE cuadro suavizadas: el neón se calcula acá (ver más abajo) para que línea y átomos salgan del mismo cuadro */
-  try{if(window.__PP)window.__PP()}catch(e){window.__neerr=e.message}}
+   a.t=now}}
  (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
   r.render=function(a,b){try{paso()}catch(e){window.__lkerr=e.message}return o(a,b)}})();
 })();
@@ -643,10 +643,7 @@ const ITEMS=[
    La línea se dibuja sobre el plano de la hoja, hija de uno de los marcadores: acompaña a los átomos sin retraso.
    Animación: al detectar el grupo la línea se traza con una chispa, hace un destello y queda con una luz que la recorre.
    Se apaga desde el panel Capas, o con ?neon=0 · ?par=0 quita lo de los dos marcadores (el cartel de unión y su color: vuelve a mandar el color de la familia)
-   ?paso=1.55 = distancia entre marcadores de la hoja, en anchos de marcador
-   Sincronía: la línea se recalcula dentro del mismo cuadro que los átomos, justo después de suavizar sus poses (antes corría en otro momento
-   y quedaba un cuadro atrás, más un segundo suavizado propio encima). Como los marcadores ya vienen filtrados, la línea los sigue 1 a 1.
-   ?sync=0 vuelve al comportamiento anterior (y con ?lock=0 también funciona como antes) */
+   ?paso=1.55 = distancia entre marcadores de la hoja, en anchos de marcador */
 (function(){
   const TH=AFRAME.THREE;
   const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff",
@@ -847,12 +844,11 @@ void main(){
     g.setAttribute("aV",new TH.Float32BufferAttribute(r.V,1));g.setAttribute("aL",new TH.Float32BufferAttribute(r.L,1));g.setIndex(r.I);
     ob.mesh.geometry.dispose();ob.mesh.geometry=g}
   let tp=performance.now();
-  const SYNC=!!window.__LK&&Q.get("sync")!=="0";
-  const tk=function(){if(!SYNC)requestAnimationFrame(tk);
+  (function tk(){requestAnimationFrame(tk);
     const now=performance.now(),dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
     const act={};let un=null;
     const V=[];
-    for(const a of ms){const o=a.o;if(!o.visible)continue;if(SYNC)o.updateWorldMatrix(true,false);a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
+    for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
     /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
        de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
     if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(op.ne)act[un.k]=c}}
@@ -887,7 +883,7 @@ void main(){
       c.forEach((a,q)=>{nVv.set(cel[q][0]*PASO*ss,0,cel[q][1]*PASO*ss).applyQuaternion(nQa);nVo.add(a.p).sub(nVv)});
       nVo.multiplyScalar(1/c.length);
       if(ref!==ob.ref||!ob.O){ob.ref=ref;ob.O=ob.O||new TH.Vector3();ob.Q=ob.Q||new TH.Quaternion();ob.O.copy(nVo);ob.Q.copy(nQa);ob.S=ss}
-      else{const al=SYNC?1:Math.min(1,.18+3*(ob.O.distanceTo(nVo)/ss)+2.5*2*Math.acos(Math.min(1,Math.abs(ob.Q.dot(nQa)))));ob.O.lerp(nVo,al);ob.Q.slerp(nQa,al);ob.S+=(ss-ob.S)*al}
+      else{const al=Math.min(1,.18+3*(ob.O.distanceTo(nVo)/ss)+2.5*2*Math.acos(Math.min(1,Math.abs(ob.Q.dot(nQa)))));ob.O.lerp(nVo,al);ob.Q.slerp(nQa,al);ob.S+=(ss-ob.S)*al}
       if(ob.mesh.parent!==rt)rt.add(ob.mesh);
       ob.mesh.position.copy(ob.O);ob.mesh.quaternion.copy(ob.Q);ob.mesh.scale.setScalar(ob.S);ob.mesh.visible=true;ob.seen=now}
     /* si se agranda mucho el átomo (el slider de tamaño) la línea se desvanece, para no tapar el modelo */
@@ -899,8 +895,7 @@ void main(){
       const age=(now-ob.t0)/1000;
       if(!ob.fin&&age>.9){ob.fin=1;if(!RM)ob.fl=.9}/* destello al terminar de trazarse */
       ob.fl*=Math.exp(-dt*4);
-      const u=ob.mat.uniforms;u.uT.value=RM?0:(now/1000)%900;u.uAge.value=age;u.uA.value=ob.al*grande;u.uFl.value=ob.fl}};
-  if(SYNC)window.__PP=tk;else tk();
+      const u=ob.mat.uniforms;u.uT.value=RM?0:(now/1000)%900;u.uAge.value=age;u.uA.value=ob.al*grande;u.uFl.value=ob.fl}})();
 })();
 </script>
 <script>
