@@ -892,7 +892,7 @@ void main(){
   {h:"Dos marcadores = una unión",p:"Acercá solo dos: arriba de ellos flota si la unión es iónica, covalente o metálica, y un neón de color los rodea.",d:"par",big:1},
   {h:"Tres o más: el grupo",p:"Con varios de una misma familia flota el nombre del grupo y un neón los envuelve.",d:"grp",big:1},
   {t:"#back",h:"Grupos",p:"Volvé acá para elegir otras familias de la tabla."}];
- const DEM={mk:'<i class="q"></i><span class="at">⚛</span>',hand:'<span class="hd">👆</span>',par:'<i class="gl"></i><i class="q a"></i><i class="q b"></i><span class="pl p1">Unión iónica</span><span class="pl p2">Unión covalente</span>',grp:'<i class="gl g"></i><i class="q"></i><i class="q"></i><i class="q"></i><span class="pl p3">Halógenos</span>'};
+ const DEM={mk:'<i class="q"></i><svg class="at" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><ellipse cx="12" cy="12" rx="10.5" ry="4.2"/><ellipse cx="12" cy="12" rx="10.5" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10.5" ry="4.2" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>',hand:'<span class="hd">👆</span>',par:'<i class="gl"></i><i class="q a"></i><i class="q b"></i><span class="pl p1">Unión iónica</span><span class="pl p2">Unión covalente</span>',grp:'<i class="gl g"></i><i class="q"></i><i class="q"></i><i class="q"></i><span class="pl p3">Halógenos</span>'};
  const st=document.createElement("style");st.textContent=`
 #tut{position:fixed;inset:0;z-index:60;pointer-events:none;font:14px system-ui,sans-serif;color:#fff}#tut[hidden]{display:none}
 #tut .sp{position:absolute;border-radius:14px;box-shadow:0 0 0 100vmax rgba(5,7,13,.62);transition:left .4s,top .4s,width .4s,height .4s,opacity .3s}
@@ -903,15 +903,15 @@ void main(){
 #tut .tf{display:flex;align-items:center;gap:6px;margin-top:8px}#tut .tf button{padding:7px 12px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}
 #tut .tf .sk{margin-right:auto;background:none;color:#9fb0d0;padding-left:0}#tut .tf .nx{background:rgba(61,230,255,.3);box-shadow:0 0 8px rgba(61,230,255,.4)}
 #tut .dm{position:relative;height:56px;margin-top:8px;display:flex;align-items:flex-end;justify-content:center;gap:6px;padding-bottom:4px}
-#tut .q{width:24px;height:24px;border-radius:4px;background:#fff;border:3px solid #111;box-sizing:border-box;flex:none}#tut .a{animation:qa 4s ease-in-out infinite}#tut .b{animation:qb 4s ease-in-out infinite}
-#tut .gl{position:absolute;bottom:0;left:50%;width:92px;height:34px;margin-left:-46px;border-radius:12px;border:2px solid #ff6a00;animation:gc 4s infinite}#tut .gl.g{width:104px;margin-left:-52px;border-color:#b8ff3d;box-shadow:0 0 10px #b8ff3d;animation:tpu 1.4s infinite}
+#tut .q{width:24px;height:24px;border-radius:4px;background:#fff;border:3px solid #111;box-sizing:border-box;flex:none}#tut .a{animation:qa 6s ease-in-out .3s infinite backwards}#tut .b{animation:qb 6s ease-in-out .3s infinite backwards}
+#tut .gl{position:absolute;bottom:0;left:50%;box-sizing:border-box;width:92px;height:32px;margin-left:-46px;border-radius:12px;border:2px solid #ff6a00;box-shadow:0 0 10px #ff6a00;animation:gc 6s ease-in-out .3s infinite backwards}#tut .gl.g{width:104px;margin-left:-52px;border-color:#b8ff3d;box-shadow:0 0 10px #b8ff3d;animation:tpu 1.4s infinite}
 #tut .pl{position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 13px system-ui,sans-serif;text-shadow:0 0 8px currentColor}
-#tut .p1{color:#ff6a00;animation:p1k 4s infinite}#tut .p2{color:#00d9ff;animation:p2k 4s infinite}#tut .p3{color:#b8ff3d}
-#tut .at{font-size:26px;color:#3de6ff;animation:spin 3s linear infinite;margin-left:6px}#tut .hd{font-size:30px;animation:hs 1.6s ease-in-out infinite}
+#tut .p1{color:#ff6a00;animation:p1k 6s ease-in-out .3s infinite backwards}#tut .p2{color:#00d9ff;animation:p2k 6s ease-in-out .3s infinite backwards}#tut .p3{color:#b8ff3d}
+#tut .at{display:block;flex:none;width:24px;height:24px;color:#3de6ff;animation:spin 3s linear infinite;margin-left:8px}#tut .hd{font-size:30px;animation:hs 1.6s ease-in-out infinite}
 @keyframes tin{from{opacity:0;transform:translateY(12px) scale(.94)}}@keyframes tpu{50%{opacity:.4;transform:scale(1.03)}}
-@keyframes qa{0%,12%{transform:translateX(-30px)}38%,100%{transform:translateX(0)}}@keyframes qb{0%,12%{transform:translateX(30px)}38%,100%{transform:translateX(0)}}
-@keyframes gc{0%,45%{border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}55%,100%{border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
-@keyframes p1k{0%,10%{opacity:0}20%,45%{opacity:1}55%,100%{opacity:0}}@keyframes p2k{0%,50%{opacity:0}60%,95%{opacity:1}100%{opacity:0}}
+@keyframes qa{0%,6%{transform:translateX(-34px)}28%,88%{transform:translateX(0)}96%,100%{transform:translateX(-34px)}}@keyframes qb{0%,6%{transform:translateX(34px)}28%,88%{transform:translateX(0)}96%,100%{transform:translateX(34px)}}
+@keyframes gc{0%,26%{opacity:0;transform:scale(.85);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}34%,48%{opacity:1;transform:scale(1);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}56%,86%{opacity:1;transform:scale(1);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}92%,100%{opacity:0;transform:scale(.85);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
+@keyframes p1k{0%,30%{opacity:0}36%,46%{opacity:1}51%,100%{opacity:0}}@keyframes p2k{0%,55%{opacity:0}61%,86%{opacity:1}92%,100%{opacity:0}}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes hs{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
 #tutb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;left:-4px;bottom:0;min-width:70px;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #datp.vacia #tutb{top:calc(44px + env(safe-area-inset-top,0px));bottom:auto;position:fixed;left:8px;background:rgba(8,12,24,.7)}
@@ -920,7 +920,7 @@ void main(){
 #tut.big .cd{width:min(340px,calc(100vw - 32px));padding:18px 18px 14px;border-radius:18px;box-shadow:0 0 22px rgba(61,230,255,.32),0 10px 30px rgba(0,0,0,.5)}
 #tut.big .th{font:300 24px system-ui,sans-serif;letter-spacing:.5px;color:#f2f9ff;text-shadow:0 0 6px #3de6ff,0 0 18px rgba(61,230,255,.4);margin-bottom:6px}
 #tut.big .tp{font-size:14.5px;line-height:1.4}#tut.dec .tp{font-size:16px;line-height:1.45}
-#tut.big .dm{transform:scale(1.2);margin:16px 0 8px}
+#tut.big .dm{transform:scale(1.2);margin:16px 0 14px}
 #tut.big .tf{margin-top:12px}#tut.big .tf button{padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px}
 #tut.big .tf .nx{background:none;border:1.5px solid #3de6ff;color:#3de6ff;text-shadow:0 0 8px rgba(61,230,255,.7);box-shadow:0 0 10px rgba(61,230,255,.35)}
 @media (prefers-reduced-motion:reduce){#tut *{animation:none!important;transition:none!important}#tut .p2{display:none}}`;
