@@ -128,9 +128,9 @@ try{const g=+localStorage.getItem("mult2");mult=g>0?Math.min(MAX_M,Math.max(MIN,
 const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend=0;sl.min=PMIN;sl.max=PMAX;sl.step="any";
 /* Altura del átomo sobre el marcador: 0 = centrado justo sobre el marcador (anclado, el error de ángulo de la cámara casi no lo desplaza);
    1 = levantado un radio como antes. Se cambia con ?alt=0.5 */
-/* Altura del átomo sobre el marcador: 0 = centrado en el plano del marcador · 1 = apoyado encima (el borde de abajo toca el marcador).
-   Por defecto 0.5, así no queda pegado al marcador. ?alt=0 lo deja como antes · ?alt=1 lo apoya encima */
-const ALT=Q.get("alt")===null?.5:Math.max(0,+Q.get("alt")||0);
+/* Altura del átomo sobre el marcador, como fracción de su radio medido: 0 = centrado en el plano del marcador · 1 = apoyado encima (el punto
+   más bajo del átomo, órbitas incluidas, toca el marcador). Por defecto 0.8. ?alt=0 lo deja como al principio · ?alt=1 lo apoya encima */
+const ALT=Q.get("alt")===null?.8:Math.max(0,+Q.get("alt")||0);
 function aplicar(){pend=0;pc.textContent=Math.round((Math.log2(mult)*50-PMIN)/(PMAX-PMIN)*100)+"%";
  if(document.activeElement!==sl)sl.value=Math.log2(mult)*50;
  /* Si el ajuste de tamaño (más abajo) está andando, ÉL escribe la escala en cada cuadro: escribirla también acá se pisaban y,
@@ -567,6 +567,17 @@ const ITEMS=[
       ka   = tamaño del átomo solo, con su tope de TOPE lados de marcador, multiplicado por el slider (se puede agrandar y achicar);
       tope = límite por el vecino más cercano (solo si hay 2 o más marcadores): al 100% o menos evita que se encimen; si se agranda a propósito (slider por encima del 100%), el límite crece con el slider.
     Lo que se suaviza es únicamente el límite por el vecino, no el slider: el tamaño sigue al slider cuadro a cuadro y nunca pasa de ka. */
+ /* Sombra de contacto: un disco suave y oscuro sobre el plano del marcador, justo debajo del átomo. Es la pista de profundidad que falta
+    (un átomo translúcido sobre el video se ve como una calcomanía) y deja ver a qué altura flota. ?sombra=0 la quita */
+ const SOM=Q.get("sombra")!=="0";let somM=null,somG=null;
+ function sombra(a,R){
+  if(!SOM)return;
+  if(!a.sh){
+   if(!somM){const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,"rgba(0,0,0,.55)");g.addColorStop(.55,"rgba(0,0,0,.32)");g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(0,0,128,128);
+    somM=new TH.MeshBasicMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false,side:TH.DoubleSide});somG=new TH.PlaneGeometry(2,2).rotateX(-Math.PI/2)}
+   const m=new TH.Mesh(somG,somM);m.renderOrder=-1;m.frustumCulled=false;a.m.object3D.add(m);a.sh=m}
+  a.sh.position.y=.004;a.sh.scale.setScalar(Math.max(.01,R))}
  window.__FITON=1;
  (function tk(){requestAnimationFrame(tk);
   const v=it.filter(a=>a.m.object3D.visible);
@@ -577,7 +588,7 @@ const ITEMS=[
    const kt=n<1e9?Math.max(.3,Math.min(FIT*n,TOPE))/(2*RG)*Math.max(1,mult):1e9,tg=Math.min(kt,ka*1.25);
    a.K=a.K==null?tg:a.K+(tg-a.K)*SUAV;if(Math.abs(tg-a.K)<.002*tg)a.K=tg;
    const k=Math.min(ka,Math.max(a.K,MINF*base*mult)),g=k/(base*mult);
-   a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}
+   a.w.object3D.scale.setScalar(k);a.w.object3D.position.y=(RG*k+.1*g)*ALT;sombra(a,RG*k*.9)}
  })();
 })();
 
