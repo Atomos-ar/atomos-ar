@@ -1,0 +1,1475 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Lector de átomos</title>
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+<style>body{margin:0;overflow:hidden;background:#000;font-family:system-ui,sans-serif}
+#info{position:fixed;left:0;right:0;bottom:0;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));background:rgba(5,7,13,.8);color:#fff;text-align:center;z-index:10;font-size:18px}
+#back{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:8px;z-index:15;padding:8px 14px;border-radius:20px;background:rgba(5,7,13,.7);color:#fff;font-size:15px;text-decoration:none}
+#info small{display:block;color:#aab;font-size:12.5px;margin-top:4px}
+#ui{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:rgba(10,14,26,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:30;color:#fff;user-select:none;-webkit-user-select:none;touch-action:manipulation;max-width:90vw;opacity:.45;transition:opacity .25s}
+#ui.act{opacity:1}
+#ui button{width:30px;height:30px;flex:none;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font:600 18px/1 system-ui;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#ui button:active{background:rgba(255,255,255,.45)}
+#ui input{width:min(30vw,130px);min-width:56px;height:20px;margin:0}
+#pc{min-width:38px;text-align:center;font:600 11px system-ui;cursor:pointer}
+/* ---------- Pantalla de entrada: átomo de nube de probabilidad hecho de 0 y 1 (estilo Matrix) ---------- */
+#intro{position:fixed;inset:0;z-index:100;background:#05070d;transition:opacity .7s ease,transform .7s cubic-bezier(.6,0,.2,1)}
+#intro.out{opacity:0;transform:scale(1.35);pointer-events:none}
+#intro canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#intro p{position:absolute;left:0;right:0;bottom:calc(11% + env(safe-area-inset-bottom,0px));margin:0;text-align:center;color:#2dff7a;font:400 16px/1 "Courier New",monospace;letter-spacing:1.5px;text-shadow:0 0 8px rgba(45,255,122,.8);animation:resp 1.2s ease-in-out infinite alternate}
+@keyframes resp{from{opacity:.5}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#intro p{animation:none}}
+#capb{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:15;padding:8px 14px;border-radius:20px;border:0;background:rgba(5,7,13,.7);color:#fff;font:15px system-ui,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#capb.on{background:rgba(61,230,255,.28)}
+#capp{position:fixed;top:calc(52px + env(safe-area-inset-top,0px));right:8px;z-index:16;width:min(270px,86vw);padding:10px 10px 12px;border-radius:16px;background:rgba(8,12,24,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:14px system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+#capp[hidden]{display:none}
+#capp .ch{font-size:12px;letter-spacing:.5px;color:#9fb0d0;margin:0 2px 8px}
+#capp .cg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#capp .chip{display:flex;align-items:center;gap:7px;padding:9px 8px;border-radius:12px;border:1.5px solid rgba(255,255,255,.18);background:transparent;color:#cfd8ee;font:13px system-ui,sans-serif;text-align:left;touch-action:manipulation;opacity:.5}
+#capp .chip i{flex:none;width:11px;height:11px;border-radius:50%;border:2px solid var(--c);background:transparent}
+#capp .chip.on{opacity:1;border-color:var(--c);color:#fff;background:rgba(255,255,255,.07)}
+#capp .chip.on i{background:var(--c);box-shadow:0 0 8px var(--c)}
+#capp .cf{display:flex;gap:6px;margin-top:8px}
+#capp .cf button{flex:1;padding:8px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}
+#capp .ca{display:flex;align-items:center;gap:8px;margin:10px 2px 0;font-size:13px;color:#cfd8ee}
+
+#capp{max-height:calc(100vh - 70px - env(safe-area-inset-top,0px));overflow-y:auto}
+#capp .cn{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+#capp .cn button{padding:9px 0;border-radius:10px;border:1.5px solid rgba(255,255,255,.18);background:transparent;color:#cfd8ee;font:600 13px system-ui,sans-serif;opacity:.5;touch-action:manipulation}
+#capp .cn button.on{opacity:1;border-color:#3de6ff;background:rgba(61,230,255,.16);color:#fff;box-shadow:0 0 8px rgba(61,230,255,.35)}
+#capp .sec{margin-top:12px}
+#capp .tgl{display:block;width:100%;padding:6px 8px;border-radius:12px;border:1.5px solid rgba(255,255,255,.22);background:rgba(8,12,24,.6);color:#fff;font:12.5px system-ui,sans-serif;text-align:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#capp .tgl:disabled{opacity:.35;pointer-events:none}
+#capp .tgl.on{border-color:#3de6ff;background:rgba(61,230,255,.16);color:#fff;box-shadow:0 0 8px rgba(61,230,255,.35)}
+
+.ib{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;margin-left:8px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:var(--c,#8fe9ff);font:700 12px/1 Georgia,"Times New Roman",serif;vertical-align:middle;cursor:pointer;touch-action:manipulation}
+.ib[aria-expanded="true"]{box-shadow:0 0 0 2px rgba(255,255,255,.2)}
+.in{margin:-3px 0 4px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.07);font-size:12.5px;line-height:1.35;color:#d7e6ff}
+
+</style></head>
+<body>
+<div id="intro" aria-hidden="true"><canvas id="mx"></canvas><p id="introT">Preparando la cámara…</p></div>
+<script>
+(function(){const cv=document.getElementById("mx");if(!cv)return;const cx=cv.getContext("2d",{alpha:false}),rm=matchMedia("(prefers-reduced-motion:reduce)").matches,R=Math.random;
+let W=0,H=0,S=0;
+function rs(){const d=Math.min(devicePixelRatio||1,1.5);W=cv.clientWidth;H=cv.clientHeight;cv.width=Math.round(W*d);cv.height=Math.round(H*d);cx.setTransform(d,0,0,d,0,0);S=Math.min(W,H)*.34}
+rs();addEventListener("resize",rs);
+const g=()=>R()<.5?0:1,P=[];
+/* sprites precalculados: dibujar una imagen es mucho más barato que texto con resplandor en cada cuadro */
+const mk=(w,fn)=>{const c=document.createElement("canvas");c.width=c.height=w;fn(c.getContext("2d"),w);return c};
+const gl=(col,glow)=>[0,1].map(d=>mk(48,(x,w)=>{x.font="bold 26px 'Courier New',monospace";x.textAlign="center";x.textBaseline="middle";x.fillStyle=col;if(glow){x.shadowColor=col;x.shadowBlur=glow}x.fillText(""+d,w/2,w/2+1)}));
+const GH=gl("#e6ffee",8),GT=gl("#00ff6a",0),GE=gl("#3de6ff",9);
+const rg=(w,st)=>mk(w,(x,w)=>{const q=x.createRadialGradient(w/2,w/2,0,w/2,w/2,w/2);st.forEach(s=>q.addColorStop(s[0],s[1]));x.fillStyle=q;x.fillRect(0,0,w,w)});
+const DG=rg(32,[[0,"rgba(25,255,122,1)"],[.5,"rgba(25,255,122,.95)"],[1,"rgba(25,255,122,0)"]]),
+ DN=rg(64,[[0,"rgba(255,255,255,1)"],[.22,"rgba(234,255,240,1)"],[.3,"rgba(120,255,170,.55)"],[1,"rgba(45,255,122,0)"]]),
+ DE=rg(64,[[0,"rgba(255,255,255,1)"],[.2,"rgba(61,230,255,1)"],[.3,"rgba(61,230,255,.5)"],[1,"rgba(61,230,255,0)"]]);
+const spr=(im,x,y,s,al)=>{if(al<=.01||s<.5)return;cx.globalAlpha=al;cx.drawImage(im,x-s/2,y-s/2,s,s)};
+const sm=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)};
+/* nube de probabilidad: densa cerca del núcleo, rala hacia afuera */
+for(let i=0;i<380;i++){const nuc=i<28,th=Math.acos(2*R()-1),ph=6.2832*R(),r=nuc?.05+R()*.09:.18+Math.pow(R(),1.7)*.95;
+ P.push({nuc,x:r*Math.sin(th)*Math.cos(ph),y:r*Math.cos(th),z:r*Math.sin(th)*Math.sin(ph),sx:(R()-.5)*1.1,sy:-(.55+R()*.4),d:R()*1.6,du:1.1+R(),c:[g(),g(),g(),g()],ph:6.2832*R()})}
+const E=[0,1,2].map(i=>({r:.5+i*.28,w:2.4-i*.5,a0:i*2.1,tl:.5+i*.55}));
+const t0=performance.now();let PX=0,PY=0,PZ=0,PF=1;
+function draw(now){if(!cv.isConnected)return;requestAnimationFrame(draw);
+ const t=rm?9:Math.max(0,(now-t0)/1000),ox=W/2,oy=H*.44,an=t*.45,ca=Math.cos(an),sa=Math.sin(an),br=1+.045*Math.sin(t*2);
+ cx.globalAlpha=1;cx.fillStyle="#05070d";cx.fillRect(0,0,W,H);
+ const pr=(x,y,z)=>{x*=br;y*=br;z*=br;const xr=x*ca+z*sa,zr=-x*sa+z*ca,f=1/(1-zr*.3);PX=ox+xr*S*f;PY=oy+y*S*f;PZ=zr;PF=f};
+ for(const p of P){if(t<p.d)continue;const u=Math.min(1,(t-p.d)/p.du);pr(p.x,p.y,p.z);const tx=PX,ty=PY,zr=PZ,f=PF,gx=ox+p.sx*W,gy=oy+p.sy*H;
+  if(R()<.05)p.c[(R()*4)|0]=g();
+  const fl=.75+.25*Math.sin(t*3+p.ph),rd=p.nuc?2.7*f:.5+1.1*f,fa=p.nuc?.95:Math.max(.12,Math.min(.8,(.45+.4*zr)*fl)),
+   im=p.nuc?DN:DG,ds=p.nuc?rd*6.5:rd*4;
+  if(u<1){/* cae como lluvia de Matrix; al acercarse los 0 y 1 se deshacen en puntitos */
+   const m=sm((u-.5)/.45);
+   for(let k=3;k>=0;k--){const uu=Math.max(0,u-k*.05),e=1-Math.pow(1-uu,3),x=gx+(tx-gx)*e,y=gy+(ty-gy)*e;
+    if(k){if(m<1)spr(GT[p.c[k]],x,y,20,(.55-k*.12)*(1-m))}
+    else{if(m<1)spr(GH[p.c[0]],x,y,20*(1-.5*m),1-m);if(m>0)spr(im,x,y,ds*(.4+.6*m),fa*m)}}}
+  else spr(im,tx,ty,ds,fa)}
+ if(t>2.4){/* electrones: llegan como 1 y 0 celestes y se convierten en puntos que orbitan */
+  const q0=t-2.4,al=Math.min(1,q0),m=sm((q0-.2)/1.1),ap=1+(1-sm(q0/1.4))*2.2;
+  E.forEach(e=>{for(let k=4;k>=0;k--){const a=e.a0+t*e.w-k*.12,x=Math.cos(a)*e.r*ap,y0=Math.sin(a)*e.r*ap;pr(x,y0*Math.cos(e.tl),y0*Math.sin(e.tl));
+   const a2=al*(k?.5-k*.09:1);
+   if(m<1)spr(GE[g()],PX,PY,26*PF,a2*(1-m));
+   if(m>0)spr(DE,PX,PY,Math.max(.6,3.4-k*.55)*PF*6.5*m,a2*m)}})}
+ cx.globalAlpha=1}
+requestAnimationFrame(draw)})();
+</script>
+<script>
+(function(){const it=document.getElementById("intro");if(!it)return;const t0=performance.now(),MIN=3200;let ok=0;
+ function fin(){if(ok)return;ok=1;const p=document.getElementById("introT");if(p)p.textContent="¡Listo!";setTimeout(()=>{it.classList.add("out");setTimeout(()=>it.remove(),800)},350)}
+ function listo(){const v=document.querySelector("video");return !!(v&&v.videoWidth>0&&v.readyState>=2)}
+ (function w(){const t=performance.now()-t0;if((listo()&&t>MIN)||t>10000)fin();else setTimeout(w,120)})()})();
+</script>
+<a id="back" href="lector_test.html">‹ Grupos</a><div id="info"><b id="t">Apunta la cámara a un marcador</b><small id="s">Si el video se ve con mucho zoom, prueba agregar ?c=1 o ?c=2 a la dirección</small></div>
+<div id="ui"><button id="mn" aria-label="Más pequeño">−</button><input id="sl" type="range" min="16.1" max="266.1" step="any" value="29.2" aria-label="Tamaño"><button id="mp" aria-label="Más grande">+</button><span id="pc" title="Toca para volver al tamaño inicial">5%</span></div>
+<script>
+window.addEventListener("error",e=>{window.__err=(e.message||"")+" "+String(e.filename||"").split("/").pop()});
+{const c=new URLSearchParams(location.search).get("c")||"3",p=innerWidth<innerHeight;
+const b="sourceType:webcam;debugUIEnabled:false;detectionMode:mono;patternRatio:0.5;trackingMethod:best;";
+const A={"1":b+"sourceWidth:"+(p?720:1280)+";sourceHeight:"+(p?1280:720)+";displayWidth:"+innerWidth+";displayHeight:"+innerHeight,"2":b+"sourceWidth:1280;sourceHeight:960;displayWidth:1280;displayHeight:960","3":b,"4":b+"sourceWidth:1280;sourceHeight:720","5":b+"sourceWidth:"+(p?480:640)+";sourceHeight:"+(p?640:480),"6":b+"sourceWidth:"+(p?480:640)+";sourceHeight:"+(p?640:480)+";cameraParametersUrl:"+(p?"camera_p.dat":"camera_l.dat")};
+document.write("<a-scene "+(c>="3"?"":"embedded ")+'vr-mode-ui="enabled:false" renderer="logarithmicDepthBuffer:true;alpha:true;antialias:true" arjs="'+(A[c]||A["3"])+'">')}
+</script>
+<script>
+const G={"alc": [3, 11, 19, 37, 55, 87], "alt": [4, 12, 20, 38, 56, 88], "tr": [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 72, 73, 74, 75, 76, 77, 78, 79, 80, 104, 105, 106, 107, 108, 109, 110, 111, 112], "lan": [57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71], "act": [89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103], "pt": [13, 31, 49, 50, 81, 82, 83, 84, 113, 114, 115, 116], "mo": [5, 14, 32, 33, 51, 52], "nm": [1, 6, 7, 8, 15, 16, 34], "ha": [9, 17, 35, 53, 85, 117], "gn": [2, 10, 18, 36, 54, 86, 118]},MAX=50,Q0=new URLSearchParams(location.search);let ZS=[];
+(Q0.get("g")||"").split(",").forEach(k=>{if(G[k]&&ZS.length+G[k].length<=MAX)ZS=ZS.concat(G[k])});
+window.__Z=ZS;document.getElementById("back").href="lector_test.html"+location.search;
+if(!ZS.length)location.replace("lector_test.html"+location.search);
+const SMA=Q0.get("lock")==="0"?' smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="4"':' smooth="false"';
+ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z+'.patt"'+SMA+'><a-entity id="w'+z+'"><a-entity gltf-model="glb/'+z+'.glb"></a-entity></a-entity></a-marker>'));
+</script>
+<a-entity camera></a-entity></a-scene>
+<script>
+const D0={"1": ["Hidrógeno", "H", "1s¹", 17, [], 0.08], "2": ["Helio", "He", "1s²", 17, [], 0.08], "3": ["Litio", "Li", "1s² 2s¹", 17, [], 0.1], "4": ["Berilio", "Be", "1s² 2s²", 17, [], 0.1], "5": ["Boro", "B", "1s² 2s² 2p¹", 17, [], 0.12], "6": ["Carbono", "C", "1s² 2s² 2p²", 17, [], 0.12], "7": ["Nitrógeno", "N", "1s² 2s² 2p³", 17, [], 0.12], "8": ["Oxígeno", "O", "1s² 2s² 2p⁴", 17, [], 0.12], "9": ["Flúor", "F", "1s² 2s² 2p⁵", 17, [], 0.12], "10": ["Neón", "Ne", "1s² 2s² 2p⁶", 17, [], 0.12], "11": ["Sodio", "Na", "1s² 2s² 2p⁶ 3s¹", 15.0, [], 0.14], "12": ["Magnesio", "Mg", "1s² 2s² 2p⁶ 3s²", 15.0, [], 0.14], "13": ["Aluminio", "Al", "1s² 2s² 2p⁶ 3s² 3p¹", 13.12, [], 0.16], "14": ["Silicio", "Si", "1s² 2s² 2p⁶ 3s² 3p²", 13.12, [], 0.16], "15": ["Fósforo", "P", "1s² 2s² 2p⁶ 3s² 3p³", 13.12, [], 0.16], "16": ["Azufre", "S", "1s² 2s² 2p⁶ 3s² 3p⁴", 13.12, [], 0.16], "17": ["Cloro", "Cl", "1s² 2s² 2p⁶ 3s² 3p⁵", 13.12, [], 0.16], "18": ["Argón", "Ar", "1s² 2s² 2p⁶ 3s² 3p⁶", 13.12, [], 0.16], "19": ["Potasio", "K", "1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹", 11.67, [], 0.18], "20": ["Calcio", "Ca", "1s² 2s² 2p⁶ 3s² 3p⁶ 4s²", 11.67, [], 0.18], "21": ["Escandio", "Sc", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹ 4s²", 10.5, [], 0.2], "22": ["Titanio", "Ti", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d² 4s²", 10.5, [], 0.2], "23": ["Vanadio", "V", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d³ 4s²", 10.5, [], 0.2], "24": ["Cromo", "Cr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s¹", 10.5, [], 0.2], "25": ["Manganeso", "Mn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s²", 10.5, [], 0.2], "26": ["Hierro", "Fe", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁶ 4s²", 10.5, [], 0.2], "27": ["Cobalto", "Co", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁷ 4s²", 10.5, [], 0.2], "28": ["Níquel", "Ni", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁸ 4s²", 10.5, [], 0.2], "29": ["Cobre", "Cu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s¹", 10.5, [], 0.2], "30": ["Zinc", "Zn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s²", 10.5, [], 0.2], "31": ["Galio", "Ga", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p¹", 9.55, [], 0.22], "32": ["Germanio", "Ge", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p²", 9.55, [], 0.22], "33": ["Arsénico", "As", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p³", 9.55, [], 0.22], "34": ["Selenio", "Se", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁴", 9.55, [], 0.22], "35": ["Bromo", "Br", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁵", 9.55, [], 0.22], "36": ["Kriptón", "Kr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶", 9.55, [], 0.22], "37": ["Rubidio", "Rb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 5s¹", 8.75, [], 0.24], "38": ["Estroncio", "Sr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 5s²", 8.75, [], 0.24], "39": ["Itrio", "Y", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹ 5s²", 8.08, [], 0.26], "40": ["Circonio", "Zr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d² 5s²", 8.08, [], 0.26], "41": ["Niobio", "Nb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁴ 5s¹", 8.08, [], 0.26], "42": ["Molibdeno", "Mo", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁵ 5s¹", 8.08, [], 0.26], "43": ["Tecnecio", "Tc", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁵ 5s²", 8.08, [], 0.26], "44": ["Rutenio", "Ru", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁷ 5s¹", 8.08, [], 0.26], "45": ["Rodio", "Rh", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁸ 5s¹", 8.08, [], 0.26], "46": ["Paladio", "Pd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰", 8.75, [], 0.24], "47": ["Plata", "Ag", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s¹", 8.08, [], 0.26], "48": ["Cadmio", "Cd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s²", 8.08, [], 0.26], "49": ["Indio", "In", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p¹", 7.5, [], 0.28], "50": ["Estaño", "Sn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p²", 7.5, [], 0.28], "51": ["Antimonio", "Sb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p³", 7.5, [], 0.28], "52": ["Telurio", "Te", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁴", 7.5, [], 0.28], "53": ["Yodo", "I", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁵", 7.5, [], 0.28], "54": ["Xenón", "Xe", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶", 7.5, [], 0.28], "55": ["Cesio", "Cs", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 6s¹", 7.0, [], 0.3], "56": ["Bario", "Ba", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 6s²", 7.0, [], 0.3], "57": ["Lantano", "La", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 5d¹ 6s²", 6.56, [], 0.32], "58": ["Cerio", "Ce", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹ 5s² 5p⁶ 5d¹ 6s²", 6.18, [], 0.34], "59": ["Praseodimio", "Pr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f³ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "60": ["Neodimio", "Nd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁴ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "61": ["Prometio", "Pm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁵ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "62": ["Samario", "Sm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁶ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "63": ["Europio", "Eu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁷ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "64": ["Gadolinio", "Gd", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁷ 5s² 5p⁶ 5d¹ 6s²", 6.18, [], 0.34], "65": ["Terbio", "Tb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁹ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "66": ["Disprosio", "Dy", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁰ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "67": ["Holmio", "Ho", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹¹ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "68": ["Erbio", "Er", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹² 5s² 5p⁶ 6s²", 6.56, [], 0.32], "69": ["Tulio", "Tm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹³ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "70": ["Iterbio", "Yb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 6s²", 6.56, [], 0.32], "71": ["Lutecio", "Lu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹ 6s²", 6.18, [], 0.34], "72": ["Hafnio", "Hf", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d² 6s²", 6.18, [], 0.34], "73": ["Tántalo", "Ta", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d³ 6s²", 6.18, [], 0.34], "74": ["Wolframio", "W", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁴ 6s²", 6.18, [], 0.34], "75": ["Renio", "Re", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁵ 6s²", 6.18, [], 0.34], "76": ["Osmio", "Os", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁶ 6s²", 6.18, [], 0.34], "77": ["Iridio", "Ir", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁷ 6s²", 6.18, [], 0.34], "78": ["Platino", "Pt", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁹ 6s¹", 6.18, [], 0.34], "79": ["Oro", "Au", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s¹", 6.18, [], 0.34], "80": ["Mercurio", "Hg", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s²", 6.18, [], 0.34], "81": ["Talio", "Tl", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p¹", 5.83, [], 0.36], "82": ["Plomo", "Pb", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p²", 5.83, [], 0.36], "83": ["Bismuto", "Bi", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p³", 5.83, [], 0.36], "84": ["Polonio", "Po", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁴", 5.83, [], 0.36], "85": ["Astato", "At", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁵", 5.83, [], 0.36], "86": ["Radón", "Rn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶", 5.83, [], 0.36], "87": ["Francio", "Fr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 7s¹", 5.53, [], 0.38], "88": ["Radio", "Ra", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 7s²", 5.53, [], 0.38], "89": ["Actinio", "Ac", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 6d¹ 7s²", 5.25, [], 0.4], "90": ["Torio", "Th", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 6d² 7s²", 5.25, [], 0.4], "91": ["Protactinio", "Pa", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f² 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "92": ["Uranio", "U", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f³ 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "93": ["Neptunio", "Np", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁴ 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "94": ["Plutonio", "Pu", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁶ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "95": ["Americio", "Am", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁷ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "96": ["Curio", "Cm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁷ 6s² 6p⁶ 6d¹ 7s²", 5.0, [], 0.42], "97": ["Berkelio", "Bk", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁹ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "98": ["Californio", "Cf", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁰ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "99": ["Einstenio", "Es", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹¹ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "100": ["Fermio", "Fm", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹² 6s² 6p⁶ 7s²", 5.25, [], 0.4], "101": ["Mendelevio", "Md", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹³ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "102": ["Nobelio", "No", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 7s²", 5.25, [], 0.4], "103": ["Lawrencio", "Lr", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 7s² 7p¹", 5.0, [], 0.42], "104": ["Rutherfordio", "Rf", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d² 7s²", 5.0, [], 0.42], "105": ["Dubnio", "Db", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d³ 7s²", 5.0, [], 0.42], "106": ["Seaborgio", "Sg", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁴ 7s²", 5.0, [], 0.42], "107": ["Bohrio", "Bh", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁵ 7s²", 5.0, [], 0.42], "108": ["Hasio", "Hs", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁶ 7s²", 5.0, [], 0.42], "109": ["Meitnerio", "Mt", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁷ 7s²", 5.0, [], 0.42], "110": ["Darmstatio", "Ds", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁸ 7s²", 5.0, [], 0.42], "111": ["Roentgenio", "Rg", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁹ 7s²", 5.0, [], 0.42], "112": ["Copernicio", "Cn", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s²", 5.0, [], 0.42], "113": ["Nihonio", "Nh", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p¹", 4.77, [], 0.44], "114": ["Flerovio", "Fl", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p²", 4.77, [], 0.44], "115": ["Moscovio", "Mc", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p³", 4.77, [], 0.44], "116": ["Livermorio", "Lv", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁴", 4.77, [], 0.44], "117": ["Teneso", "Ts", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁵", 4.77, [], 0.44], "118": ["Oganesón", "Og", "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁶", 4.77, [], 0.44]},D={};for(const z of window.__Z)D[z]=D0[z];
+const Q=new URLSearchParams(location.search),quiz=Q.get("quiz");
+/* ---------- Tamaño del modelo: botones y slider ---------- */
+/* Escala real: mínimo 125% (se muestra 0%), tamaño inicial 150%, máximo 4000% (se muestra 100%). El porcentaje que se ve es el recorrido del slider. */
+const MIN=1.25,MAX_M=40,DEF=1.5,PMIN=Math.log2(MIN)*50,PMAX=Math.log2(MAX_M)*50;let M0=DEF;const MZ={};
+try{const g=+localStorage.getItem("mult2");M0=g>0?Math.min(MAX_M,Math.max(MIN,g)):DEF}catch(e){}
+/* Cada átomo tiene su propio tamaño (parten del último que se guardó). El slider y los botones − / + actúan sobre el átomo seleccionado (ver SEL más abajo). */
+function multDe(z){return z!=null&&MZ[z]!=null?MZ[z]:M0}
+function multSel(){return multDe(window.SEL?window.SEL.z:null)}
+const sl=document.getElementById("sl"),pc=document.getElementById("pc");let pend=0;sl.min=PMIN;sl.max=PMAX;sl.step="any";
+/* Altura del átomo sobre el marcador: 0 = centrado justo sobre el marcador (anclado, el error de ángulo de la cámara casi no lo desplaza);
+   1 = levantado un radio como antes. Se cambia con ?alt=0.5 */
+const ALT=Q.get("alt")===null?0:Math.max(0,+Q.get("alt")||0);
+function aplicar(){pend=0;const mu=multSel();pc.textContent=Math.round((Math.log2(mu)*50-PMIN)/(PMAX-PMIN)*100)+"%";
+ if(document.activeElement!==sl)sl.value=Math.log2(mu)*50;
+ /* Si el ajuste de tamaño (más abajo) está andando, ÉL escribe la escala en cada cuadro: escribirla también acá se pisaban y,
+    en los cuadros en que ganaba esta línea, se veía un destello con el átomo enorme y sin tope. */
+ if(window.__FITON)return;
+ for(const z in D){const e=document.querySelector("#m"+z+" a-entity"),k=+(Q.get("s")||D[z][3])*multDe(z);
+  e.setAttribute("scale",k+" "+k+" "+k);e.setAttribute("position","0 "+(D[z][5]*k+0.1)*ALT+" 0")}}
+function cambiar(m){const z=window.SEL?window.SEL.z:null;if(z==null)return;const v=Math.min(MAX_M,Math.max(MIN,m));MZ[z]=v;try{localStorage.setItem("mult2",v)}catch(e){}if(!pend)pend=requestAnimationFrame(aplicar)}
+function repetir(btn,f){let t,iv;const go=()=>cambiar(multSel()*f),stop=()=>{clearTimeout(t);clearInterval(iv)};
+ btn.addEventListener("pointerdown",ev=>{ev.preventDefault();stop();go();t=setTimeout(()=>{iv=setInterval(go,80)},350)});
+ ["pointerup","pointerleave","pointercancel"].forEach(n=>btn.addEventListener(n,stop))}
+repetir(document.getElementById("mn"),1/1.1);repetir(document.getElementById("mp"),1.1);
+sl.addEventListener("input",()=>cambiar(Math.pow(2,sl.value/50)));
+pc.addEventListener("click",()=>cambiar(DEF));
+aplicar();
+if(!Q.get("info"))document.getElementById("info").style.display="none";else document.getElementById("ui").style.bottom="100px";
+{const u=document.getElementById("ui");let ta;const act=()=>{u.classList.add("act");clearTimeout(ta);ta=setTimeout(()=>u.classList.remove("act"),2200)};
+ ["pointerdown","input","click"].forEach(n=>u.addEventListener(n,act,true))}
+
+/* ---------- Selección de átomo ----------
+   Con UN solo marcador a la vista, ese átomo es el seleccionado. Con DOS O MÁS hay que tocar un átomo para seleccionarlo (tocar fuera de los átomos deselecciona).
+   Tamaño, capas, giro, posición original y los datos del banner de arriba actúan solo sobre el seleccionado, y los demás no cambian.
+   Si el seleccionado sale de la vista, queda sin selección; si queda uno solo, ese pasa a ser el seleccionado. Cuando aparece un segundo marcador no queda ninguno seleccionado hasta tocar uno. */
+window.SEL=(function(){
+ const subs=[],T=AFRAME.THREE,c0=new T.Vector3(),c1=new T.Vector3(),rg=new T.Vector3(),s3=new T.Vector3();
+ let user=null,eff=null,last="";
+ const S={z:null,n:0,zs:[],on(f){subs.push(f)},sel(z){user=z;pasar()}};
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut,#tutb");
+ function leer(){const r=[];document.querySelectorAll("a-marker").forEach(m=>{if(m.object3D&&m.object3D.visible&&/^m\d+$/.test(m.id))r.push(+m.id.slice(1))});return r}
+ function pasar(){const zs=leer(),n=zs.length;
+  /* "user" es solo lo que se eligió tocando; si ese átomo sale de la vista, se pierde la elección */
+  if(user!=null&&zs.indexOf(user)<0)user=null;
+  /* con un marcador, ese átomo es el seleccionado; con 2 o más, solo el que se tocó (al aparecer el segundo no queda ninguno elegido) */
+  if(n===1)eff=zs[0];else if(n>=2)eff=user;
+  /* con 0 marcadores se conserva el último (el banner queda atenuado, como antes) */
+  const k=n+"|"+eff+"|"+zs.join(",");S.n=n;S.zs=zs;S.z=eff;
+  if(k!==last){last=k;subs.forEach(f=>{try{f(eff,n)}catch(e){console.error(e)}})}}
+ /* radio real (en el mundo) del átomo z; deja su centro en c0 */
+ function geo(z){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(!w)return 0;
+  w.object3D.getWorldPosition(c0);m.object3D.getWorldScale(s3);
+  return((window.__ATR&&window.__ATR[z])||(D[z]?D[z][5]:.5)*w.object3D.scale.x)*s3.x}
+ /* qué átomo está bajo el dedo: se proyecta el centro de cada átomo y su radio a pantalla; gana el que tenga el dedo más adentro (en proporción a su radio) */
+ function hit(x,y){const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,cv=sc&&sc.canvas;if(!cam||!cv)return null;
+  const r=cv.getBoundingClientRect();let best=1.05,bz=null;cam.updateMatrixWorld();rg.setFromMatrixColumn(cam.matrixWorld,0).normalize();
+  for(const z of S.zs){const R=geo(z);if(!(R>0))continue;
+   c1.copy(c0).project(cam);const sx=r.left+(c1.x*.5+.5)*r.width,sy=r.top+(.5-c1.y*.5)*r.height;
+   c1.copy(c0).addScaledVector(rg,R).project(cam);const rp=Math.hypot(r.left+(c1.x*.5+.5)*r.width-sx,r.top+(.5-c1.y*.5)*r.height-sy);
+   if(!(rp>4))continue;const d=Math.hypot(x-sx,y-sy)/rp;if(d<best){best=d;bz=z}}
+  return bz}
+ /* Resaltado del átomo seleccionado (solo cuando hay 2 o más a la vista): aro de rayitas celestes con un halo, que gira despacio y pulsa suave.
+    Se dibuja encima del modelo, mirando siempre a la cámara, con el mismo radio que se usa para tocar el átomo. ?resalte=0 lo quita */
+ const RESALTE=new URLSearchParams(location.search).get("resalte")!=="0",QUIETO=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+ let hl=null,hlA=0;
+ function crearHL(){const sc=document.querySelector("a-scene");if(!sc||!sc.object3D)return null;
+  const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.translate(128,128);
+  const g=x.createRadialGradient(0,0,92,0,0,126);g.addColorStop(0,"rgba(61,230,255,0)");g.addColorStop(.72,"rgba(61,230,255,.24)");g.addColorStop(1,"rgba(61,230,255,0)");
+  x.fillStyle=g;x.beginPath();x.arc(0,0,126,0,6.2832);x.fill();
+  x.lineWidth=5.5;x.lineCap="round";x.strokeStyle="#c9f8ff";x.shadowColor="#3de6ff";x.shadowBlur=12;
+  const N=28;for(let i=0;i<N;i++){const a0=i/N*6.2832;x.beginPath();x.arc(0,0,108,a0,a0+6.2832/N*.62);x.stroke()}
+  const sp=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));
+  sp.frustumCulled=false;sp.visible=false;sc.object3D.add(sp);return sp}
+ function resaltar(now){const mostrar=RESALTE&&S.n>=2&&S.z!=null;
+  if(!hl){if(!mostrar)return;hl=crearHL();if(!hl)return}
+  const R=mostrar?geo(S.z):0;
+  hlA=mostrar&&R>0?Math.min(1,hlA+.12):Math.max(0,hlA-.15);/* aparece y se va con un fundido corto */
+  if(hlA<=0){hl.visible=false;return}
+  const sz=R>0?R*1.06*256/108:hl.scale.x;
+  if(R>0)hl.position.copy(c0);hl.scale.set(sz,sz,1);hl.visible=true;
+  hl.material.opacity=hlA*(QUIETO?.95:.8+.2*Math.sin(now/260));hl.material.rotation=QUIETO?0:(now/6000)%6.2832}
+ S.hit=hit;
+ /* un toque (no un arrastre) selecciona; el arrastre sigue siendo para girar */
+ let dn=null;
+ addEventListener("pointerdown",e=>{dn=ui(e)?null:{id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()}},true);
+ addEventListener("pointercancel",()=>{dn=null},true);
+ addEventListener("pointerup",e=>{const d=dn;dn=null;if(!d||d.id!==e.pointerId||S.n<2)return;
+  if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>10||performance.now()-d.t>650)return;
+  user=hit(e.clientX,e.clientY);pasar()},true);
+ (function lp(now){requestAnimationFrame(lp);pasar();resaltar(now||performance.now())})();
+ {const st=document.createElement("style");st.textContent="#ui.sinsel{opacity:.4!important;filter:grayscale(1);pointer-events:none}";document.head.appendChild(st);
+  const u=document.getElementById("ui");
+  S.on(()=>{if(u)u.classList.toggle("sinsel",S.z==null);try{aplicar()}catch(e){}});if(u)u.classList.add("sinsel")}
+ return S})();
+
+/* ---------- Anti-parpadeo: si el marcador se pierde un instante, el modelo aguanta en su última posición ---------- */
+/* ?h=1200 aguanta más · ?h=0 lo desactiva (el parámetro g ya lo usa el selector de grupos) */
+const HOLD=Q.get("h")===null?700:+Q.get("h");let gaps=0,maxgap=0;
+window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.object3D;let real=!!o.visible,last=real?performance.now():-1e9;window.__ST[m.id]=()=>[real,performance.now()-last];
+ Object.defineProperty(o,"visible",{configurable:true,
+  get(){return real||performance.now()-last<HOLD},
+  set(v){v=!!v;if(v){const n=performance.now(),h=n-last;if(h>150&&h<1e8){gaps++;if(h>maxgap)maxgap=h}last=n}real=v}})});
+(function(){
+ /* diagnóstico (?d=1): proyección de la cámara AR y dónde cae cada marcador en pantalla */
+ window.__camInfo=function(c,v){try{const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,P=cam&&cam.projectionMatrix.elements;if(!P)return"cam: -";
+  const T=AFRAME.THREE,r=c?c.getBoundingClientRect():null,vr=v?v.getBoundingClientRect():null,f=n=>Math.round(n);
+  const J=window.__PJ||{};let s="AR.js "+(J.ok?"P0="+J.P0.toFixed(2)+" P5="+J.P5.toFixed(2)+" det "+J.cw+"x"+J.ch+" SINCRONIZADA"+(J.vr?"\nvideo en det "+J.vr+" | corr x"+(J.kx||1).toFixed(2)+" y"+(J.ky||1).toFixed(2)+" (P0 orig "+(J.raw0||0).toFixed(2)+")":""):"NO ENCONTRADA ["+(J.keys||"-")+"]")+(window.__pjerr?" ERR "+window.__pjerr:"")+"\ncam P0="+P[0].toFixed(2)+" P5="+P[5].toFixed(2)+" P5/P0="+(P[5]/P[0]).toFixed(2)+" | pant "+innerWidth+"x"+innerHeight+" dpr "+(devicePixelRatio||1).toFixed(2);
+  if(r)s+="\ncanvas css "+f(r.left)+","+f(r.top)+" "+f(r.width)+"x"+f(r.height);
+  if(vr)s+="  video css "+f(vr.left)+","+f(vr.top)+" "+f(vr.width)+"x"+f(vr.height);
+  for(const m of document.querySelectorAll("a-marker")){const st=window.__ST&&window.__ST[m.id]&&window.__ST[m.id]();if(!st||!st[0])continue;
+   const o=m.object3D,p=new T.Vector3().setFromMatrixPosition(o.matrixWorld),q=p.clone().project(cam);
+   s+="\n"+m.id+" pos "+p.x.toFixed(2)+","+p.y.toFixed(2)+","+p.z.toFixed(2)+" ndc "+q.x.toFixed(2)+","+q.y.toFixed(2)+" esc "+new T.Vector3().setFromMatrixScale(o.matrixWorld).x.toFixed(2)}
+  return s}catch(e){return"cam err "+e.message}};
+})();
+(function(){
+ /* ---------- Cámara AR sincronizada ----------
+   La detección de AR.js se hace con una cámara calibrada, pero algo (el redimensionado de A-Frame) la reemplaza por una cámara
+   genérica de 80° 4:3. Los modelos se dibujaban con esa cámara y caían corridos hacia el centro de la pantalla y más chicos.
+   Acá, antes de dibujar cada cuadro, se vuelve a copiar la proyección calibrada de AR.js a la cámara.
+   ?proj=0 lo desactiva */
+ window.__PJ={ok:0,P0:0,P5:0,cw:0,ch:0,keys:""};
+ if(Q.get("proj")==="0")return;
+ const sc=document.querySelector("a-scene");let ctx=null,tries=0;
+ const ok=x=>x&&typeof x==="object"&&typeof x.getProjectionMatrix==="function";
+ function buscar(){const sy=sc.systems&&sc.systems.arjs;if(!sy)return null;
+  window.__PJ.keys=Object.keys(sy).filter(k=>k[0]!=="_"||k.length>1).slice(0,14).join(",");
+  const s=sy._arSession||sy.arSession;
+  if(s)for(const n of["arContext","arToolkitContext","_arContext"])if(ok(s[n]))return s[n];
+  for(const n of["_arToolkitContext","arToolkitContext","arContext"])if(ok(sy[n]))return sy[n];
+  for(const k in sy){if(k==="el"||k==="sceneEl")continue;let x;try{x=sy[k]}catch(e){continue}
+   if(ok(x))return x;
+   if(x&&typeof x==="object"&&!x.nodeType)for(const j in x){let y;try{y=x[j]}catch(e){continue}if(ok(y))return y}}
+  return null}
+ /* ---------- El video dentro del lienzo de detección ----------
+   El detector trabaja sobre un lienzo apaisado de 320x240, pero el video del celu es vertical (480x640). AR.js lo mete ENCAJADO sin deformar:
+   el video queda de ~180x240 px, centrado, con franjas negras a los costados. La proyección de AR.js está calculada para el lienzo
+   entero (320 de ancho), pero las posiciones que devuelve el detector están medidas sobre ese video angosto (180 de ancho).
+   Resultado: al dibujar, todo lo horizontal salía comprimido ~1,78 veces. Los átomos quedaban más angostos que altos y corridos hacia
+   el centro de la pantalla (a ~60% de la distancia real entre marcadores), y por eso parecían pegarse entre sí.
+   Acá se mide en qué rectángulo cae el video dentro del lienzo de detección y se reescala la proyección a ese rectángulo.
+   ?pk=0 lo desactiva (comportamiento anterior) · ?pk=1.78 fuerza a mano el factor horizontal */
+ const TH=AFRAME.THREE,PK=Q.get("pk"),PKN=PK===null||PK===""||isNaN(+PK)?null:+PK;let rc=null,rcT=-1e9,rcV="";
+ function medir(cv,v){
+  const w=cv.width,h=cv.height,vw=v&&v.videoWidth,vh=v&&v.videoHeight;
+  if(!w||!h||!vw||!vh)return null;
+  const va=vw/vh,ca=w/h;let rw,rh;
+  if(va<ca){rh=h;rw=h*va}else{rw=w;rh=w/va}
+  let r={x0:(w-rw)/2,x1:(w+rw)/2,y0:(h-rh)/2,y1:(h+rh)/2,src:"calc"};/* por cuentas: video encajado y centrado */
+  try{const g=ctx.arController.ctx||cv.getContext("2d");
+   if(g){let x0=w,x1=-1,y0=h,y1=-1;const px=(d,i)=>d[i+3]>0&&(d[i]|d[i+1]|d[i+2])>0;
+    for(const f of[.25,.5,.75]){const d=g.getImageData(0,Math.floor(h*f),w,1).data;for(let i=0;i<w;i++)if(px(d,i*4)){if(i<x0)x0=i;if(i>x1)x1=i}}
+    for(const f of[.25,.5,.75]){const d=g.getImageData(Math.floor(w*f),0,1,h).data;for(let i=0;i<h;i++)if(px(d,i*4)){if(i<y0)y0=i;if(i>y1)y1=i}}
+    if(x1>x0&&y1>y0){const mw=x1-x0+1,mh=y1-y0+1;
+     if(Math.abs(mw/mh/va-1)<.06)r={x0:x0,x1:x1+1,y0:y0,y1:y1+1,src:"medido"};/* se ve encajado: vale lo medido */
+     else if(mw>w*.97&&mh>h*.97)r={x0:0,x1:w,y0:0,y1:h,src:"estirado"}}}}/* estirado al lienzo entero: no hay qué corregir */
+  catch(e){}
+  return r}
+ function sync(){const cam=sc.camera;if(!cam)return;
+  if(!ctx){if(tries++%30===0)ctx=buscar();if(!ctx)return}
+  if(!ctx.arController)return;
+  const m0=ctx.getProjectionMatrix(),e0=m0&&m0.elements;
+  if(!e0||!(e0[0]>0&&e0[5]>0)||!isFinite(e0[0]+e0[5]))return;
+  const m=m0.clone(),cv=ctx.arController.canvas,P=window.__PJ;
+  /* Corrección del video dentro del lienzo de detección (ver nota arriba) */
+  let Ax=1,Bx=0,Ay=1,By=0;
+  if(PKN===null||PKN>0){
+   if(PKN>0){Ax=1/PKN}
+   else if(cv){const v=document.querySelector("video"),now=performance.now(),vk=v?v.videoWidth+"x"+v.videoHeight+"/"+cv.width+"x"+cv.height:"";
+    if((!rc&&now-rcT>400)||(rc&&vk!==rcV)||now-rcT>4000){rcT=now;const r=medir(cv,v);if(r){rc=r;rcV=vk}}
+    if(rc){const w=cv.width,h=cv.height;Ax=(rc.x1-rc.x0)/w;Bx=(rc.x0+rc.x1-w)/w;Ay=(rc.y1-rc.y0)/h;By=(h-rc.y0-rc.y1)/h}}
+   if(Ax>.05&&Ay>.05&&(Math.abs(Ax-1)>.005||Math.abs(Ay-1)>.005||Math.abs(Bx)>.005||Math.abs(By)>.005))
+    m.premultiply(new TH.Matrix4().set(1/Ax,0,0,-Bx/Ax, 0,1/Ay,0,-By/Ay, 0,0,1,0, 0,0,0,1));
+   else{Ax=1;Ay=1}}
+  const e=m.elements;
+  cam.projectionMatrix.copy(m);if(cam.projectionMatrixInverse)cam.projectionMatrixInverse.copy(m).invert();
+  P.ok=1;P.P0=e[0];P.P5=e[5];P.kx=1/Ax;P.ky=1/Ay;P.raw0=e0[0];
+  if(cv){P.cw=cv.width;P.ch=cv.height;P.vr=PKN>0?"manual":(rc?Math.round(rc.x1-rc.x0)+"x"+Math.round(rc.y1-rc.y0)+" "+rc.src:"-")}}
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
+  r.render=function(a,b){try{sync()}catch(e){window.__pjerr=e.message}return o(a,b)}})();
+})();
+/* ---------- Hoja rígida (?fus=1) ----------
+   La hoja impresa es una sola pieza plana y se sabe dónde va cada marcador (grilla de 1,57 anchos de marcador).
+   Con 2 o más marcadores a la vista se calcula UNA pose de la hoja y cada átomo se coloca donde le toca:
+   separación exacta (no se pegan) y menos temblor (mucho menos con 3 o más marcadores).
+   Aprende solo la orientación de los ejes y la escala; si lo calculado no cuadra con lo medido, se usa la pose de siempre.
+   Sin ?fus=1 no hace nada. Se aplica antes del anclaje de abajo, así que necesita que ?lock=0 no esté puesto. */
+function __makeFUS(TH){
+ const PIT=1.567,LRr=7.45,ARr=8.45,LAY={};
+ const put=(z,c,r)=>{LAY[z]=[c*PIT,r*PIT]};
+ put(1,0,0);put(2,17,0);
+ for(let i=0;i<2;i++){put(3+i,i,1);put(11+i,i,2)}
+ for(let i=0;i<6;i++){put(5+i,12+i,1);put(13+i,12+i,2)}
+ for(let i=0;i<18;i++){put(19+i,i,3);put(37+i,i,4)}
+ put(55,0,5);put(56,1,5);put(87,0,6);put(88,1,6);
+ for(let i=0;i<15;i++){put(72+i,3+i,5);put(104+i,3+i,6);put(57+i,2+i,LRr);put(89+i,2+i,ARr)}
+ /* las 24 formas posibles de que los ejes de la hoja (x der., y abajo, z hacia adentro) correspondan a los del marcador */
+ const CAND=[];
+ [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]].forEach(p=>{for(let s=0;s<8;s++){const m=new TH.Matrix4(),e=m.elements;e.fill(0);e[15]=1;
+  for(let r=0;r<3;r++)e[p[r]*4+r]=(s>>r&1)?-1:1;if(m.determinant()>0)CAND.push(m)}});
+ /* lo normal en AR.js: X a la derecha, Y sale del papel, Z hacia abajo del marcador */
+ const PRI=CAND.findIndex(m=>{const e=m.elements;return e[0]===1&&e[9]===-1&&e[6]===1});
+ const S={cost:new Float64Array(CAND.length),neff:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
+ const V3=()=>new TH.Vector3(),Q4=()=>new TH.Quaternion(),tq=Q4(),iq=Q4(),w=V3(),dg=V3(),pr=V3(),pc=V3(),gc=V3(),aa=V3(),bb=V3(),cr=V3(),om=V3(),qb=Q4(),dq=Q4(),qM=Q4(),qMi=Q4(),A=new TH.Matrix3();
+ /* aprende ejes y escala mirando pares de marcadores recién detectados (sin usar poses ya corregidas) */
+ function calib(V,u){
+  const rs=[];let np=0;
+  for(let i=0;i<V.length&&np<8;i++)for(let j=i+1;j<V.length&&np<8;j++){
+   const a=V[i],b=V[j];dg.set(b.gx-a.gx,b.gy-a.gy,0);const L=dg.length();
+   iq.copy(a.q).invert();w.copy(b.p).sub(a.p).applyQuaternion(iq).multiplyScalar(1/u);const wl=w.length();
+   if(L<1e-6||wl<1e-9)continue;np++;rs.push(wl/L);w.multiplyScalar(L/wl);S.neff=S.neff*.995+1;
+   for(let k=0;k<CAND.length;k++){pr.copy(dg).applyMatrix4(CAND[k]);S.cost[k]=S.cost[k]*.995+pr.sub(w).lengthSq()/(L*L)}}
+  if(rs.length){rs.sort((x,y)=>x-y);const m=rs[rs.length>>1];S.ks=S.ks===null?m:S.ks+(m-S.ks)*.05}
+  let b=0;for(let k=1;k<CAND.length;k++)if(S.cost[k]<S.cost[b])b=k;
+  S.sel=S.cost[PRI]<=S.cost[b]*1.5+.05?PRI:b;
+  S.ready=S.neff>=20&&S.cost[S.sel]/S.neff<.15&&S.ks>.7&&S.ks<1.4?1:0}
+ /* una sola pose para toda la hoja; cada marcador se coloca donde le toca. Devuelve false si no cuadra con lo medido */
+ function fuse(V,u){
+  const n=V.length,sk=S.ks*u;
+  qM.setFromRotationMatrix(CAND[S.sel]);qMi.copy(qM).invert();
+  pc.set(0,0,0);gc.set(0,0,0);
+  for(const a of V){pc.add(a.p);a.g.set(a.gx*sk,a.gy*sk,0);gc.add(a.g)}
+  pc.multiplyScalar(1/n);gc.multiplyScalar(1/n);
+  qb.set(0,0,0,0);/* rotación inicial: promedio de las de cada marcador */
+  for(const a of V){tq.copy(a.q).multiply(qM);if(qb.dot(tq)<0)tq.set(-tq.x,-tq.y,-tq.z,-tq.w);qb.set(qb.x+tq.x,qb.y+tq.y,qb.z+tq.z,qb.w+tq.w)}
+  qb.normalize();
+  for(let it=0;it<3;it++){/* afinada con las posiciones (más precisas que los giros) */
+   let s=0,e0=0,e1=0,e2=0,e4=0,e5=0,e8=0;cr.set(0,0,0);
+   for(const a of V){aa.copy(a.g).sub(gc).applyQuaternion(qb);bb.copy(a.p).sub(pc);const q2=aa.lengthSq();s+=q2;
+    e0+=q2-aa.x*aa.x;e1-=aa.x*aa.y;e2-=aa.x*aa.z;e4+=q2-aa.y*aa.y;e5-=aa.y*aa.z;e8+=q2-aa.z*aa.z;cr.add(w.crossVectors(aa,bb))}
+   const l=.02*s+1e-9;A.set(e0+l,e1,e2,e1,e4+l,e5,e2,e5,e8+l);
+   if(Math.abs(A.determinant())<1e-12)break;
+   om.copy(cr).applyMatrix3(A.invert());const ang=Math.min(.5,om.length());if(ang<1e-7)break;
+   dq.setFromAxisAngle(om.normalize(),ang);qb.premultiply(dq)}
+  let mx=0,sm=0,sa=0;
+  for(const a of V){a.fp.copy(a.g).sub(gc).applyQuaternion(qb).add(pc);a.fq.copy(qb).multiply(qMi);
+   const d=a.fp.distanceTo(a.p)/u;mx=Math.max(mx,d);sm+=d;sa+=2*Math.acos(Math.min(1,Math.abs(a.fq.dot(a.q))))}
+  S.dev=sm/n;return mx<1&&sm/n<.5&&sa/n<1.1}
+ return{LAY,CAND,S,calib,fuse}}
+
+const FUS=__makeFUS(AFRAME.THREE);
+const __sigPose=o=>o.matrixAutoUpdate?[o.position.x,o.position.y,o.position.z,o.quaternion.x,o.quaternion.y,o.quaternion.z,o.quaternion.w]:o.matrix.elements.slice();
+const __samePose=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
+/* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
+   Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
+   y los dos modelos terminan en el punto medio; además, como el ajuste de tamaño usa la distancia entre marcadores,
+   esa distancia "falsa" (casi 0) los achicaba.
+   Solución: antes de dibujar cada cuadro se revisa la posición que reportó el detector y se descarta si es imposible:
+     A) dos marcadores a menos de COL anchos de marcador (no caben así: un marcador mide 1 ancho),
+     B) una posición que cae justo donde otro marcador tiene anclado su modelo,
+     C) un salto de más de SALTO anchos en un solo cuadro (solo se acepta si se repite 4 cuadros seguidos).
+   Si se descarta, el modelo se queda en su último lugar bueno. Además suaviza el temblor (reemplaza el "smooth" de AR.js).
+   ?lock=0 lo desactiva y vuelve al comportamiento anterior · ?col=0.75 distancia mínima · ?salto=1 salto máximo por cuadro */
+(function(){
+ if(Q.get("lock")==="0")return;
+ const COL=Q.get("col")===null?.75:+Q.get("col"),SALTO=Q.get("salto")===null?1:+Q.get("salto"),GAP=400,CONF=4,TH=AFRAME.THREE,sc=document.querySelector("a-scene");
+ const V=()=>new TH.Vector3();
+ const L=[...document.querySelectorAll("a-marker")].map(m=>({id:m.id,o:m.object3D,w:m.querySelector(":scope > a-entity"),has:0,seen:-1e9,hid:0,snap:0,ok:0,u:1,cn:0,
+  p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V()}));
+ window.__LK={no:0};
+ const FUSE=Q.get("fus")==="1";window.__FUS=FUSE?FUS.S:null;
+ if(FUSE)L.forEach(a=>{const l=FUS.LAY[+a.id.slice(1)];a.lay=l||null;a.it=l?{p:a.rp,q:a.rq,gx:l[0],gy:l[1],g:V(),fp:V(),fq:new TH.Quaternion()}:null});
+ function fusiona(v){const S=FUS.S,F=v.filter(a=>a.it);S.n=F.length;S.on=0;if(F.length<2)return;
+  let u=0;F.forEach(a=>u+=a.rs.x);u/=F.length;if(!(u>1e-6))return;
+  const fr=F.filter(a=>a.fr);if(fr.length>=2)FUS.calib(fr.map(a=>a.it),u);/* aprende solo con detecciones nuevas */
+  if(!S.ready)return;
+  if(FUS.fuse(F.map(a=>a.it),u)){F.forEach(a=>{a.rp.copy(a.it.fp);a.rq.copy(a.it.fq)});S.on=1}else S.rej++}
+ const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
+ const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true;a.sg=__sigPose(o)};
+ function paso(){
+  const now=performance.now(),v=[];
+  for(const a of L){
+   const st=window.__ST&&window.__ST[a.id]?window.__ST[a.id]():null,real=st?st[0]:a.o.visible;
+   if(!real)continue;
+   if(now-a.seen>GAP){a.has=0;a.cn=0}/* estuvo perdido: la posición vieja ya no sirve */
+   a.seen=now;a.fr=!a.sg||!__samePose(a.sg,__sigPose(a.o));leer(a);v.push(a)}
+  if(FUSE)try{fusiona(v)}catch(e){window.__lkerr="fus "+e.message}
+  for(const a of v){a.ok=1;a.u=a.rs.x>1e-6?a.rs.x:1;
+   for(const b of v){if(b===a)continue;
+    if(a.rp.distanceTo(b.rp)/a.u<COL){a.ok=0;break}/* A: encimados */
+    if(b.has&&a.rp.distanceTo(b.p)/a.u<COL){a.ok=0;break}}/* B: cayó donde está el modelo del otro */
+   if(a.ok&&a.has){const d=a.rp.distanceTo(a.p)/a.u;
+    if(d>SALTO){/* C: salto grande, solo vale si se mantiene */
+     if(a.cn>0&&a.rp.distanceTo(a.cp)/a.u<.4)a.cn++;else a.cn=1;a.cp.copy(a.rp);
+     if(a.cn>=CONF){a.snap=1;a.cn=0}else a.ok=0}
+    else a.cn=0}
+   else if(!a.ok)a.cn=0}
+  for(const a of v){
+   if(a.ok){
+    if(!a.has||a.snap){a.p.copy(a.rp);a.q.copy(a.rq);a.s.copy(a.rs);a.has=1;a.snap=0}
+    else{const k=Math.min(1,.18+2*a.rp.distanceTo(a.p)/a.u);a.p.lerp(a.rp,k);a.q.slerp(a.rq,k);a.s.lerp(a.rs,k)}
+    if(a.hid&&a.w){a.w.object3D.visible=true;a.hid=0}
+    poner(a)}
+   else{window.__LK.no++;
+    if(a.has)poner(a);/* rechazado: se queda donde estaba */
+    else if(a.w&&!a.hid){a.w.object3D.visible=false;a.hid=1}}}}/* primera vez y en conflicto: esperar a una posición creíble */
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
+  r.render=function(a,b){try{paso()}catch(e){window.__lkerr=e.message}return o(a,b)}})();
+})();
+
+(function f(){const v=document.querySelector("video"),st=v&&v.srcObject;if(!st)return setTimeout(f,500);
+const k=st.getVideoTracks()[0],cp=k.getCapabilities?k.getCapabilities():{};
+if(cp.focusMode&&cp.focusMode.includes("continuous"))k.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(()=>{})})();
+(function(){const sc=document.querySelector("a-scene"),mode=new URLSearchParams(location.search).get("v")||"cover";
+const S=(e,o)=>{for(const k in o)e.style.setProperty(k,o[k],"important")};
+function fix(){requestAnimationFrame(fix);if(new URLSearchParams(location.search).get("nofix"))return;
+ const v=document.querySelector("video"),c=document.querySelector("canvas.a-canvas")||document.querySelector("a-scene canvas"),r=sc&&sc.renderer;
+ if(!v||!c||!r||!v.videoWidth)return;
+ let L,T,W,H;
+ if(mode=="contain"){const k=Math.min(innerWidth/v.videoWidth,innerHeight/v.videoHeight);W=v.videoWidth*k;H=v.videoHeight*k;L=(innerWidth-W)/2;T=(innerHeight-H)/2;
+  S(v,{position:"fixed",left:L+"px",top:T+"px",width:W+"px",height:H+"px",margin:"0"})}
+ else{const b=v.getBoundingClientRect();L=b.left;T=b.top;W=b.width;H=b.height}
+ S(c,{position:"fixed",left:L+"px",top:T+"px",width:W+"px",height:H+"px",margin:"0"});
+ const pr=Math.min(devicePixelRatio||1,2,2200/Math.max(W,H)),bw=Math.round(W*pr),bh=Math.round(H*pr);
+ /* Solo este bloque puede cambiar el tamaño del lienzo: cada setSize lo borra y se ve como un parpadeo */
+ if(!r.__w){r.__w=1;const o=r.setSize.bind(r);r.setSize=function(a,b,u){if(!window.__mine){window.__blk=(window.__blk||0)+1;return}return o(a,b,u)}}
+ window.__obj=bw+"x"+bh;
+ if(Math.abs(c.width-bw)>bw*.02||Math.abs(c.height-bh)>bh*.02){window.__rs=(window.__rs||0)+1;window.__mine=1;r.setPixelRatio(1);r.setSize(bw,bh,false);window.__mine=0}}
+fix()})();
+if(new URLSearchParams(location.search).get("d")){const d=document.createElement("div");d.style.cssText="position:fixed;top:44px;left:0;z-index:20;background:rgba(0,0,0,.75);color:#0f0;font:11px monospace;padding:4px;white-space:pre";document.body.appendChild(d);
+const FR={n:0,last:performance.now(),max:0,r0:performance.now(),c0:0,fps:0,pk:0};
+(function w(){const r=document.querySelector("a-scene").renderer;if(!r)return setTimeout(w,300);const o=r.render.bind(r);
+ r.render=function(a,b){const t=performance.now(),g=t-FR.last;FR.last=t;if(g>FR.max)FR.max=g;FR.n++;return o(a,b)}})();
+setInterval(()=>{const v=document.querySelector("video"),c=document.querySelector("a-scene canvas"),t=performance.now();
+ FR.fps=(FR.n-FR.c0)*1000/(t-FR.r0);FR.c0=FR.n;FR.r0=t;if(t-(FR.rst||0)>5000){FR.pk=FR.max;FR.max=0;FR.rst=t}
+ const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
+ d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
+ +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+" · desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej:"apagada (agrega ?fus=1)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
+for(const z in D){const m=document.getElementById("m"+z);
+ m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
+ m.addEventListener("markerLost",()=>{if(cur==z){t.textContent="Apunta la cámara a un marcador";s.textContent="azul = electrones · núcleo: rojo = protones, celeste = neutrones"}})}
+</script>
+<script>
+/*LOGICA*/
+const CAPAS=(function(){
+ const CATS=[["pro","Protones","#ff4d4d"],["neu","Neutrones","#9fb4c8"],["ele","Electrones","#3d9bff"],["niv","Niveles de energía","#e6ecff"],
+  ["s","Subniveles s","#ff8aa0"],["p","Subniveles p","#ffd84a"],["d","Subniveles d","#4dd98a"],["f","Subniveles f","#c08cff"]],NIVS=[1,2,3,4,5,6,7];
+ const est={},niv={};CATS.forEach(c=>est[c[0]]=1);NIVS.forEach(n=>niv[n]=1);let atenuar=0;const DIM=.15;
+ try{const g=JSON.parse(localStorage.getItem("capas")||"null");if(g){CATS.forEach(c=>{if(g.est&&c[0] in g.est)est[c[0]]=g.est[c[0]]?1:0});
+  NIVS.forEach(n=>{if(g.niv&&n in g.niv)niv[n]=g.niv[n]?1:0});atenuar=g.atenuar?1:0}}catch(e){}
+ /* Un estado de capas por átomo: cada uno parte de los valores generales (ESN) y después cambia solo. CAPAS.est / niv / atenuar son los del átomo seleccionado (CAPAS.usar(z));
+    si no hay ninguno seleccionado son los generales (ESN), y CAPAS.muta(fn) aplica el cambio a todos los átomos y a los que aparezcan después */
+ const copiaDe=o=>({est:Object.assign({},o.est),niv:Object.assign({},o.niv),atenuar:o.atenuar});
+ const ESTS={},ESN=copiaDe({est,niv,atenuar});let cur=ESN;
+ const estDe=z=>ESTS[z]||(ESTS[z]=copiaDe(ESN));
+ function muta(fn){if(cur===ESN){fn(ESN);for(const z in ESTS)fn(ESTS[z])}else fn(cur)}
+ function usar(z){cur=z==null?ESN:estDe(z)}
+ const guardar=()=>{try{localStorage.setItem("capas",JSON.stringify({est:cur.est,niv:cur.niv,atenuar:cur.atenuar}))}catch(e){}};
+ function zDe(root){let z=root.userData.__z;if(z==null){const el=root.el,mk=el&&el.closest&&el.closest("a-marker");z=mk&&/^m\d+$/.test(mk.id)?+mk.id.slice(1):null;if(z!=null)root.userData.__z=z}return z}
+ function porNombre(n){n=n||"";let m;
+  if(/^proton/i.test(n))return"pro";if(/^neutron/i.test(n))return"neu";if(/^electron/i.test(n))return"ele";if(/^nivel/i.test(n))return"niv";
+  if(m=/^orbital_?\d+([spdf])/i.exec(n))return m[1].toLowerCase();return null}
+ /* nivel n según el nombre: Nivel_n2, Orbital_2p_0, Electron_n2_005 (sin nivel -> siempre visible) */
+ function nivelNombre(n){n=n||"";let m;if(m=/^nivel_?n?(\d+)/i.exec(n))return+m[1];if(m=/^orbital_?(\d+)[spdf]/i.exec(n))return+m[1];if(m=/^electron_?n(\d+)/i.exec(n))return+m[1];return null}
+ const cl=(a,b)=>Math.abs(a-b)<.06;
+ function porColor(m){const c=m&&m.color;if(!c)return null;const e=m.emissive&&(m.emissive.r+m.emissive.g+m.emissive.b)>.05;
+  const is=(r,g,b)=>cl(c.r,r)&&cl(c.g,g)&&cl(c.b,b);
+  if(is(.1,.5,1))return"ele";if(is(.85,.12,.18))return"pro";if(is(.55,.75,.92))return"neu";if(e)return"niv";
+  if(m.transparent&&m.opacity<.5){if(is(.92,.25,.25))return"s";if(is(.97,.85,.2))return"p";if(is(.25,.72,.36))return"d";if(is(.76,.42,.92))return"f"}
+  return null}
+ const mats=o=>(Array.isArray(o.material)?o.material:[o.material]).filter(Boolean);
+ function categoria(o){for(let x=o,i=0;x&&i<3;x=x.parent,i++){const k=porNombre(x.name);if(k)return k}
+  for(const m of mats(o)){const k=porNombre(m.name)||porColor(m);if(k)return k}return null}
+ function nivel(o){for(let x=o,i=0;x&&i<3;x=x.parent,i++){const k=nivelNombre(x.name);if(k!==null)return k}return null}
+ const guarda=m=>{if(!m.userData.__c)m.userData.__c={op:m.opacity,tr:m.transparent,dw:m.depthWrite};return m.userData.__c};
+ /* Volumen de los lóbulos s, p, d y f: efecto burbuja de jabón. Según cuánto mira cada punto de la superficie hacia la cámara (0° = de frente, 90° = de canto):
+    - el centro (de frente) queda más transparente y el borde más opaco; a media inclinación (45°) la opacidad y el color son exactamente los originales.
+    - en el borde, además, el color se avanza un poco hacia su versión más viva (brillo), para que el contorno de cada lóbulo se marque con color y no se pierda.
+    Núcleo, electrones, anillos y la esfera de oclusión no se tocan.
+    Ajustes: centro = fracción de la opacidad original de frente (1 = igual que antes); exp = qué tan rápido crece hacia el borde; tope = opacidad máxima; brillo = color extra en el borde (0 = nada). */
+ const BURB={centro:.35,exp:2,tope:.92,brillo:.65};
+ const BURB_VS="vBubN=normalize(normalMatrix*normal);vBubP=(modelViewMatrix*vec4(transformed,1.0)).xyz;";
+ /* va justo antes del tonemapping: gl_FragColor ya tiene la luz aplicada y el alfa final; diffuseColor sigue siendo el color base del material */
+ const BURB_FS="{float bl=length(vBubN);if(bl>0.0001){float bc=clamp(abs(dot(vBubN/bl,normalize(-vBubP))),0.0,1.0);float bt=acos(bc)*0.63662;"
+  +"float bf="+BURB.centro.toFixed(4)+"+"+(1-BURB.centro).toFixed(4)+"*pow(max(bt*2.0,0.0001),"+BURB.exp.toFixed(4)+");"
+  +"gl_FragColor.a=min(gl_FragColor.a*bf,max(gl_FragColor.a,"+BURB.tope.toFixed(4)+"));"
+  +"gl_FragColor.rgb+=diffuseColor.rgb*smoothstep(0.5,1.0,bt)*"+BURB.brillo.toFixed(4)+";}}";
+ function bubOBC(sh){const A="#include <begin_vertex>",B="#include <tonemapping_fragment>";
+  if(sh.vertexShader.indexOf(A)<0||sh.fragmentShader.indexOf(B)<0)return;
+  sh.vertexShader="varying vec3 vBubN;\nvarying vec3 vBubP;\n"+sh.vertexShader.replace(A,A+"\n"+BURB_VS);
+  sh.fragmentShader="varying vec3 vBubN;\nvarying vec3 vBubP;\n"+sh.fragmentShader.replace(B,BURB_FS+"\n"+B)}
+ /* un material clonado (al atenuar) pierde el onBeforeCompile: por eso se reaplica en cada pasada y se reconoce por la función, no por una marca en userData */
+ function burbuja(m){if(!m||m.isShaderMaterial||m.colorWrite===false||m.onBeforeCompile===bubOBC)return;
+  m.onBeforeCompile=bubOBC;m.customProgramCacheKey=()=>"burbuja2";m.needsUpdate=true}
+ function esOcl(o){for(let x=o,i=0;x&&i<3;x=x.parent,i++){if(/oclu|occl|^esfera/i.test(x.name||""))return true}return false}
+ function aplicarModelo(root,S){if(!S||!S.est){const z=zDe(root);S=z==null?cur:estDe(z)}const E=S.est,N=S.niv,A=S.atenuar;root.traverse(o=>{if(!o.isMesh)return;const u=o.userData;
+  if(u.__cat===undefined){u.__cat=categoria(o);u.__niv=nivel(o)}const k=u.__cat;if(!k)return;
+  const lob=(k==="s"||k==="p"||k==="d"||k==="f")&&!esOcl(o);
+  const on=!!E[k]&&(u.__niv==null||!!N[u.__niv]),dim=!on&&A;o.visible=on||!!A;
+  /* los electrones comparten material: al atenuar cada objeto necesita el suyo */
+  if(dim&&!u.__cl){u.__cl=1;mats(o).forEach(guarda);const cp=m=>{const c=m.clone();c.userData.__c=m.userData.__c;return c};
+   o.material=Array.isArray(o.material)?o.material.map(cp):cp(o.material)}
+  for(const m of mats(o)){const c=guarda(m);
+   if(lob&&c.tr)burbuja(m);
+   const op=dim?c.op*DIM:c.op,tr=dim?true:c.tr,dw=dim?false:c.dw;
+   if(m.opacity!==op||m.transparent!==tr||m.depthWrite!==dw){const t=m.transparent!==tr;m.opacity=op;m.transparent=tr;m.depthWrite=dw;if(t)m.needsUpdate=true}}})}
+ return{CATS,NIVS,get est(){return cur.est},get niv(){return cur.niv},get atenuar(){return cur.atenuar},set atenuar(v){cur.atenuar=v?1:0},guardar,categoria,nivel,aplicarModelo,usar,muta,estado:z=>z==null?ESN:estDe(z)}})();
+/*FIN LOGICA*/
+
+/* ---------- Capas: botones para mostrar, ocultar o atenuar partes del modelo, y selector de niveles ---------- */
+(function(){
+ const raices=()=>[...document.querySelectorAll("[gltf-model]")].map(e=>e.object3D).filter(Boolean);
+ const todo=()=>raices().forEach(r=>CAPAS.aplicarModelo(r));
+ const b=document.createElement("button");b.id="capb";b.textContent="Capas";b.setAttribute("aria-expanded","false");
+ const p=document.createElement("div");p.id="capp";p.hidden=true;
+ p.innerHTML='<div class="ch">Capas del átomo</div><div class="cg"></div><div class="cf"><button data-a="todo">Todo</button><button data-a="nada">Nada</button></div>'
+  +'<div class="ch sec">Niveles de energía (n)</div><div class="cn"></div><div class="cf cv"><button data-v="todo">Todos</button><button data-v="nada">Ninguno</button></div>'
+  +'<label class="ca"><input type="checkbox" id="capt"> Atenuar en vez de ocultar</label>';
+ document.body.appendChild(b);document.body.appendChild(p);
+ const g=p.querySelector(".cg"),gn=p.querySelector(".cn"),ch={},cn={};
+ CAPAS.CATS.forEach(([k,n,col])=>{const x=document.createElement("button");x.className="chip";x.dataset.k=k;x.style.setProperty("--c",col);
+  x.innerHTML="<i></i>"+n;g.appendChild(x);ch[k]=x;
+  x.addEventListener("click",()=>{const v=CAPAS.est[k]?0:1;CAPAS.muta(s=>{s.est[k]=v});sync();todo()})});
+ CAPAS.NIVS.forEach(n=>{const x=document.createElement("button");x.textContent=n;x.setAttribute("aria-label","Nivel "+n);gn.appendChild(x);cn[n]=x;
+  x.addEventListener("click",()=>{const v=CAPAS.niv[n]?0:1;CAPAS.muta(s=>{s.niv[n]=v});sync();todo()})});
+ const t=p.querySelector("#capt");
+ function sync(ns){for(const k in ch){const on=!!CAPAS.est[k];ch[k].classList.toggle("on",on);ch[k].setAttribute("aria-pressed",on)}
+  for(const n in cn){const on=!!CAPAS.niv[n];cn[n].classList.toggle("on",on);cn[n].setAttribute("aria-pressed",on)}
+  t.checked=!!CAPAS.atenuar;if(!ns)CAPAS.guardar()}
+ p.querySelectorAll(".cf:not(.cv) button").forEach(x=>x.addEventListener("click",()=>{const v=x.dataset.a=="todo"?1:0;CAPAS.muta(s=>{for(const k in s.est)s.est[k]=v});sync();todo()}));
+ p.querySelectorAll(".cv button").forEach(x=>x.addEventListener("click",()=>{const v=x.dataset.v=="todo"?1:0;CAPAS.muta(s=>{for(const n in s.niv)s.niv[n]=v});sync();todo()}));
+ t.addEventListener("change",()=>{const v=t.checked?1:0;CAPAS.muta(s=>{s.atenuar=v});sync();todo()});
+ b.addEventListener("click",()=>{p.hidden=!p.hidden;b.setAttribute("aria-expanded",!p.hidden);b.classList.toggle("on",!p.hidden)});
+ sync();
+ /* el panel siempre está activo: con un átomo seleccionado cambia solo ese; sin selección cambia a todos */
+ {const hd=p.querySelector(".ch");
+  const sel=()=>{const S=window.SEL;if(!S)return;CAPAS.usar(S.z);const z=S.z,d=window.__DAT&&window.__DAT[z];
+   hd.textContent="Capas del átomo";if(z==null?S.n>=2:true){const sp=document.createElement("span");sp.style.cssText="font-weight:400;opacity:.8";sp.textContent=z==null?" · afecta a todos (tocá un átomo para elegir uno)":" · "+(d?d.n:"seleccionado");hd.appendChild(sp)}sync(1)};
+  if(window.SEL){window.SEL.on(sel);sel()}}
+ document.addEventListener("model-loaded",e=>{const o=e.target&&e.target.object3D;if(o)CAPAS.aplicarModelo(o)});
+ document.querySelectorAll("a-marker").forEach(m=>m.addEventListener("markerFound",()=>{const e=m.querySelector("[gltf-model]");if(e&&e.object3D)CAPAS.aplicarModelo(e.object3D)}));
+ setTimeout(todo,2500);setTimeout(todo,6000);
+})();
+
+/* ---------- Girar: un dedo arrastrando hacia los costados gira el átomo sobre el eje Z del marcador; arrastrando hacia arriba/abajo, sobre el eje X.
+   El eje Y queda bloqueado a propósito: se logra girando el marcador o moviendo el celular.
+   La rotación automática (botón Rotación) gira en diagonal, entre los ejes X y Z. ---------- */
+(function(){
+ const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),EJX=new TH.Vector3(1,0,0),DIAG=new TH.Vector3(1,0,1).normalize(),K=.01,q=new TH.Quaternion(),qy=new TH.Quaternion(),qd=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),b2=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
+ const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut,#tutb");
+ const marcadores=()=>[...document.querySelectorAll("a-marker")];
+ const GV=.7;let ON0=0;try{ON0=localStorage.getItem("giro")==="1"?1:0}catch(e){}
+ /* Cada átomo gira por su cuenta: g.on = rotación automática, g.ang = su ángulo, g.lock = posición original.
+    Arrastrar, Rotación y Posición original actúan solo sobre el átomo seleccionado. */
+ const gs=m=>m.__g||(m.__g={on:ON0,ang:0,lock:0});
+ const selM=()=>{const z=window.SEL?window.SEL.z:null;return z==null?null:document.getElementById("m"+z)};
+ let pid=null,x0=0,y0=0;
+ addEventListener("pointerdown",e=>{if(pid!==null||ui(e)||window.__fix)return;const m=selM();if(!m||gs(m).lock)return;pid=e.pointerId;x0=e.clientX;y0=e.clientY},true);
+ addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;const m=selM();if(!m||!m.object3D.visible)return;const dx=e.clientX-x0,dy=e.clientY-y0;x0=e.clientX;y0=e.clientY;
+  /* el sentido sale de cómo se ve el eje en pantalla: la cara visible del átomo sigue al dedo aunque se gire el marcador */
+  m.object3D.getWorldQuaternion(qm);ce.object3D.getWorldQuaternion(qc);a.copy(EJE).applyQuaternion(qm).applyQuaternion(qc.invert());
+  const vx=a.y,vy=-a.x,n=Math.hypot(vx,vy),f=n<.25?4:1/n;
+  m.__tilt=(m.__tilt||0)+K*(dx*vx-dy*vy)*f;
+  /* eje X (el tercero): mismo criterio que Z, el sentido sale de cómo se ve el eje en pantalla.
+     Ese eje gira junto con el átomo cuando se lo gira sobre Z (por eso se le aplica ese giro): así, aunque el átomo quede de espaldas, el giro sigue al dedo */
+  b2.copy(EJX).applyQuaternion(q.setFromAxisAngle(EJE,m.__tilt)).applyQuaternion(qm).applyQuaternion(qc);const wx=b2.y,wy=-b2.x,n2=Math.hypot(wx,wy),f2=n2<.25?4:1/n2;
+  m.__tx=(m.__tx||0)+K*(dx*wx-dy*wy)*f2},true);
+ const fin=e=>{if(e.pointerId===pid)pid=null};addEventListener("pointerup",fin,true);addEventListener("pointercancel",fin,true);
+ /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
+ {const cp=document.getElementById("capp");
+  if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Movimiento</div><div class="cg"><button type="button" class="tgl" id="giroB">Rotación</button><button type="button" class="tgl" id="posB">Posición original</button></div>');
+   /* con un átomo seleccionado, estos botones actúan sobre ese; sin selección, sobre todos */
+   const objs=()=>{const m=selM();return m?[m]:marcadores()},
+    b=cp.querySelector("#giroB"),p=cp.querySelector("#posB"),
+    pint=()=>{const T=objs(),on=T.length>0&&T.every(m=>gs(m).on),lk=T.length>0&&T.every(m=>gs(m).lock);b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);b.disabled=!T.length||lk;p.classList.toggle("on",lk);p.setAttribute("aria-pressed",lk);p.disabled=!T.length};
+   b.addEventListener("click",()=>{const T=objs().filter(m=>!gs(m).lock);if(!T.length)return;const nv=T.every(m=>gs(m).on)?0:1;T.forEach(m=>{gs(m).on=nv});try{localStorage.setItem("giro",nv)}catch(e){}pint()});
+   /* Posición original: deja el átomo en su orientación predeterminada, frena su rotación y bloquea el arrastre.
+      Al desactivarlo solo se desbloquea: el átomo se queda donde está, no vuelve a la posición anterior. */
+   p.addEventListener("click",()=>{const T=objs();if(!T.length)return;const nv=T.every(m=>gs(m).lock)?0:1;
+    T.forEach(m=>{const g=gs(m);g.lock=nv;if(nv){g.on=0;g.ang=0;m.__tilt=0;m.__tx=0}});
+    if(nv){try{localStorage.setItem("giro",0)}catch(e){}pid=null}
+    pint()});pint();if(window.SEL)window.SEL.on(pint)}}
+ let tp=performance.now();
+ (function tk(now){requestAnimationFrame(tk);now=now||performance.now();const dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
+  for(const m of marcadores()){const w=m.querySelector(":scope > a-entity");if(!w||w.object3D.parent!==m.object3D)continue;
+   const g=gs(m);if(g.on)g.ang=(g.ang+GV*dt)%(Math.PI*2);
+   q.setFromAxisAngle(EJE,m.__tilt||0);qy.setFromAxisAngle(EJX,m.__tx||0);qd.setFromAxisAngle(DIAG,g.ang);
+   w.object3D.quaternion.copy(q.multiply(qy).multiply(qd))}})();
+})();
+
+/* ---------- Datos: banner translúcido a todo el ancho, desde arriba de la pantalla (por debajo de Grupos y Capas) ---------- */
+(function(){
+ const DAT=window.__DAT={"1":{"n":"Hidrógeno","s":"H","c":"1s¹","ca":"1s¹","ce":"1s¹","f":"No metales","m":1.008,"a":1,"p":1,"g":1,"b":"s","e":2,"fu":13.99,"eb":20.271,"d":0.08988,"du":"g/L","en":2.2,"ie":1312.0,"r":25,"sh":[1]},"2":{"n":"Helio","s":"He","c":"1s²","ca":"1s²","ce":"1s²","f":"Gases nobles","m":4.0026,"a":4,"p":1,"g":18,"b":"s","e":2,"fu":0.95,"eb":4.222,"d":0.1786,"du":"g/L","en":null,"ie":2372.3,"r":120,"sh":[2]},"3":{"n":"Litio","s":"Li","c":"1s² 2s¹","ca":"[He] 2s¹","ce":"2s¹","f":"Metales alcalinos","m":6.94,"a":7,"p":2,"g":1,"b":"s","e":0,"fu":453.65,"eb":1603.0,"d":0.534,"du":"g/cm³","en":0.98,"ie":520.2,"r":145,"sh":[2,1]},"4":{"n":"Berilio","s":"Be","c":"1s² 2s²","ca":"[He] 2s²","ce":"2s²","f":"Alcalinotérreos","m":9.01218,"a":9,"p":2,"g":2,"b":"s","e":0,"fu":1560.0,"eb":2742.0,"d":1.85,"du":"g/cm³","en":1.57,"ie":899.5,"r":105,"sh":[2,2]},"5":{"n":"Boro","s":"B","c":"1s² 2s² 2p¹","ca":"[He] 2s² 2p¹","ce":"2s² 2p¹","f":"Metaloides","m":10.81,"a":11,"p":2,"g":13,"b":"p","e":0,"fu":2349.0,"eb":4200.0,"d":2.08,"du":"g/cm³","en":2.04,"ie":800.6,"r":85,"sh":[2,3]},"6":{"n":"Carbono","s":"C","c":"1s² 2s² 2p²","ca":"[He] 2s² 2p²","ce":"2s² 2p²","f":"No metales","m":12.011,"a":12,"p":2,"g":14,"b":"p","e":0,"fu":4600.0,"eb":null,"d":1.821,"du":"g/cm³","en":2.55,"ie":1086.5,"r":70,"sh":[2,4]},"7":{"n":"Nitrógeno","s":"N","c":"1s² 2s² 2p³","ca":"[He] 2s² 2p³","ce":"2s² 2p³","f":"No metales","m":14.007,"a":14,"p":2,"g":15,"b":"p","e":2,"fu":63.15,"eb":77.355,"d":1.251,"du":"g/L","en":3.04,"ie":1402.3,"r":65,"sh":[2,5]},"8":{"n":"Oxígeno","s":"O","c":"1s² 2s² 2p⁴","ca":"[He] 2s² 2p⁴","ce":"2s² 2p⁴","f":"No metales","m":15.999,"a":16,"p":2,"g":16,"b":"p","e":2,"fu":54.36,"eb":90.188,"d":1.429,"du":"g/L","en":3.44,"ie":1313.9,"r":60,"sh":[2,6]},"9":{"n":"Flúor","s":"F","c":"1s² 2s² 2p⁵","ca":"[He] 2s² 2p⁵","ce":"2s² 2p⁵","f":"Halógenos","m":18.9984,"a":19,"p":2,"g":17,"b":"p","e":2,"fu":53.48,"eb":85.03,"d":1.696,"du":"g/L","en":3.98,"ie":1681.0,"r":50,"sh":[2,7]},"10":{"n":"Neón","s":"Ne","c":"1s² 2s² 2p⁶","ca":"[He] 2s² 2p⁶","ce":"2s² 2p⁶","f":"Gases nobles","m":20.1798,"a":20,"p":2,"g":18,"b":"p","e":2,"fu":24.56,"eb":27.104,"d":0.9002,"du":"g/L","en":null,"ie":2080.7,"r":160,"sh":[2,8]},"11":{"n":"Sodio","s":"Na","c":"1s² 2s² 2p⁶ 3s¹","ca":"[Ne] 3s¹","ce":"3s¹","f":"Metales alcalinos","m":22.9898,"a":23,"p":3,"g":1,"b":"s","e":0,"fu":370.944,"eb":1156.09,"d":0.968,"du":"g/cm³","en":0.93,"ie":495.8,"r":180,"sh":[2,8,1]},"12":{"n":"Magnesio","s":"Mg","c":"1s² 2s² 2p⁶ 3s²","ca":"[Ne] 3s²","ce":"3s²","f":"Alcalinotérreos","m":24.305,"a":24,"p":3,"g":2,"b":"s","e":0,"fu":923.0,"eb":1363.0,"d":1.738,"du":"g/cm³","en":1.31,"ie":737.7,"r":150,"sh":[2,8,2]},"13":{"n":"Aluminio","s":"Al","c":"1s² 2s² 2p⁶ 3s² 3p¹","ca":"[Ne] 3s² 3p¹","ce":"3s² 3p¹","f":"Otros metales","m":26.9815,"a":27,"p":3,"g":13,"b":"p","e":0,"fu":933.47,"eb":2743.0,"d":2.7,"du":"g/cm³","en":1.61,"ie":577.5,"r":125,"sh":[2,8,3]},"14":{"n":"Silicio","s":"Si","c":"1s² 2s² 2p⁶ 3s² 3p²","ca":"[Ne] 3s² 3p²","ce":"3s² 3p²","f":"Metaloides","m":28.085,"a":28,"p":3,"g":14,"b":"p","e":0,"fu":1687.0,"eb":3538.0,"d":2.329,"du":"g/cm³","en":1.9,"ie":786.5,"r":110,"sh":[2,8,4]},"15":{"n":"Fósforo","s":"P","c":"1s² 2s² 2p⁶ 3s² 3p³","ca":"[Ne] 3s² 3p³","ce":"3s² 3p³","f":"No metales","m":30.9738,"a":31,"p":3,"g":15,"b":"p","e":0,"fu":317.3,"eb":null,"d":1.823,"du":"g/cm³","en":2.19,"ie":1011.8,"r":100,"sh":[2,8,5]},"16":{"n":"Azufre","s":"S","c":"1s² 2s² 2p⁶ 3s² 3p⁴","ca":"[Ne] 3s² 3p⁴","ce":"3s² 3p⁴","f":"No metales","m":32.06,"a":32,"p":3,"g":16,"b":"p","e":0,"fu":388.36,"eb":717.8,"d":2.07,"du":"g/cm³","en":2.58,"ie":999.6,"r":100,"sh":[2,8,6]},"17":{"n":"Cloro","s":"Cl","c":"1s² 2s² 2p⁶ 3s² 3p⁵","ca":"[Ne] 3s² 3p⁵","ce":"3s² 3p⁵","f":"Halógenos","m":35.45,"a":35,"p":3,"g":17,"b":"p","e":2,"fu":171.6,"eb":239.11,"d":3.2,"du":"g/L","en":3.16,"ie":1251.2,"r":100,"sh":[2,8,7]},"18":{"n":"Argón","s":"Ar","c":"1s² 2s² 2p⁶ 3s² 3p⁶","ca":"[Ne] 3s² 3p⁶","ce":"3s² 3p⁶","f":"Gases nobles","m":39.9481,"a":40,"p":3,"g":18,"b":"p","e":2,"fu":83.81,"eb":87.302,"d":1.784,"du":"g/L","en":null,"ie":1520.6,"r":71,"sh":[2,8,8]},"19":{"n":"Potasio","s":"K","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹","ca":"[Ar] 4s¹","ce":"4s¹","f":"Metales alcalinos","m":39.0983,"a":39,"p":4,"g":1,"b":"s","e":0,"fu":336.7,"eb":1032.0,"d":0.862,"du":"g/cm³","en":0.82,"ie":418.8,"r":220,"sh":[2,8,8,1]},"20":{"n":"Calcio","s":"Ca","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 4s²","ca":"[Ar] 4s²","ce":"4s²","f":"Alcalinotérreos","m":40.0784,"a":40,"p":4,"g":2,"b":"s","e":0,"fu":1115.0,"eb":1757.0,"d":1.55,"du":"g/cm³","en":1.0,"ie":589.8,"r":180,"sh":[2,8,8,2]},"21":{"n":"Escandio","s":"Sc","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹ 4s²","ca":"[Ar] 3d¹ 4s²","ce":"3d¹ 4s²","f":"Metales de transición","m":44.9559,"a":45,"p":4,"g":3,"b":"d","e":0,"fu":1814.0,"eb":3109.0,"d":2.985,"du":"g/cm³","en":1.36,"ie":633.1,"r":160,"sh":[2,8,9,2]},"22":{"n":"Titanio","s":"Ti","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d² 4s²","ca":"[Ar] 3d² 4s²","ce":"3d² 4s²","f":"Metales de transición","m":47.8671,"a":48,"p":4,"g":4,"b":"d","e":0,"fu":1941.0,"eb":3560.0,"d":4.506,"du":"g/cm³","en":1.54,"ie":658.8,"r":140,"sh":[2,8,10,2]},"23":{"n":"Vanadio","s":"V","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d³ 4s²","ca":"[Ar] 3d³ 4s²","ce":"3d³ 4s²","f":"Metales de transición","m":50.9415,"a":51,"p":4,"g":5,"b":"d","e":0,"fu":2183.0,"eb":3680.0,"d":6.0,"du":"g/cm³","en":1.63,"ie":650.9,"r":135,"sh":[2,8,11,2]},"24":{"n":"Cromo","s":"Cr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s¹","ca":"[Ar] 3d⁵ 4s¹","ce":"3d⁵ 4s¹","f":"Metales de transición","m":51.9962,"a":52,"p":4,"g":6,"b":"d","e":0,"fu":2180.0,"eb":2944.0,"d":7.19,"du":"g/cm³","en":1.66,"ie":652.9,"r":140,"sh":[2,8,13,1]},"25":{"n":"Manganeso","s":"Mn","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s²","ca":"[Ar] 3d⁵ 4s²","ce":"3d⁵ 4s²","f":"Metales de transición","m":54.938,"a":55,"p":4,"g":7,"b":"d","e":0,"fu":1519.0,"eb":2334.0,"d":7.21,"du":"g/cm³","en":1.55,"ie":717.3,"r":140,"sh":[2,8,13,2]},"26":{"n":"Hierro","s":"Fe","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁶ 4s²","ca":"[Ar] 3d⁶ 4s²","ce":"3d⁶ 4s²","f":"Metales de transición","m":55.8452,"a":56,"p":4,"g":8,"b":"d","e":0,"fu":1811.0,"eb":3134.0,"d":7.874,"du":"g/cm³","en":1.83,"ie":762.5,"r":140,"sh":[2,8,14,2]},"27":{"n":"Cobalto","s":"Co","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁷ 4s²","ca":"[Ar] 3d⁷ 4s²","ce":"3d⁷ 4s²","f":"Metales de transición","m":58.9332,"a":59,"p":4,"g":9,"b":"d","e":0,"fu":1768.0,"eb":3200.0,"d":8.9,"du":"g/cm³","en":1.88,"ie":760.4,"r":135,"sh":[2,8,15,2]},"28":{"n":"Níquel","s":"Ni","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁸ 4s²","ca":"[Ar] 3d⁸ 4s²","ce":"3d⁸ 4s²","f":"Metales de transición","m":58.6934,"a":59,"p":4,"g":10,"b":"d","e":0,"fu":1728.0,"eb":3003.0,"d":8.908,"du":"g/cm³","en":1.91,"ie":737.1,"r":135,"sh":[2,8,16,2]},"29":{"n":"Cobre","s":"Cu","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s¹","ca":"[Ar] 3d¹⁰ 4s¹","ce":"3d¹⁰ 4s¹","f":"Metales de transición","m":63.5463,"a":64,"p":4,"g":11,"b":"d","e":0,"fu":1357.77,"eb":2835.0,"d":8.96,"du":"g/cm³","en":1.9,"ie":745.5,"r":135,"sh":[2,8,18,1]},"30":{"n":"Zinc","s":"Zn","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s²","ca":"[Ar] 3d¹⁰ 4s²","ce":"3d¹⁰ 4s²","f":"Metales de transición","m":65.382,"a":65,"p":4,"g":12,"b":"d","e":0,"fu":692.68,"eb":1180.0,"d":7.14,"du":"g/cm³","en":1.65,"ie":906.4,"r":135,"sh":[2,8,18,2]},"31":{"n":"Galio","s":"Ga","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p¹","ca":"[Ar] 3d¹⁰ 4s² 4p¹","ce":"4s² 4p¹","f":"Otros metales","m":69.7231,"a":70,"p":4,"g":13,"b":"p","e":0,"fu":302.915,"eb":2673.0,"d":5.91,"du":"g/cm³","en":1.81,"ie":578.8,"r":130,"sh":[2,8,18,3]},"32":{"n":"Germanio","s":"Ge","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p²","ca":"[Ar] 3d¹⁰ 4s² 4p²","ce":"4s² 4p²","f":"Metaloides","m":72.6308,"a":73,"p":4,"g":14,"b":"p","e":0,"fu":1211.4,"eb":3106.0,"d":5.323,"du":"g/cm³","en":2.01,"ie":762.0,"r":125,"sh":[2,8,18,4]},"33":{"n":"Arsénico","s":"As","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p³","ca":"[Ar] 3d¹⁰ 4s² 4p³","ce":"4s² 4p³","f":"Metaloides","m":74.9216,"a":75,"p":4,"g":15,"b":"p","e":0,"fu":1090.0,"eb":null,"d":5.727,"du":"g/cm³","en":2.18,"ie":947.0,"r":115,"sh":[2,8,18,5]},"34":{"n":"Selenio","s":"Se","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁴","ca":"[Ar] 3d¹⁰ 4s² 4p⁴","ce":"4s² 4p⁴","f":"No metales","m":78.9718,"a":79,"p":4,"g":16,"b":"p","e":0,"fu":494.0,"eb":958.0,"d":4.81,"du":"g/cm³","en":2.55,"ie":941.0,"r":115,"sh":[2,8,18,6]},"35":{"n":"Bromo","s":"Br","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁵","ca":"[Ar] 3d¹⁰ 4s² 4p⁵","ce":"4s² 4p⁵","f":"Halógenos","m":79.904,"a":80,"p":4,"g":17,"b":"p","e":1,"fu":265.8,"eb":332.0,"d":3.1028,"du":"g/cm³","en":2.96,"ie":1139.9,"r":115,"sh":[2,8,18,7]},"36":{"n":"Kriptón","s":"Kr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶","ca":"[Ar] 3d¹⁰ 4s² 4p⁶","ce":"4s² 4p⁶","f":"Gases nobles","m":83.7982,"a":84,"p":4,"g":18,"b":"p","e":2,"fu":115.78,"eb":119.93,"d":3.749,"du":"g/L","en":3.0,"ie":1350.8,"r":88,"sh":[2,8,18,8]},"37":{"n":"Rubidio","s":"Rb","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 5s¹","ca":"[Kr] 5s¹","ce":"5s¹","f":"Metales alcalinos","m":85.4678,"a":85,"p":5,"g":1,"b":"s","e":0,"fu":312.45,"eb":961.0,"d":1.532,"du":"g/cm³","en":0.82,"ie":403.0,"r":235,"sh":[2,8,18,8,1]},"38":{"n":"Estroncio","s":"Sr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 5s²","ca":"[Kr] 5s²","ce":"5s²","f":"Alcalinotérreos","m":87.621,"a":88,"p":5,"g":2,"b":"s","e":0,"fu":1050.0,"eb":1650.0,"d":2.64,"du":"g/cm³","en":0.95,"ie":549.5,"r":200,"sh":[2,8,18,8,2]},"39":{"n":"Itrio","s":"Y","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹ 5s²","ca":"[Kr] 4d¹ 5s²","ce":"4d¹ 5s²","f":"Metales de transición","m":88.9058,"a":89,"p":5,"g":3,"b":"d","e":0,"fu":1799.0,"eb":3203.0,"d":4.472,"du":"g/cm³","en":1.22,"ie":600.0,"r":180,"sh":[2,8,18,9,2]},"40":{"n":"Circonio","s":"Zr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d² 5s²","ca":"[Kr] 4d² 5s²","ce":"4d² 5s²","f":"Metales de transición","m":91.2242,"a":91,"p":5,"g":4,"b":"d","e":0,"fu":2128.0,"eb":4650.0,"d":6.52,"du":"g/cm³","en":1.33,"ie":640.1,"r":155,"sh":[2,8,18,10,2]},"41":{"n":"Niobio","s":"Nb","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁴ 5s¹","ca":"[Kr] 4d⁴ 5s¹","ce":"4d⁴ 5s¹","f":"Metales de transición","m":92.9064,"a":93,"p":5,"g":5,"b":"d","e":0,"fu":2750.0,"eb":5017.0,"d":8.57,"du":"g/cm³","en":1.6,"ie":652.1,"r":145,"sh":[2,8,18,12,1]},"42":{"n":"Molibdeno","s":"Mo","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁵ 5s¹","ca":"[Kr] 4d⁵ 5s¹","ce":"4d⁵ 5s¹","f":"Metales de transición","m":95.951,"a":96,"p":5,"g":6,"b":"d","e":0,"fu":2896.0,"eb":4912.0,"d":10.28,"du":"g/cm³","en":2.16,"ie":684.3,"r":145,"sh":[2,8,18,13,1]},"43":{"n":"Tecnecio","s":"Tc","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁵ 5s²","ca":"[Kr] 4d⁵ 5s²","ce":"4d⁵ 5s²","f":"Metales de transición","m":98.0,"a":98,"p":5,"g":7,"b":"d","e":0,"fu":2430.0,"eb":4538.0,"d":11.0,"du":"g/cm³","en":1.9,"ie":702.0,"r":135,"sh":[2,8,18,13,2]},"44":{"n":"Rutenio","s":"Ru","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁷ 5s¹","ca":"[Kr] 4d⁷ 5s¹","ce":"4d⁷ 5s¹","f":"Metales de transición","m":101.072,"a":101,"p":5,"g":8,"b":"d","e":0,"fu":2607.0,"eb":4423.0,"d":12.45,"du":"g/cm³","en":2.2,"ie":710.2,"r":130,"sh":[2,8,18,15,1]},"45":{"n":"Rodio","s":"Rh","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d⁸ 5s¹","ca":"[Kr] 4d⁸ 5s¹","ce":"4d⁸ 5s¹","f":"Metales de transición","m":102.906,"a":103,"p":5,"g":9,"b":"d","e":0,"fu":2237.0,"eb":3968.0,"d":12.41,"du":"g/cm³","en":2.28,"ie":719.7,"r":135,"sh":[2,8,18,16,1]},"46":{"n":"Paladio","s":"Pd","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰","ca":"[Kr] 4d¹⁰","ce":"4d¹⁰","f":"Metales de transición","m":106.421,"a":106,"p":5,"g":10,"b":"d","e":0,"fu":1828.05,"eb":3236.0,"d":12.023,"du":"g/cm³","en":2.2,"ie":804.4,"r":140,"sh":[2,8,18,18]},"47":{"n":"Plata","s":"Ag","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s¹","ca":"[Kr] 4d¹⁰ 5s¹","ce":"4d¹⁰ 5s¹","f":"Metales de transición","m":107.868,"a":108,"p":5,"g":11,"b":"d","e":0,"fu":1234.93,"eb":2435.0,"d":10.49,"du":"g/cm³","en":1.93,"ie":731.0,"r":160,"sh":[2,8,18,18,1]},"48":{"n":"Cadmio","s":"Cd","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s²","ca":"[Kr] 4d¹⁰ 5s²","ce":"4d¹⁰ 5s²","f":"Metales de transición","m":112.414,"a":112,"p":5,"g":12,"b":"d","e":0,"fu":594.22,"eb":1040.0,"d":8.65,"du":"g/cm³","en":1.69,"ie":867.8,"r":155,"sh":[2,8,18,18,2]},"49":{"n":"Indio","s":"In","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p¹","ca":"[Kr] 4d¹⁰ 5s² 5p¹","ce":"5s² 5p¹","f":"Otros metales","m":114.818,"a":115,"p":5,"g":13,"b":"p","e":0,"fu":429.748,"eb":2345.0,"d":7.31,"du":"g/cm³","en":1.78,"ie":558.3,"r":155,"sh":[2,8,18,18,3]},"50":{"n":"Estaño","s":"Sn","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p²","ca":"[Kr] 4d¹⁰ 5s² 5p²","ce":"5s² 5p²","f":"Otros metales","m":118.711,"a":119,"p":5,"g":14,"b":"p","e":0,"fu":505.08,"eb":2875.0,"d":7.365,"du":"g/cm³","en":1.96,"ie":708.6,"r":145,"sh":[2,8,18,18,4]},"51":{"n":"Antimonio","s":"Sb","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p³","ca":"[Kr] 4d¹⁰ 5s² 5p³","ce":"5s² 5p³","f":"Metaloides","m":121.76,"a":122,"p":5,"g":15,"b":"p","e":0,"fu":903.78,"eb":1908.0,"d":6.697,"du":"g/cm³","en":2.05,"ie":834.0,"r":145,"sh":[2,8,18,18,5]},"52":{"n":"Telurio","s":"Te","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁴","ca":"[Kr] 4d¹⁰ 5s² 5p⁴","ce":"5s² 5p⁴","f":"Metaloides","m":127.603,"a":128,"p":5,"g":16,"b":"p","e":0,"fu":722.66,"eb":1261.0,"d":6.24,"du":"g/cm³","en":2.1,"ie":869.3,"r":140,"sh":[2,8,18,18,6]},"53":{"n":"Yodo","s":"I","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁵","ca":"[Kr] 4d¹⁰ 5s² 5p⁵","ce":"5s² 5p⁵","f":"Halógenos","m":126.904,"a":127,"p":5,"g":17,"b":"p","e":0,"fu":386.85,"eb":457.4,"d":4.933,"du":"g/cm³","en":2.66,"ie":1008.4,"r":140,"sh":[2,8,18,18,7]},"54":{"n":"Xenón","s":"Xe","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶","ca":"[Kr] 4d¹⁰ 5s² 5p⁶","ce":"5s² 5p⁶","f":"Gases nobles","m":131.294,"a":131,"p":5,"g":18,"b":"p","e":2,"fu":161.4,"eb":165.051,"d":5.894,"du":"g/L","en":2.6,"ie":1170.4,"r":108,"sh":[2,8,18,18,8]},"55":{"n":"Cesio","s":"Cs","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 6s¹","ca":"[Xe] 6s¹","ce":"6s¹","f":"Metales alcalinos","m":132.905,"a":133,"p":6,"g":1,"b":"s","e":0,"fu":301.7,"eb":944.0,"d":1.93,"du":"g/cm³","en":0.79,"ie":375.7,"r":260,"sh":[2,8,18,18,8,1]},"56":{"n":"Bario","s":"Ba","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 6s²","ca":"[Xe] 6s²","ce":"6s²","f":"Alcalinotérreos","m":137.328,"a":137,"p":6,"g":2,"b":"s","e":0,"fu":1000.0,"eb":2118.0,"d":3.51,"du":"g/cm³","en":0.89,"ie":502.9,"r":215,"sh":[2,8,18,18,8,2]},"57":{"n":"Lantano","s":"La","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 5s² 5p⁶ 5d¹ 6s²","ca":"[Xe] 5d¹ 6s²","ce":"5d¹ 6s²","f":"Lantánidos","m":138.905,"a":139,"p":6,"g":null,"b":"f","e":0,"fu":1193.0,"eb":3737.0,"d":6.162,"du":"g/cm³","en":1.1,"ie":538.1,"r":195,"sh":[2,8,18,18,9,2]},"58":{"n":"Cerio","s":"Ce","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹ 5s² 5p⁶ 5d¹ 6s²","ca":"[Xe] 4f¹ 5d¹ 6s²","ce":"4f¹ 5d¹ 6s²","f":"Lantánidos","m":140.116,"a":140,"p":6,"g":null,"b":"f","e":0,"fu":1068.0,"eb":3716.0,"d":6.77,"du":"g/cm³","en":1.12,"ie":534.4,"r":185,"sh":[2,8,18,19,9,2]},"59":{"n":"Praseodimio","s":"Pr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f³ 5s² 5p⁶ 6s²","ca":"[Xe] 4f³ 6s²","ce":"4f³ 6s²","f":"Lantánidos","m":140.908,"a":141,"p":6,"g":null,"b":"f","e":0,"fu":1208.0,"eb":3403.0,"d":6.77,"du":"g/cm³","en":1.13,"ie":527.0,"r":185,"sh":[2,8,18,21,8,2]},"60":{"n":"Neodimio","s":"Nd","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁴ 5s² 5p⁶ 6s²","ca":"[Xe] 4f⁴ 6s²","ce":"4f⁴ 6s²","f":"Lantánidos","m":144.242,"a":144,"p":6,"g":null,"b":"f","e":0,"fu":1297.0,"eb":3347.0,"d":7.01,"du":"g/cm³","en":1.14,"ie":533.1,"r":185,"sh":[2,8,18,22,8,2]},"61":{"n":"Prometio","s":"Pm","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁵ 5s² 5p⁶ 6s²","ca":"[Xe] 4f⁵ 6s²","ce":"4f⁵ 6s²","f":"Lantánidos","m":145.0,"a":145,"p":6,"g":null,"b":"f","e":0,"fu":1315.0,"eb":3273.0,"d":7.26,"du":"g/cm³","en":1.13,"ie":540.0,"r":185,"sh":[2,8,18,23,8,2]},"62":{"n":"Samario","s":"Sm","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁶ 5s² 5p⁶ 6s²","ca":"[Xe] 4f⁶ 6s²","ce":"4f⁶ 6s²","f":"Lantánidos","m":150.362,"a":150,"p":6,"g":null,"b":"f","e":0,"fu":1345.0,"eb":2173.0,"d":7.52,"du":"g/cm³","en":1.17,"ie":544.5,"r":185,"sh":[2,8,18,24,8,2]},"63":{"n":"Europio","s":"Eu","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁷ 5s² 5p⁶ 6s²","ca":"[Xe] 4f⁷ 6s²","ce":"4f⁷ 6s²","f":"Lantánidos","m":151.964,"a":152,"p":6,"g":null,"b":"f","e":0,"fu":1099.0,"eb":1802.0,"d":5.264,"du":"g/cm³","en":1.2,"ie":547.1,"r":185,"sh":[2,8,18,25,8,2]},"64":{"n":"Gadolinio","s":"Gd","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁷ 5s² 5p⁶ 5d¹ 6s²","ca":"[Xe] 4f⁷ 5d¹ 6s²","ce":"4f⁷ 5d¹ 6s²","f":"Lantánidos","m":157.253,"a":157,"p":6,"g":null,"b":"f","e":0,"fu":1585.0,"eb":3273.0,"d":7.9,"du":"g/cm³","en":1.2,"ie":593.4,"r":180,"sh":[2,8,18,25,9,2]},"65":{"n":"Terbio","s":"Tb","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f⁹ 5s² 5p⁶ 6s²","ca":"[Xe] 4f⁹ 6s²","ce":"4f⁹ 6s²","f":"Lantánidos","m":158.925,"a":159,"p":6,"g":null,"b":"f","e":0,"fu":1629.0,"eb":3396.0,"d":8.23,"du":"g/cm³","en":1.1,"ie":565.8,"r":175,"sh":[2,8,18,27,8,2]},"66":{"n":"Disprosio","s":"Dy","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁰ 5s² 5p⁶ 6s²","ca":"[Xe] 4f¹⁰ 6s²","ce":"4f¹⁰ 6s²","f":"Lantánidos","m":162.5,"a":163,"p":6,"g":null,"b":"f","e":0,"fu":1680.0,"eb":2840.0,"d":8.54,"du":"g/cm³","en":1.22,"ie":573.0,"r":175,"sh":[2,8,18,28,8,2]},"67":{"n":"Holmio","s":"Ho","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹¹ 5s² 5p⁶ 6s²","ca":"[Xe] 4f¹¹ 6s²","ce":"4f¹¹ 6s²","f":"Lantánidos","m":164.93,"a":165,"p":6,"g":null,"b":"f","e":0,"fu":1734.0,"eb":2873.0,"d":8.79,"du":"g/cm³","en":1.23,"ie":581.0,"r":175,"sh":[2,8,18,29,8,2]},"68":{"n":"Erbio","s":"Er","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹² 5s² 5p⁶ 6s²","ca":"[Xe] 4f¹² 6s²","ce":"4f¹² 6s²","f":"Lantánidos","m":167.259,"a":167,"p":6,"g":null,"b":"f","e":0,"fu":1802.0,"eb":3141.0,"d":9.066,"du":"g/cm³","en":1.24,"ie":589.3,"r":175,"sh":[2,8,18,30,8,2]},"69":{"n":"Tulio","s":"Tm","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹³ 5s² 5p⁶ 6s²","ca":"[Xe] 4f¹³ 6s²","ce":"4f¹³ 6s²","f":"Lantánidos","m":168.934,"a":169,"p":6,"g":null,"b":"f","e":0,"fu":1818.0,"eb":2223.0,"d":9.32,"du":"g/cm³","en":1.25,"ie":596.7,"r":175,"sh":[2,8,18,31,8,2]},"70":{"n":"Iterbio","s":"Yb","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 6s²","ca":"[Xe] 4f¹⁴ 6s²","ce":"4f¹⁴ 6s²","f":"Lantánidos","m":173.045,"a":173,"p":6,"g":null,"b":"f","e":0,"fu":1097.0,"eb":1469.0,"d":6.9,"du":"g/cm³","en":1.1,"ie":603.4,"r":175,"sh":[2,8,18,32,8,2]},"71":{"n":"Lutecio","s":"Lu","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹ 6s²","ca":"[Xe] 4f¹⁴ 5d¹ 6s²","ce":"4f¹⁴ 5d¹ 6s²","f":"Lantánidos","m":174.967,"a":175,"p":6,"g":null,"b":"d","e":0,"fu":1925.0,"eb":3675.0,"d":9.841,"du":"g/cm³","en":1.27,"ie":523.5,"r":175,"sh":[2,8,18,32,9,2]},"72":{"n":"Hafnio","s":"Hf","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d² 6s²","ca":"[Xe] 4f¹⁴ 5d² 6s²","ce":"5d² 6s²","f":"Metales de transición","m":178.492,"a":178,"p":6,"g":4,"b":"d","e":0,"fu":2506.0,"eb":4876.0,"d":13.31,"du":"g/cm³","en":1.3,"ie":658.5,"r":155,"sh":[2,8,18,32,10,2]},"73":{"n":"Tántalo","s":"Ta","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d³ 6s²","ca":"[Xe] 4f¹⁴ 5d³ 6s²","ce":"5d³ 6s²","f":"Metales de transición","m":180.948,"a":181,"p":6,"g":5,"b":"d","e":0,"fu":3290.0,"eb":5731.0,"d":16.69,"du":"g/cm³","en":1.5,"ie":761.0,"r":145,"sh":[2,8,18,32,11,2]},"74":{"n":"Wolframio","s":"W","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁴ 6s²","ca":"[Xe] 4f¹⁴ 5d⁴ 6s²","ce":"5d⁴ 6s²","f":"Metales de transición","m":183.841,"a":184,"p":6,"g":6,"b":"d","e":0,"fu":3695.0,"eb":6203.0,"d":19.25,"du":"g/cm³","en":2.36,"ie":770.0,"r":135,"sh":[2,8,18,32,12,2]},"75":{"n":"Renio","s":"Re","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁵ 6s²","ca":"[Xe] 4f¹⁴ 5d⁵ 6s²","ce":"5d⁵ 6s²","f":"Metales de transición","m":186.207,"a":186,"p":6,"g":7,"b":"d","e":0,"fu":3459.0,"eb":5869.0,"d":21.02,"du":"g/cm³","en":1.9,"ie":760.0,"r":135,"sh":[2,8,18,32,13,2]},"76":{"n":"Osmio","s":"Os","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁶ 6s²","ca":"[Xe] 4f¹⁴ 5d⁶ 6s²","ce":"5d⁶ 6s²","f":"Metales de transición","m":190.233,"a":190,"p":6,"g":8,"b":"d","e":0,"fu":3306.0,"eb":5285.0,"d":22.59,"du":"g/cm³","en":2.2,"ie":840.0,"r":130,"sh":[2,8,18,32,14,2]},"77":{"n":"Iridio","s":"Ir","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁷ 6s²","ca":"[Xe] 4f¹⁴ 5d⁷ 6s²","ce":"5d⁷ 6s²","f":"Metales de transición","m":192.217,"a":192,"p":6,"g":9,"b":"d","e":0,"fu":2719.0,"eb":4403.0,"d":22.56,"du":"g/cm³","en":2.2,"ie":880.0,"r":135,"sh":[2,8,18,32,15,2]},"78":{"n":"Platino","s":"Pt","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d⁹ 6s¹","ca":"[Xe] 4f¹⁴ 5d⁹ 6s¹","ce":"5d⁹ 6s¹","f":"Metales de transición","m":195.085,"a":195,"p":6,"g":10,"b":"d","e":0,"fu":2041.4,"eb":4098.0,"d":21.45,"du":"g/cm³","en":2.28,"ie":870.0,"r":135,"sh":[2,8,18,32,17,1]},"79":{"n":"Oro","s":"Au","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s¹","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s¹","ce":"5d¹⁰ 6s¹","f":"Metales de transición","m":196.967,"a":197,"p":6,"g":11,"b":"d","e":0,"fu":1337.33,"eb":3243.0,"d":19.3,"du":"g/cm³","en":2.54,"ie":890.1,"r":135,"sh":[2,8,18,32,18,1]},"80":{"n":"Mercurio","s":"Hg","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s²","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s²","ce":"5d¹⁰ 6s²","f":"Metales de transición","m":200.592,"a":201,"p":6,"g":12,"b":"d","e":1,"fu":234.321,"eb":629.88,"d":13.534,"du":"g/cm³","en":2.0,"ie":1007.1,"r":150,"sh":[2,8,18,32,18,2]},"81":{"n":"Talio","s":"Tl","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p¹","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹","ce":"6s² 6p¹","f":"Otros metales","m":204.38,"a":204,"p":6,"g":13,"b":"p","e":0,"fu":577.0,"eb":1746.0,"d":11.85,"du":"g/cm³","en":1.62,"ie":589.4,"r":190,"sh":[2,8,18,32,18,3]},"82":{"n":"Plomo","s":"Pb","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p²","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²","ce":"6s² 6p²","f":"Otros metales","m":207.21,"a":207,"p":6,"g":14,"b":"p","e":0,"fu":600.61,"eb":2022.0,"d":11.34,"du":"g/cm³","en":1.87,"ie":715.6,"r":180,"sh":[2,8,18,32,18,4]},"83":{"n":"Bismuto","s":"Bi","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p³","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³","ce":"6s² 6p³","f":"Otros metales","m":208.98,"a":209,"p":6,"g":15,"b":"p","e":0,"fu":544.7,"eb":1837.0,"d":9.78,"du":"g/cm³","en":2.02,"ie":703.0,"r":160,"sh":[2,8,18,32,18,5]},"84":{"n":"Polonio","s":"Po","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁴","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴","ce":"6s² 6p⁴","f":"Otros metales","m":209.0,"a":209,"p":6,"g":16,"b":"p","e":0,"fu":527.0,"eb":1235.0,"d":9.196,"du":"g/cm³","en":2.0,"ie":812.1,"r":190,"sh":[2,8,18,32,18,6]},"85":{"n":"Astato","s":"At","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁵","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵","ce":"6s² 6p⁵","f":"Halógenos","m":210.0,"a":210,"p":6,"g":17,"b":"p","e":0,"fu":575.0,"eb":610.0,"d":6.35,"du":"g/cm³","en":2.2,"ie":899.003,"r":127,"sh":[2,8,18,32,18,7]},"86":{"n":"Radón","s":"Rn","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶","ca":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶","ce":"6s² 6p⁶","f":"Gases nobles","m":222.0,"a":222,"p":6,"g":18,"b":"p","e":2,"fu":202.0,"eb":211.5,"d":9.73,"du":"g/L","en":2.2,"ie":1037.0,"r":120,"sh":[2,8,18,32,18,8]},"87":{"n":"Francio","s":"Fr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 7s¹","ca":"[Rn] 7s¹","ce":"7s¹","f":"Metales alcalinos","m":223.0,"a":223,"p":7,"g":1,"b":"s","e":0,"fu":300.0,"eb":950.0,"d":1.87,"du":"g/cm³","en":0.79,"ie":380.0,"r":null,"sh":[2,8,18,32,18,8,1]},"88":{"n":"Radio","s":"Ra","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 7s²","ca":"[Rn] 7s²","ce":"7s²","f":"Alcalinotérreos","m":226.0,"a":226,"p":7,"g":2,"b":"s","e":0,"fu":1233.0,"eb":2010.0,"d":5.5,"du":"g/cm³","en":0.9,"ie":509.3,"r":215,"sh":[2,8,18,32,18,8,2]},"89":{"n":"Actinio","s":"Ac","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 6d¹ 7s²","ca":"[Rn] 6d¹ 7s²","ce":"6d¹ 7s²","f":"Actínidos","m":227.0,"a":227,"p":7,"g":null,"b":"f","e":0,"fu":1500.0,"eb":3500.0,"d":10.0,"du":"g/cm³","en":1.1,"ie":499.0,"r":195,"sh":[2,8,18,32,18,9,2]},"90":{"n":"Torio","s":"Th","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 6s² 6p⁶ 6d² 7s²","ca":"[Rn] 6d² 7s²","ce":"6d² 7s²","f":"Actínidos","m":232.038,"a":232,"p":7,"g":null,"b":"f","e":0,"fu":2023.0,"eb":5061.0,"d":11.724,"du":"g/cm³","en":1.3,"ie":587.0,"r":180,"sh":[2,8,18,32,18,10,2]},"91":{"n":"Protactinio","s":"Pa","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f² 6s² 6p⁶ 6d¹ 7s²","ca":"[Rn] 5f² 6d¹ 7s²","ce":"5f² 6d¹ 7s²","f":"Actínidos","m":231.036,"a":231,"p":7,"g":null,"b":"f","e":0,"fu":1841.0,"eb":4300.0,"d":15.37,"du":"g/cm³","en":1.5,"ie":568.0,"r":180,"sh":[2,8,18,32,20,9,2]},"92":{"n":"Uranio","s":"U","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f³ 6s² 6p⁶ 6d¹ 7s²","ca":"[Rn] 5f³ 6d¹ 7s²","ce":"5f³ 6d¹ 7s²","f":"Actínidos","m":238.029,"a":238,"p":7,"g":null,"b":"f","e":0,"fu":1405.3,"eb":4404.0,"d":19.1,"du":"g/cm³","en":1.38,"ie":597.6,"r":175,"sh":[2,8,18,32,21,9,2]},"93":{"n":"Neptunio","s":"Np","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁴ 6s² 6p⁶ 6d¹ 7s²","ca":"[Rn] 5f⁴ 6d¹ 7s²","ce":"5f⁴ 6d¹ 7s²","f":"Actínidos","m":237.0,"a":237,"p":7,"g":null,"b":"f","e":0,"fu":912.0,"eb":4447.0,"d":20.45,"du":"g/cm³","en":1.36,"ie":604.5,"r":175,"sh":[2,8,18,32,22,9,2]},"94":{"n":"Plutonio","s":"Pu","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁶ 6s² 6p⁶ 7s²","ca":"[Rn] 5f⁶ 7s²","ce":"5f⁶ 7s²","f":"Actínidos","m":244.0,"a":244,"p":7,"g":null,"b":"f","e":0,"fu":912.5,"eb":3505.0,"d":19.816,"du":"g/cm³","en":1.28,"ie":584.7,"r":175,"sh":[2,8,18,32,24,8,2]},"95":{"n":"Americio","s":"Am","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁷ 6s² 6p⁶ 7s²","ca":"[Rn] 5f⁷ 7s²","ce":"5f⁷ 7s²","f":"Actínidos","m":243.0,"a":243,"p":7,"g":null,"b":"f","e":0,"fu":1449.0,"eb":2880.0,"d":12.0,"du":"g/cm³","en":1.13,"ie":578.0,"r":175,"sh":[2,8,18,32,25,8,2]},"96":{"n":"Curio","s":"Cm","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁷ 6s² 6p⁶ 6d¹ 7s²","ca":"[Rn] 5f⁷ 6d¹ 7s²","ce":"5f⁷ 6d¹ 7s²","f":"Actínidos","m":247.0,"a":247,"p":7,"g":null,"b":"f","e":0,"fu":1613.0,"eb":3383.0,"d":13.51,"du":"g/cm³","en":1.28,"ie":581.0,"r":176,"sh":[2,8,18,32,25,9,2]},"97":{"n":"Berkelio","s":"Bk","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f⁹ 6s² 6p⁶ 7s²","ca":"[Rn] 5f⁹ 7s²","ce":"5f⁹ 7s²","f":"Actínidos","m":247.0,"a":247,"p":7,"g":null,"b":"f","e":0,"fu":1259.0,"eb":2900.0,"d":14.78,"du":"g/cm³","en":1.3,"ie":601.0,"r":null,"sh":[2,8,18,32,27,8,2]},"98":{"n":"Californio","s":"Cf","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁰ 6s² 6p⁶ 7s²","ca":"[Rn] 5f¹⁰ 7s²","ce":"5f¹⁰ 7s²","f":"Actínidos","m":251.0,"a":251,"p":7,"g":null,"b":"f","e":0,"fu":1173.0,"eb":1743.0,"d":15.1,"du":"g/cm³","en":1.3,"ie":608.0,"r":null,"sh":[2,8,18,32,28,8,2]},"99":{"n":"Einstenio","s":"Es","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹¹ 6s² 6p⁶ 7s²","ca":"[Rn] 5f¹¹ 7s²","ce":"5f¹¹ 7s²","f":"Actínidos","m":252.0,"a":252,"p":7,"g":null,"b":"f","e":0,"fu":1133.0,"eb":1269.0,"d":8.84,"du":"g/cm³","en":1.3,"ie":619.0,"r":null,"sh":[2,8,18,32,29,8,2]},"100":{"n":"Fermio","s":"Fm","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹² 6s² 6p⁶ 7s²","ca":"[Rn] 5f¹² 7s²","ce":"5f¹² 7s²","f":"Actínidos","m":257.0,"a":257,"p":7,"g":null,"b":"f","e":0,"fu":1800.0,"eb":null,"d":null,"du":"g/cm³","en":1.3,"ie":627.0,"r":null,"sh":[2,8,18,32,30,8,2]},"101":{"n":"Mendelevio","s":"Md","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹³ 6s² 6p⁶ 7s²","ca":"[Rn] 5f¹³ 7s²","ce":"5f¹³ 7s²","f":"Actínidos","m":258.0,"a":258,"p":7,"g":null,"b":"f","e":0,"fu":1100.0,"eb":null,"d":null,"du":"g/cm³","en":1.3,"ie":635.0,"r":null,"sh":[2,8,18,32,31,8,2]},"102":{"n":"Nobelio","s":"No","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 7s²","ca":"[Rn] 5f¹⁴ 7s²","ce":"5f¹⁴ 7s²","f":"Actínidos","m":259.0,"a":259,"p":7,"g":null,"b":"f","e":0,"fu":1100.0,"eb":null,"d":null,"du":"g/cm³","en":1.3,"ie":642.0,"r":null,"sh":[2,8,18,32,32,8,2]},"103":{"n":"Lawrencio","s":"Lr","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 7s² 7p¹","ca":"[Rn] 5f¹⁴ 7s² 7p¹","ce":"5f¹⁴ 7s² 7p¹","f":"Actínidos","m":266.0,"a":266,"p":7,"g":null,"b":"d","e":0,"fu":1900.0,"eb":null,"d":null,"du":"g/cm³","en":1.3,"ie":470.0,"r":null,"sh":[2,8,18,32,32,8,3]},"104":{"n":"Rutherfordio","s":"Rf","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d² 7s²","ca":"[Rn] 5f¹⁴ 6d² 7s²","ce":"6d² 7s²","f":"Metales de transición","m":267.0,"a":267,"p":7,"g":4,"b":"d","e":0,"fu":2400.0,"eb":5800.0,"d":23.2,"du":"g/cm³","en":null,"ie":580.0,"r":null,"sh":[2,8,18,32,32,10,2],"pred":1},"105":{"n":"Dubnio","s":"Db","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d³ 7s²","ca":"[Rn] 5f¹⁴ 6d³ 7s²","ce":"6d³ 7s²","f":"Metales de transición","m":268.0,"a":268,"p":7,"g":5,"b":"d","e":0,"fu":null,"eb":null,"d":29.3,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,11,2],"pred":1},"106":{"n":"Seaborgio","s":"Sg","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁴ 7s²","ca":"[Rn] 5f¹⁴ 6d⁴ 7s²","ce":"6d⁴ 7s²","f":"Metales de transición","m":269.0,"a":269,"p":7,"g":6,"b":"d","e":0,"fu":null,"eb":null,"d":35.0,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,12,2],"pred":1},"107":{"n":"Bohrio","s":"Bh","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁵ 7s²","ca":"[Rn] 5f¹⁴ 6d⁵ 7s²","ce":"6d⁵ 7s²","f":"Metales de transición","m":270.0,"a":270,"p":7,"g":7,"b":"d","e":0,"fu":null,"eb":null,"d":37.1,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,13,2],"pred":1},"108":{"n":"Hasio","s":"Hs","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁶ 7s²","ca":"[Rn] 5f¹⁴ 6d⁶ 7s²","ce":"6d⁶ 7s²","f":"Metales de transición","m":269.0,"a":269,"p":7,"g":8,"b":"d","e":0,"fu":null,"eb":null,"d":40.7,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,14,2],"pred":1},"109":{"n":"Meitnerio","s":"Mt","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁷ 7s²","ca":"[Rn] 5f¹⁴ 6d⁷ 7s²","ce":"6d⁷ 7s²","f":"Metales de transición","m":278.0,"a":278,"p":7,"g":9,"b":"d","e":0,"fu":null,"eb":null,"d":37.4,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,15,2],"pred":1},"110":{"n":"Darmstatio","s":"Ds","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁸ 7s²","ca":"[Rn] 5f¹⁴ 6d⁹ 7s¹","ce":"6d⁹ 7s¹","f":"Metales de transición","m":281.0,"a":281,"p":7,"g":10,"b":"d","e":0,"fu":null,"eb":null,"d":34.8,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,16,2],"pred":1},"111":{"n":"Roentgenio","s":"Rg","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d⁹ 7s²","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s¹","ce":"6d¹⁰ 7s¹","f":"Metales de transición","m":282.0,"a":282,"p":7,"g":11,"b":"d","e":0,"fu":null,"eb":null,"d":28.7,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,17,2],"pred":1},"112":{"n":"Copernicio","s":"Cn","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s²","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s²","ce":"6d¹⁰ 7s²","f":"Metales de transición","m":285.0,"a":285,"p":7,"g":12,"b":"d","e":1,"fu":283.0,"eb":340.0,"d":14.0,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,2],"pred":1},"113":{"n":"Nihonio","s":"Nh","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p¹","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹","ce":"7s² 7p¹","f":"Otros metales","m":286.0,"a":286,"p":7,"g":13,"b":"p","e":0,"fu":700.0,"eb":1430.0,"d":16.0,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,3],"pred":1},"114":{"n":"Flerovio","s":"Fl","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p²","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²","ce":"7s² 7p²","f":"Otros metales","m":289.0,"a":289,"p":7,"g":14,"b":"p","e":0,"fu":340.0,"eb":420.0,"d":14.0,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,4],"pred":1},"115":{"n":"Moscovio","s":"Mc","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p³","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³","ce":"7s² 7p³","f":"Otros metales","m":289.0,"a":289,"p":7,"g":15,"b":"p","e":0,"fu":670.0,"eb":1400.0,"d":13.5,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,5],"pred":1},"116":{"n":"Livermorio","s":"Lv","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁴","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴","ce":"7s² 7p⁴","f":"Otros metales","m":293.0,"a":293,"p":7,"g":16,"b":"p","e":0,"fu":709.0,"eb":1085.0,"d":12.9,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,6],"pred":1},"117":{"n":"Teneso","s":"Ts","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁵","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵","ce":"7s² 7p⁵","f":"Halógenos","m":294.0,"a":294,"p":7,"g":17,"b":"p","e":0,"fu":723.0,"eb":883.0,"d":7.17,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,7],"pred":1},"118":{"n":"Oganesón","s":"Og","c":"1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶ 4d¹⁰ 4f¹⁴ 5s² 5p⁶ 5d¹⁰ 5f¹⁴ 6s² 6p⁶ 6d¹⁰ 7s² 7p⁶","ca":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶","ce":"7s² 7p⁶","f":"Gases nobles","m":294.0,"a":294,"p":7,"g":18,"b":"p","e":0,"fu":null,"eb":350.0,"d":4.95,"du":"g/cm³","en":null,"ie":null,"r":null,"sh":[2,8,18,32,32,18,8],"pred":1}};
+ const st=document.createElement("style");st.textContent=
+ "#datp{box-sizing:border-box;position:fixed;top:0;left:0;right:0;width:100%;z-index:12;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 6px;background:rgba(8,12,24,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.1);color:#fff;font:14px system-ui,sans-serif;line-height:1.35;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.6)}"
+ +"#datp[hidden]{display:none}#datp.tapa{visibility:hidden}#datp.vacia{background:none;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}#datp.ex{background:rgba(8,12,24,.9);border-radius:0 0 16px 16px}"
+ +"#datp .dc{position:relative}#datp.off .rw{opacity:.6}#datp .rw{transition:opacity .25s}"
+ +"#datp .t{height:36px;line-height:36px;padding:0 96px;font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#datp .sy{color:#c3cfe8;font-weight:600}"
+ +"#datp .f{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;min-height:30px;font-size:14.5px}#datp .f.ul{padding:0 92px}#datp .f.c{padding:0}"
+ +"#datp .f.g{display:grid;grid-template-columns:1fr auto 1fr;column-gap:12px;padding:0}#datp .f.g .l{justify-self:end}#datp .f.g .rr{justify-self:start}#datp.bajo .dc{padding-bottom:34px}#datp .f span{white-space:nowrap}#datp .f i{font-style:normal;color:#c3cfe8;margin-right:5px}#datp .f b{font-weight:600}"
+ +"#datb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;right:-4px;bottom:0;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}"
+ +"#datp.ex #datb{border-color:#3de6ff;background:rgba(61,230,255,.22)}"
+ +"#datp.vacia #datb{top:calc(44px + env(safe-area-inset-top,0px));bottom:auto;position:fixed;right:8px;background:rgba(8,12,24,.7)}#datp.sinsel #datb{display:none}"
+ +"#datp .more{margin:6px -12px 0;padding:10px 14px 6px;border-top:1px solid rgba(255,255,255,.12);background:none;max-height:calc(100vh - 230px);overflow-y:auto;text-align:left;text-shadow:none}#datp .more[hidden]{display:none}"
+ +"#datp .lb{color:#9fb0d0;font-size:12px;margin-bottom:5px}"
+ +"#datp .tg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}#datp .tg button{flex:1 1 auto}"
+ +"#datp .tg button{padding:6px 8px;border-radius:999px;border:1.5px solid rgba(255,255,255,.22);background:transparent;color:#9fb0d0;font:13px system-ui,sans-serif;touch-action:manipulation}"
+ +"#datp .tg button.on{border-color:#3de6ff;background:rgba(61,230,255,.16);color:#fff}"
+ +"#datp .nt{color:#ffd84a;font-size:12px;margin-bottom:6px}"
+ +"#datp .r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08)}#datp .r span{color:#9fb0d0}#datp .r b{font-weight:600;text-align:right;word-break:break-word}";
+ document.head.appendChild(st);
+ const N=(x,s)=>x==null?null:String(+(+x).toPrecision(s||6)).replace(".",",");
+ const KC=k=>k==null?null:N(k)+" K · "+N(Math.round((k-273.15)*10)/10)+" °C";
+ const ESTADO=["Sólido","Líquido","Gas"];
+ /* ficha completa: [título, función que devuelve el valor (o null si no hay dato)] */
+ const fila=(it,v,d)=>{const i=it[2]&&v!=null,ab=!!window.__inf;return '<div class="r"><span>'+it[0]+'</span><b>'+(v==null?"Sin datos":v)+(i?'<button type="button" class="ib" aria-label="Más información" aria-expanded="'+ab+'">i</button>':'')+'</b></div>'+(i?'<div class="in"'+(ab?'':' hidden')+'>'+it[2](d)+'</div>':'')};
+addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".ib");if(!b)return;const n=b.closest(".r").nextElementSibling;if(!n||!n.classList.contains("in"))return;n.hidden=!n.hidden;window.__inf=!n.hidden;b.setAttribute("aria-expanded",!n.hidden)});
+const ITEMS=[
+  ["Nombre y símbolo",d=>d.n+" ("+d.s+")"],
+  ["Número atómico (Z)",d=>d.z,d=>d.z+" protones y "+d.z+" electrones (átomo neutro)"],
+  ["Número másico (A)",d=>d.a],
+  ["Masa atómica",d=>N(d.m,7)+" u"],
+  ["CEE (config. electrónica externa)",d=>d.ce],
+  ["Configuración electrónica",d=>d.c],
+  ["Configuración abreviada",d=>d.ca],
+  ["Electrones por capa",d=>d.sh.join(" · ")],
+  ["Familia",d=>d.f],
+  ["Período",d=>d.p],
+  ["Grupo",d=>d.g==null?"— (bloque f)":d.g],
+  ["Bloque",d=>d.b],
+  ["Estado a temperatura ambiente",d=>ESTADO[d.e]],
+  ["Punto de fusión",d=>KC(d.fu)],
+  ["Punto de ebullición",d=>KC(d.eb)],
+  ["Densidad",d=>d.d==null?null:N(d.d)+" "+d.du],
+  ["Electronegatividad (Pauling)",d=>N(d.en)],
+  ["Primera energía de ionización",d=>d.ie==null?null:N(d.ie)+" kJ/mol"],
+  ["Radio atómico",d=>d.r==null?null:d.r+" pm"]
+ ];
+ /* qué se ve siempre en el banner (cada uno se puede apagar) */
+ const CAMPOS=[["n","Nombre"],["s","Símbolo"],["c","CEE"],["z","Z"],["a","A"]];
+ let ver={n:1,s:1,a:0,z:0,c:1};
+ try{const g=JSON.parse(localStorage.getItem("datver3")||"null");if(g&&typeof g=="object")for(const k in ver)if(k in g)ver[k]=g[k]?1:0}catch(e){}
+ const guardar=()=>{try{localStorage.setItem("datver3",JSON.stringify(ver))}catch(e){}};
+ const p=document.createElement("div");p.id="datp";p.hidden=true;
+ p.innerHTML='<div class="dc"><div class="rw"></div><button id="datb" type="button" aria-expanded="false">Ver más</button></div>'
+  +'<div class="more" hidden><div class="lb">Mostrar siempre en pantalla · Z = n.º atómico · A = n.º másico</div><div class="tg"></div><div class="nt" hidden>Valores estimados: elemento superpesado</div><div class="rows"></div></div>';
+ document.body.appendChild(p);
+ const rw=p.querySelector(".rw"),btn=p.querySelector("#datb"),more=p.querySelector(".more"),tg=p.querySelector(".tg"),nt=p.querySelector(".nt"),rows=p.querySelector(".rows");
+ const tb={};CAMPOS.forEach(([k,t])=>{const x=document.createElement("button");x.type="button";x.textContent=t;x.addEventListener("click",()=>{ver[k]=ver[k]?0:1;guardar();render()});tg.appendChild(x);tb[k]=x});
+ let z=null,ex=false;const vis=new Set();
+ function render(){
+  const d=z&&DAT[z]?Object.assign({z:z},DAT[z]):null;
+  if(!d){/* sin átomo seleccionado: no se muestra el nombre ni la CEE; solo queda el cartel de unión si está activo en el banner */
+   const ub=!!(window.__UNI&&window.__UNI.ban);p.hidden=!ub;p.classList.toggle("sinsel",ub);if(!ub)return;
+   ex=false;more.hidden=true;p.classList.remove("ex","bajo");p.classList.add("vacia");p.classList.toggle("off",!vis.size);
+   rw.innerHTML='<div class="t"></div><div class="f"></div>';return}
+  p.hidden=false;p.classList.remove("sinsel");
+  p.classList.toggle("ex",ex);p.classList.toggle("off",!vis.size);
+  /* fila de arriba (entre Grupos y Capas): nombre y símbolo; después Z y A; después CEE */
+  const nom=ver.n&&ver.s?d.n+' <span class="sy">('+d.s+')</span>':ver.n?d.n:ver.s?d.s:"";
+  const f=[],dt=[];
+  const zs=ver.z?'<span><b>Z = '+d.z+'</b></span>':"",as=ver.a?'<span><b>A = '+d.a+'</b></span>':"";
+  let gr=false,cz=false;
+  if(ver.c){gr=true;f.push('<div class="l">'+zs+'</div><span><i>CEE</i><b>'+d.ce+'</b></span><div class="rr">'+as+'</div>')}
+  else if(zs||as){f.push(zs+as);cz=true}
+  p.classList.toggle("vacia",!nom&&!f.length);
+  if(!f.length)f.push("");/* fila vacía que aloja el botón */
+  rw.innerHTML='<div class="t">'+nom+'</div>'+f.map((x,i)=>'<div class="f'+(gr&&i==f.length-1?' g':'')+(cz&&i==f.length-1?' c':'')+(i==f.length-1?' ul':'')+'">'+x+'</div>').join("");
+  /* si Z/A/CEE llegan hasta el botón "Ver más", el botón baja a su propia fila */
+  const cw=document.getElementById("capb");if(cw&&cw.offsetWidth)btn.style.width=cw.offsetWidth+"px";
+  p.classList.remove("bajo");
+  if(!p.classList.contains("vacia")){const sp=rw.querySelectorAll(".f.ul span"),br=btn.getBoundingClientRect();let mx=0;sp.forEach(e=>{mx=Math.max(mx,e.getBoundingClientRect().right)});if(sp.length&&mx>br.left-8)p.classList.add("bajo")}
+  /* ficha completa */
+  more.hidden=!ex;btn.textContent=ex?"Ver menos":"Ver más";btn.setAttribute("aria-expanded",ex);
+  CAMPOS.forEach(([k])=>{tb[k].classList.toggle("on",!!ver[k]);tb[k].setAttribute("aria-pressed",!!ver[k])});
+  if(ex){nt.hidden=!d.pred;rows.innerHTML=ITEMS.map(it=>fila(it,it[1](d),d)).join("")}}
+ btn.addEventListener("click",()=>{ex=!ex;render()});
+ /* mientras está abierto el panel de Capas, el banner se esconde para no tapar ni encimarse */
+ const cb0=document.getElementById("capb");if(cb0)cb0.addEventListener("click",()=>{const cp=document.getElementById("capp"),abierto=!!(cp&&!cp.hidden);if(abierto&&ex)ex=false;p.classList.toggle("tapa",abierto);render()});
+ document.querySelectorAll("a-marker").forEach(m=>{
+  m.addEventListener("markerFound",()=>{vis.add(m.id);render()});
+  m.addEventListener("markerLost",()=>{vis.delete(m.id);render()})});
+ render();addEventListener("resize",render);
+ /* el banner muestra al átomo seleccionado; y se vuelve a dibujar cuando el cartel de unión aparece o se va */
+ if(window.SEL){z=window.SEL.z;window.SEL.on(zz=>{z=zz;if(z==null)ex=false;render()})}
+ addEventListener("uniban",render);
+})();
+
+/* ---------- Varios átomos a la vez: cada uno se ajusta a su marcador para que no se mezclen ----------
+   Con 2 o más marcadores a la vista, el diámetro de cada átomo se limita a FIT × la distancia a su marcador vecino más cercano
+   (queda centrado sobre su marcador y apoyado en él). Con uno solo rige el mismo tope de TOPE lados de marcador: se ve igual que con dos.
+   ?fit=0 lo desactiva · ?fit=1.1 deja los átomos algo más grandes · el slider de tamaño solo puede achicarlos más. */
+(function(){
+ const FIT=Q.get("fit")===null?.92:+Q.get("fit");if(!(FIT>0))return;
+ /* tope: ningún átomo pasa de TOPE lados de marcador de diámetro. Con la hoja espaciada eso deja un hueco real entre átomos vecinos (con la hoja vieja no cambia nada). ?tope=0 lo quita */
+ const TOPE=Q.get("tope")===null?1.0:(+Q.get("tope")>0?+Q.get("tope"):1e9);
+ const TH=AFRAME.THREE,vs=new TH.Vector3(),MINF=.1,SUAV=.22;
+ const it=[];for(const z in D){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(w)it.push({z,m,w,p:new TH.Vector3(),s:1,K:null,RG:0})}
+ /* radio real del átomo: se mide sobre el modelo cargado (nube, órbitas y electrones incluidos). El radio estimado de la tabla D se queda
+    bastante corto, por eso los átomos terminaban más grandes que la distancia entre marcadores y se encimaban */
+ {const m4=new TH.Matrix4(),iv=new TH.Matrix4(),c=new TH.Vector3(),pp=new TH.Vector3(),qq=new TH.Quaternion(),ss=new TH.Vector3();
+  it.forEach(a=>{const inner=a.w.querySelector("[gltf-model]");if(!inner)return;
+   const medir=()=>{const o=inner.object3D;o.updateMatrixWorld(true);iv.copy(o.matrixWorld).invert();let R=0;
+    o.traverse(ob=>{if(!ob.isMesh||!ob.geometry)return;if(!ob.geometry.boundingSphere)ob.geometry.computeBoundingSphere();const bs=ob.geometry.boundingSphere;if(!bs)return;
+     m4.multiplyMatrices(iv,ob.matrixWorld);c.copy(bs.center).applyMatrix4(m4);m4.decompose(pp,qq,ss);R=Math.max(R,c.length()+bs.radius*Math.max(ss.x,ss.y,ss.z))});
+    if(R>0&&isFinite(R))a.RG=R};
+   inner.addEventListener("model-loaded",medir);if(inner.getObject3D("mesh"))medir()})}
+ /* Un solo escritor de la escala (este bucle), en cada cuadro:
+      ka   = tamaño del átomo solo, con su tope de TOPE lados de marcador, multiplicado por el slider (se puede agrandar y achicar);
+      tope = límite por el vecino más cercano (solo si hay 2 o más marcadores): al 100% o menos evita que se encimen; si se agranda a propósito (slider por encima del 100%), el límite crece con el slider.
+    Lo que se suaviza es únicamente el límite por el vecino, no el slider: el tamaño sigue al slider cuadro a cuadro y nunca pasa de ka. */
+ window.__FITON=1;
+ (function tk(){requestAnimationFrame(tk);
+  const v=it.filter(a=>a.m.object3D.visible);
+  for(const a of v){a.m.object3D.getWorldPosition(a.p);a.m.object3D.getWorldScale(vs);a.s=vs.x>1e-6?vs.x:1}
+  for(const a of it){
+   const d=D[a.z],base=+(Q.get("s")||d[3]),RG=a.RG||d[5],mz=multDe(a.z),kb=base*Math.min(1,Math.max(.3,TOPE)/(2*RG*base)),ka=kb*mz;
+   let n=1e9;if(v.includes(a))for(const b of v)if(b!==a)n=Math.min(n,a.p.distanceTo(b.p)/a.s);
+   const kt=n<1e9?Math.max(.3,Math.min(FIT*n,TOPE))/(2*RG)*Math.max(1,mz):1e9,tg=Math.min(kt,ka*1.25);
+   a.K=a.K==null?tg:a.K+(tg-a.K)*SUAV;if(Math.abs(tg-a.K)<.002*tg)a.K=tg;
+   const k=Math.min(ka,Math.max(a.K,MINF*base*mz)),g=k/(base*mz);
+   a.w.object3D.scale.setScalar(k);(window.__ATR=window.__ATR||{})[a.z]=RG*k;a.w.object3D.position.y=(d[5]*k+.1*g)*ALT}
+ })();
+})();
+
+/* ---------- Hoja: nombre flotante de la familia ----------
+   Con 2 o más marcadores de una misma familia cerca, sobre el grupo flota el nombre de la familia.
+   Se apaga desde el panel Capas, o con ?nombre=0. */
+(function(){
+ const TH=AFRAME.THREE,sc=document.querySelector("a-scene");
+ const FN={alc:"Metales alcalinos",alt:"Alcalinotérreos",tr:"Metales de transición",lan:"Lantánidos",act:"Actínidos",pt:"Otros metales",mo:"Metaloides",nm:"No metales",ha:"Halógenos",gn:"Gases nobles"};
+ const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff"};
+ const FAM={};for(const k in G)G[k].forEach(z=>FAM[z]=k);
+ const op={no:1};
+ try{const g=JSON.parse(localStorage.getItem("hoja2")||"null");if(g)op.no=g.no?1:0}catch(e){}
+ if(Q.get("nombre")==="0")op.no=0;
+ const cp=document.getElementById("capp");
+ if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Destacar información</div><button type="button" class="tgl" id="hoNo">Nombre de la familia</button>');
+  const bn=cp.querySelector("#hoNo"),gu=()=>{try{localStorage.setItem("hoja2",JSON.stringify(op))}catch(e){}},
+   pint=()=>{bn.classList.toggle("on",!!op.no);bn.setAttribute("aria-pressed",!!op.no)};
+  bn.addEventListener("click",()=>{op.no=op.no?0:1;gu();pint()});pint()}
+ const root=new TH.Group();sc.object3D.add(root);window.__rotuloRoot=root;/* el cartel de la unión flotante también va en este grupo, que siempre se dibuja último */
+ /* A-Frame dibuja lo transparente en el orden en que está en la escena (no ordena por renderOrder), así que el grupo de los nombres tiene que ser el ÚLTIMO hijo de la escena
+    para que quede por encima del contorno de neón y de todo lo demás. renderOrder alto por si algún día se activa el ordenado. */
+ root.renderOrder=1000;
+ const lbl={};
+ function label(k){if(lbl[k])return lbl[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d");
+  x.font="700 62px system-ui,-apple-system,'Segoe UI',sans-serif";const w=x.measureText(FN[k]).width;
+  if(w>590)x.font="700 "+Math.floor(62*590/w)+"px system-ui,-apple-system,'Segoe UI',sans-serif";
+  x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(FN[k],320,66);x.fillText(FN[k],320,66);
+  x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(FN[k],320,66);
+  const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));
+  s.userData.tw=Math.min(.98,(Math.min(w,590)+50)/640);s.renderOrder=20;s.scale.set(3.6,.72,1);s.visible=false;root.add(s);return lbl[k]=s}
+ const ms=[...document.querySelectorAll("a-marker")].map(m=>{const z=+m.id.slice(1);return{m,w:m.querySelector(":scope > a-entity"),k:FAM[z],p:new TH.Vector3(),u:new TH.Vector3(),s:1}}).filter(a=>a.k&&a.w);
+ const sv=new TH.Vector3(),MAXE=3.5,cq=new TH.Quaternion(),cr=new TH.Vector3(),cu=new TH.Vector3(),off={};
+ /* ---- Ajuste a la pantalla: un nombre flotante nunca se sale ni queda tapado ----
+    Se achica lo justo para entrar en el ancho disponible y, si el punto donde flota queda cerca o fuera de un borde, se corre hacia adentro.
+    Lo disponible deja afuera el banner de arriba (con sus botones) y la barra de tamaño de abajo. Sirve también para el nombre de la unión. */
+ const FR=new TH.Vector3(),FU=new TH.Vector3(),FF=new TH.Vector3(),FP=new TH.Vector3(),FA=new TH.Vector3(),FE=new TH.Vector3(),FV=new TH.Vector3(),CJ={l:8,r:0,t:0,b:0};let cjT=-1e9;
+ function caja(now){if(now-cjT<250)return;cjT=now;const W=innerWidth,H=innerHeight;let t=0,b=H;
+  for(const sl of["#datp","#capb","#back","#tutb"]){const e=document.querySelector(sl);if(!e||e.hidden)continue;const cs=getComputedStyle(e);if(cs.display==="none"||cs.visibility==="hidden")continue;
+   const q=e.getBoundingClientRect();if(q.height>0&&q.top<H*.45)t=Math.max(t,q.bottom)}
+  const u=document.getElementById("ui");if(u){const q=u.getBoundingClientRect();if(q.height>0&&q.top>H*.5)b=Math.min(b,q.top)}
+  CJ.l=8;CJ.r=W-8;CJ.t=t+6;CJ.b=b-6;if(CJ.b-CJ.t<H*.25){CJ.t=8;CJ.b=H-8}/* si el banner está muy extendido (ficha abierta), se ignora para no dejar sin lugar */}
+ function ajustar(sp){const cam=sc.camera,cv=sc.canvas;if(!cam||!cv)return;const r=cv.getBoundingClientRect(),W=r.width,H=r.height;if(!(W>0&&H>0))return;
+  caja(performance.now());cam.updateMatrixWorld();FR.setFromMatrixColumn(cam.matrixWorld,0).normalize();FU.setFromMatrixColumn(cam.matrixWorld,1).normalize();
+  FF.setFromMatrixColumn(cam.matrixWorld,2).negate();FP.setFromMatrixPosition(cam.matrixWorld);
+  if(FV.copy(sp.position).sub(FP).dot(FF)<.05)return;/* detrás de la cámara */
+  const sx=sp.scale.x,sy=sp.scale.y,tw=(sp.userData&&sp.userData.tw)||1;
+  FA.copy(sp.position).project(cam);
+  FE.copy(sp.position).addScaledVector(FR,sx/2).project(cam);const ex=Math.abs(FE.x-FA.x);
+  FE.copy(sp.position).addScaledVector(FU,sy/2).project(cam);const ey=Math.abs(FE.y-FA.y);
+  if(!(ex>1e-6&&ey>1e-6))return;
+  let hw=ex*W/2*tw,hh=ey*H/2*.62;/* semitamaño del texto en píxeles */
+  const k=Math.min(1,(CJ.r-CJ.l)/2/hw,(CJ.b-CJ.t)/2/hh);hw*=k;hh*=k;
+  const cx=r.left+(FA.x*.5+.5)*W,cy=r.top+(.5-FA.y*.5)*H;
+  const nx=Math.min(Math.max(cx,CJ.l+hw),CJ.r-hw),ny=Math.min(Math.max(cy,CJ.t+hh),CJ.b-hh);
+  if(k<1){sp.scale.x*=k;sp.scale.y*=k}
+  const dx=(nx-cx)/(W/2)*(sx/2)/ex,dy=-(ny-cy)/(H/2)*(sy/2)/ey;
+  if(dx)sp.position.addScaledVector(FR,dx);if(dy)sp.position.addScaledVector(FU,dy)}
+ window.__fitRotulo=ajustar;
+ (function tk(){requestAnimationFrame(tk);
+  {const so=sc.object3D,ch=so.children;if(ch[ch.length-1]!==root)so.add(root)}/* siempre el último: se dibuja encima del neón */
+  const nom={};
+  if(op.no&&!(window.__UNI&&window.__UNI.flo)){const por={};
+   for(const a of ms){const o=a.m.object3D;if(!o.visible)continue;o.updateWorldMatrix(true,false);
+    sv.setFromMatrixScale(o.matrixWorld);a.s=sv.x>1e-6?sv.x:1;a.p.set(0,a.w.object3D.position.y,0);o.localToWorld(a.p);a.u.set(0,1,0).transformDirection(o.matrixWorld);
+    (por[a.k]=por[a.k]||[]).push(a)}
+   for(const k in por){const L=por[k];if(L.length<2)continue;
+    const E=[];for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const e=L[i].p.distanceTo(L[j].p)/L[i].s;if(e<=MAXE)E.push([e,i,j])}
+    E.sort((a,b)=>a[0]-b[0]);const par=L.map((_,i)=>i),f=i=>{while(par[i]!==i)i=par[i]=par[par[i]];return i};
+    for(const[e,i,j]of E){const a=f(i),b=f(j);if(a!==b)par[a]=b}
+    const cnt={};L.forEach((_,i)=>{const r=f(i);cnt[r]=(cnt[r]||0)+1});
+    let best=-1,bn=0;for(const r in cnt)if(cnt[r]>bn){bn=cnt[r];best=+r}
+    if(bn>=2){const c=new TH.Vector3(),u=new TH.Vector3();let s=0,n=0;
+     L.forEach((a,i)=>{if(f(i)===best){c.add(a.p);u.add(a.u);s+=a.s;n++}});c.multiplyScalar(1/n);u.normalize();s/=n;
+     const sp=label(k);sp.position.copy(c).addScaledVector(u,2*s);sp.scale.set(3.6*s,.72*s,1);sp.visible=true;nom[k]=1}}}
+  for(const k in nom)ajustar(lbl[k]);/* primero: que entren en la pantalla */
+  /* los nombres no se pisan: si dos se superponen en pantalla, el de arriba sube lo justo (suavizado, para que no salte) */
+  {const cam=sc.camera;if(cam){cam.getWorldQuaternion(cq);cr.set(1,0,0).applyQuaternion(cq);cu.set(0,1,0).applyQuaternion(cq);
+   const A=[];for(const k in nom){const s=lbl[k];A.push({k,s,x:s.position.dot(cr),y:s.position.dot(cu),w:s.scale.x,h:s.scale.y})}
+   A.sort((a,b)=>a.y-b.y);const ok=[];
+   for(const e of A){let y=e.y;
+    for(let it=0;it<4;it++){let mv=0;for(const q of ok)if(Math.abs(e.x-q.x)<(e.w+q.w)*.46&&Math.abs(y-q.y)<(e.h+q.h)*.52){y=q.y+(e.h+q.h)*.52;mv=1}if(!mv)break}
+    ok.push({x:e.x,y,w:e.w,h:e.h});const o=off[e.k]||0;off[e.k]=o+(y-e.y-o)*.3;e.s.position.addScaledVector(cu,off[e.k])}}}
+  for(const k in nom)ajustar(lbl[k]);/* otra vez: el empuje para no pisarse no puede sacarlos de la pantalla */
+  for(const k in lbl)if(!nom[k]){lbl[k].visible=false;off[k]=0}
+ })();
+})();
+</script>
+<script>
+/* ---------- Hoja: línea neón que envuelve al grupo ----------
+   Cuando hay 2 o más marcadores de una misma familia a la vista (la tabla se está escaneando), una línea de color neón
+   —el color de la familia— se traza alrededor de ellos y los envuelve juntos: con dos hace una "píldora", con un grupo entero
+   sigue la forma del grupo. Si hay solo dos marcadores a la vista y están juntos, forman una UNIÓN: arriba sale si es iónica o covalente y la línea que los envuelve toma
+   el color del tipo de unión (naranja = iónica · celeste = covalente · violeta = metálica · gris = sin unión), sean o no de la misma familia.
+   La línea se dibuja sobre el plano de la hoja, hija de uno de los marcadores: acompaña a los átomos sin retraso.
+   Animación: al detectar el grupo la línea se traza con una chispa, hace un destello y queda con una luz que la recorre.
+   Se apaga desde el panel Capas, o con ?neon=0 · ?par=0 quita lo de los dos marcadores (el cartel de unión y su color: vuelve a mandar el color de la familia)
+   ?paso=1.55 = distancia entre marcadores de la hoja, en anchos de marcador */
+(function(){
+  const TH=AFRAME.THREE;
+  const FC={alc:"#ff4d6a",alt:"#ff9a3d",tr:"#3da5ff",lan:"#b07dff",act:"#ff4fc3",pt:"#2dff9c",mo:"#2de8e0",nm:"#ffd84a",ha:"#b8ff3d",gn:"#7f8cff",
+   /* colores de la unión entre dos marcadores */
+   u_ion:"#ff6a00",u_cov:"#00d9ff",u_met:"#d24dff",u_gn:"#8e97ab"};
+  const FAM={};for(const k in G)G[k].forEach(z=>FAM[z]=k);
+  const PASO=+Q.get("paso")>0?+Q.get("paso"):1.55,MAXE=3.5,RAD=.25,HW=.2,GRACIA=450,PAR=Q.get("par")!=="0",
+   RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const op={ne:1};
+  try{const g=JSON.parse(localStorage.getItem("neon1")||"null");if(g)op.ne=g.ne?1:0}catch(e){}
+  if(Q.get("neon")==="0")op.ne=0;
+  /* unión de dos marcadores · us = cartel: flo (flotante) | ban (banner de arriba) | no (ninguno). El contorno de neón (op.ne) es uno solo y rige tanto para los grupos como para las uniones */
+  const U={us:"flo"};
+  try{const g=JSON.parse(localStorage.getItem("union1")||"null");if(g&&["flo","ban","no"].includes(g.us))U.us=g.us}catch(e){}
+  window.__UNI={flo:0};
+  /* con el tipo de unión en BANNER o en NINGUNO (con «Flotante» el cartel ya lleva el color del tipo de unión), el contorno toma el color de la familia de los elementos; si son de familias distintas, degradé de una a la otra.
+     Con «Ninguno» y de la misma familia, además aparece el nombre flotante de la familia (lo dibuja el script del nombre de la familia). ?famb=0 lo quita */
+  const FAMB=Q.get("famb")!=="0";
+  {const bn=document.getElementById("hoNo");
+   if(bn){bn.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="hoNe" style="margin-top:6px">Contorno de neón</button>');
+    const b=document.getElementById("hoNe"),gu=()=>{try{localStorage.setItem("neon1",JSON.stringify(op))}catch(e){}},
+     pint=()=>{b.classList.toggle("on",!!op.ne);b.setAttribute("aria-pressed",!!op.ne)};
+    b.addEventListener("click",()=>{op.ne=op.ne?0:1;gu();pint()});pint()}}
+  {const b0=document.getElementById("hoNe");
+   if(b0){b0.insertAdjacentHTML("afterend",'<div class="ch sec">Tipo de unión</div><div class="cf" id="unS"><button type="button" class="tgl" data-s="flo">Flotante</button><button type="button" class="tgl" data-s="ban">Banner</button><button type="button" class="tgl" data-s="no">Ninguno</button></div>');
+    const bs=[...document.querySelectorAll("#unS button")],gu=()=>{try{localStorage.setItem("union1",JSON.stringify(U))}catch(e){}},
+     pint=()=>{bs.forEach(x=>x.classList.toggle("on",x.dataset.s===U.us))};
+    bs.forEach(x=>x.addEventListener("click",()=>{U.us=x.dataset.s;gu();pint()}));pint()}}
+  const VS=`attribute float aU;attribute float aV;attribute float aL;
+varying float vU;varying float vV;varying float vL;varying vec2 vXZ;
+void main(){vU=aU;vV=aV;vL=aL;vXZ=position.xz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+  const FS=`uniform vec3 uCol;uniform float uT;uniform float uAge;uniform float uA;uniform float uFl;uniform float uAni;uniform vec3 uCol2;uniform vec2 uP1;uniform vec2 uP2;
+varying float vU;varying float vV;varying float vL;varying vec2 vXZ;
+void main(){
+ vec3 uC=uCol;vec2 dd=uP2-uP1;float d2=dot(dd,dd);
+ if(d2>0.000001){uC=mix(uCol,uCol2,smoothstep(0.3,0.7,clamp(dot(vXZ-uP1,dd)/d2,0.0,1.0)));}/* degradé de un marcador al otro (solo en uniones de familias distintas) */
+ float d=abs(vV);float rv=1.0;float sp=0.0;float cm=0.0;
+ if(uAni>0.5){
+  float tr=clamp(uAge/0.9,0.0,1.0);tr=1.0-pow(1.0-tr,2.2);
+  float head=tr*(vL+0.6);
+  rv=1.0-smoothstep(head-0.2,head,vU);
+  float q=(vU-head+0.12)*2.2;
+  sp=exp(-q*q)*(1.0-step(0.999,tr));
+  cm=exp(-mod(uT*1.8-vU,vL)*0.8)*smoothstep(0.9,1.4,uAge);
+ }
+ float br=0.9+0.1*sin(uT*2.6);
+ float cas=0.34*(1.0-smoothstep(0.45,1.0,d));
+ float g=d/0.5;
+ float glo=exp(-g*g)*(0.95*br+0.5*cm+0.5*sp+0.6*uFl);
+ float cor=(1.0-smoothstep(0.14,0.26,d))*(0.95+0.4*cm+0.6*sp+0.5*uFl);
+ vec3 hot=mix(uC,vec3(1.0),0.5);
+ float ag=clamp(glo,0.0,1.0);float ac=clamp(cor,0.0,1.0);
+ vec4 o=vec4(vec3(0.02,0.03,0.07)*cas,cas);
+ o=vec4(uC*ag,ag)+o*(1.0-ag);
+ o=vec4(hot*ac,ac)+o*(1.0-ac);
+ gl_FragColor=o*(rv*uA);
+}`;
+  function construir(S, PITCH, RAD, HW) {
+    /* 1) bordes de las celdas que dan al vacío; el interior queda a la izquierda (sentido antihorario) */
+    const E = new Map();
+    const add = (x0, y0, x1, y1) => { const k = x0 + "," + y0; let a = E.get(k); if (!a) E.set(k, a = []); a.push([x1, y1]) };
+    for (const s of S) {
+      const [i, j] = s.split(",").map(Number);
+      if (!S.has(i + "," + (j - 1))) add(i - .5, j - .5, i + .5, j - .5);
+      if (!S.has((i + 1) + "," + j)) add(i + .5, j - .5, i + .5, j + .5);
+      if (!S.has(i + "," + (j + 1))) add(i + .5, j + .5, i - .5, j + .5);
+      if (!S.has((i - 1) + "," + j)) add(i - .5, j + .5, i - .5, j - .5);
+    }
+    /* 2) se encadenan en lazos; si dos celdas se tocan solo por una esquina, cada una sigue siendo su propio lazo (giro más a la izquierda) */
+    const loops = [];
+    for (const k0 of [...E.keys()]) {
+      while (E.get(k0) && E.get(k0).length) {
+        const [sx, sy] = k0.split(",").map(Number);
+        const pts = [];
+        let cx = sx, cy = sy, dx = 0, dy = 0, first = true, guard = 0;
+        do {
+          const k = cx + "," + cy, op = E.get(k);
+          if (!op || !op.length) break;
+          let bi = 0;
+          if (!first && op.length > 1) {
+            let bs = -9;
+            op.forEach((o, i) => { const ox = o[0] - cx, oy = o[1] - cy, sc = Math.atan2(dx * oy - dy * ox, dx * ox + dy * oy); if (sc > bs) { bs = sc; bi = i } });
+          }
+          const o = op.splice(bi, 1)[0];
+          if (!op.length) E.delete(k);
+          pts.push([cx, cy]);
+          dx = o[0] - cx; dy = o[1] - cy; cx = o[0]; cy = o[1]; first = false;
+        } while ((cx !== sx || cy !== sy) && ++guard < 5000);
+        if (pts.length >= 4) loops.push(pts);
+      }
+    }
+    /* 3) solo las esquinas, con los giros redondeados con arcos */
+    const P = [], U = [], V = [], L = [], I = [];
+    for (const lp of loops) {
+      const c = [], n = lp.length;
+      for (let i = 0; i < n; i++) {
+        const a = lp[(i + n - 1) % n], b = lp[i], d = lp[(i + 1) % n];
+        if ((b[0] - a[0]) * (d[1] - b[1]) - (b[1] - a[1]) * (d[0] - b[0]) !== 0) c.push(b);
+      }
+      const m = c.length, path = [];
+      for (let i = 0; i < m; i++) {
+        const a = c[(i + m - 1) % m], b = c[i], d = c[(i + 1) % m];
+        const l0 = Math.hypot(b[0] - a[0], b[1] - a[1]), l1 = Math.hypot(d[0] - b[0], d[1] - b[1]);
+        const d0x = (b[0] - a[0]) / l0, d0y = (b[1] - a[1]) / l0, d1x = (d[0] - b[0]) / l1, d1y = (d[1] - b[1]) / l1;
+        const cx = b[0] - RAD * d0x + RAD * d1x, cy = b[1] - RAD * d0y + RAD * d1y;
+        for (let t = 0; t <= 6; t++) {
+          const q = t / 6 * Math.PI / 2, co = Math.cos(q), si = Math.sin(q);
+          path.push([cx - RAD * co * d1x + RAD * si * d0x, cy - RAD * co * d1y + RAD * si * d0y]);
+        }
+      }
+      /* 4) cinta: dos vértices por punto (a cada lado de la línea), u = distancia recorrida en anchos de marcador */
+      const q = path.map(p => [p[0] * PITCH, p[1] * PITCH]), N = q.length;
+      let tot = 0; const cum = [0];
+      for (let i = 1; i <= N; i++) { tot += Math.hypot(q[i % N][0] - q[i - 1][0], q[i % N][1] - q[i - 1][1]); cum.push(tot) }
+      const base = P.length / 3;
+      for (let i = 0; i <= N; i++) {
+        const a = q[(i + N - 1) % N], b = q[(i + 1) % N];
+        let tx = b[0] - a[0], ty = b[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+        const nx = -ty, ny = tx, p = q[i % N];
+        P.push(p[0] + nx * HW, 0, p[1] + ny * HW, p[0] - nx * HW, 0, p[1] - ny * HW);
+        U.push(cum[i], cum[i]); V.push(1, -1); L.push(tot, tot);
+      }
+      for (let i = 0; i < N; i++) { const a = base + 2 * i; I.push(a, a + 1, a + 2, a + 1, a + 3, a + 2) }
+    }
+    return { P, U, V, L, I, loops: loops.length };
+  }
+  const ms=[...document.querySelectorAll("a-marker")].map(m=>({o:m.object3D,id:m.id,z:+m.id.slice(1),k:FAM[+m.id.slice(1)],p:new TH.Vector3(),s:1})).filter(a=>a.k);
+  const vs=new TH.Vector3(),inv=new TH.Matrix4(),lp=new TH.Vector3(),ce=new TH.Vector3();
+  /* el grupo más grande de marcadores cercanos entre sí (a lo sumo MAXE anchos de marcador de distancia con algún otro del grupo) */
+  const LIG=new Map();/* histéresis: dos marcadores ya unidos siguen unidos hasta que se alejan un 15 % más, así el grupo no parpadea en el borde */
+  function agrupar(L){
+    const pa=L.map((_,i)=>i),f=i=>{while(pa[i]!==i)i=pa[i]=pa[pa[i]];return i};
+    for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const x=L[i],y=L[j],kk=x.id<y.id?x.id+"|"+y.id:y.id+"|"+x.id,ok=x.p.distanceTo(y.p)/x.s<=(LIG.get(kk)?MAXE*1.15:MAXE);LIG.set(kk,ok);if(ok){const a=f(i),b=f(j);if(a!==b)pa[a]=b}}
+    const g={};L.forEach((a,i)=>{const r=f(i);(g[r]=g[r]||[]).push(a)});
+    let best=null;for(const r in g)if(g[r].length>=2&&(!best||g[r].length>best.length))best=g[r];
+    return best}
+  /* ---------- Unión entre dos marcadores ----------
+     Criterio de colegio, según el tipo de elemento (la familia de la hoja):
+       metal + no metal (o metaloide)  → iónica      · no metal + no metal (o metaloide) → covalente
+       metal + metal                   → metálica    · con un gas noble (capa externa completa) → sin unión */
+  const MET=new Set(["alc","alt","tr","lan","act","pt"]);
+  const TIPO=f=>f==="gn"?"gas noble":f==="mo"?"metaloide":MET.has(f)?"metal":"no metal";
+  const TITU={ion:"Unión iónica",cov:"Unión covalente",met:"Unión metálica",gn:"Sin unión"};
+  function union(a,b){
+    const ta=TIPO(a.k),tb=TIPO(b.k);
+    const t=ta==="gas noble"||tb==="gas noble"?"gn":ta==="metal"&&tb==="metal"?"met":ta==="metal"||tb==="metal"?"ion":"cov";
+    /* orden para mostrarlos: el metal primero; si no, el de menor número atómico */
+    const mf=x=>x==="metal"?0:1;let x=a,y=b,tx=ta,ty=tb;
+    if(mf(tb)<mf(ta)||(mf(ta)===mf(tb)&&b.z<a.z)){x=b;y=a;tx=tb;ty=ta}
+    const sy=z=>D[z]?D[z][1]:"?";
+    return{t:t,x:x,y:y,k:"u_"+t,titulo:TITU[t],sub:sy(x.z)+" + "+sy(y.z)+" · "+(t==="gn"?"gas noble: capa externa completa":tx+" + "+ty)}}
+  /* cartel de arriba: va dentro del banner de datos (debajo del nombre y la CEE), así se esconde y se acomoda junto con él */
+  {const st=document.createElement("style");st.textContent=
+   "#unib{box-sizing:border-box;width:max-content;max-width:100%;margin:6px auto 2px;padding:6px 16px 7px;border-radius:18px;border:1.5px solid var(--c,#00d9ff);background:rgba(5,7,13,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 0 12px var(--c,#00d9ff),inset 0 0 10px rgba(255,255,255,.05);text-align:center;text-shadow:none;animation:unin .5s ease-out}"
+   +"#unib[hidden]{display:none}"
+   +"#unib .ut{display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px/1.2 system-ui,sans-serif;color:#fff;text-shadow:0 0 6px var(--c),0 0 14px var(--c)}"
+   +"#unib .ut i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}"
+   +"#unib .us{margin-top:2px;font:12.5px/1.25 system-ui,sans-serif;color:#c3cfe8}"
+   +"body>#unib{position:fixed;top:calc(60px + env(safe-area-inset-top,0px));left:0;right:0;margin:0 auto;z-index:12}"
+   +"#datp.sinsel #unib{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));left:0;right:0;margin:0 auto;max-width:calc(100% - 208px)}"/* sin átomo seleccionado: arriba en el centro, donde irían el nombre y la CEE */
+   +"@keyframes unin{from{opacity:0;box-shadow:0 0 0 var(--c)}55%{box-shadow:0 0 26px var(--c)}}"
+   +"@media (prefers-reduced-motion:reduce){#unib{animation:none}}";
+   document.head.appendChild(st)}
+  const bx=document.createElement("div");bx.id="unib";bx.hidden=true;bx.setAttribute("role","status");
+  bx.innerHTML='<div class="ut"><i></i><b></b></div><div class="us"></div>';
+  {const dp=document.getElementById("datp"),dc=dp&&dp.querySelector(".dc");if(dc)dc.insertAdjacentElement("afterend",bx);else document.body.appendChild(bx)}
+  let ub=null,ubT=-1e9,ubK="";
+  /* el cartel aguanta GRACIA ms si la detección parpadea (igual que la línea) y solo se vuelve a dibujar cuando cambia la unión */
+  function banner(now,un){
+    if(un){ub=un;ubT=now}
+    const u=ub&&now-ubT<=GRACIA?ub:null,k=u?u.k+"|"+u.sub:"";
+    if(k===ubK)return;ubK=k;
+    /* avisa al banner de datos: con el cartel de unión visible, el banner se muestra aunque no haya átomo seleccionado */
+    {const nb=!!u;if(!!window.__UNI.ban!==nb){window.__UNI.ban=nb;dispatchEvent(new Event("uniban"))}}
+    if(!u){bx.hidden=true;return}
+    bx.style.setProperty("--c",FC[u.k]);bx.querySelector("b").textContent=u.titulo;bx.querySelector(".us").textContent=u.sub;
+    bx.hidden=false;bx.style.animation="none";void bx.offsetWidth;bx.style.animation=""}
+  const rt=new TH.Group();document.querySelector("a-scene").object3D.add(rt);
+  const sps={},cc=new TH.Vector3(),uu=new TH.Vector3(),t3=new TH.Vector3();let fo=null,fSeen=-1e9,fc=null;
+  function sprite(k,txt){if(sps[k])return sps[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d"),f=n=>"700 "+n+"px system-ui,-apple-system,'Segoe UI',sans-serif";
+   x.font=f(62);const w=x.measureText(txt).width;if(w>590)x.font=f(Math.floor(62*590/w));
+   x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(txt,320,66);x.fillText(txt,320,66);x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(txt,320,66);
+   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.userData.tw=Math.min(.98,(Math.min(w,590)+50)/640);s.renderOrder=20;s.visible=false;(window.__rotuloRoot||rt).add(s);return sps[k]={s,t0:0,k}}
+  function flotante(now,un){
+    if(un){if(!fo||fo.k!==un.k){fo=sprite(un.k,un.titulo);fo.t0=now}fSeen=now;fc=un.c}
+    for(const k in sps)if(sps[k]!==fo)sps[k].s.visible=false;
+    if(!fo)return;
+    if(now-fSeen>GRACIA){fo.s.visible=false;fo=null;return}
+    cc.set(0,0,0);uu.set(0,0,0);let s=0;fc.forEach(a=>{cc.add(a.p);uu.add(t3.set(0,1,0).transformDirection(a.o.matrixWorld));s+=a.s});
+    cc.multiplyScalar(1/fc.length);uu.normalize();s/=fc.length;
+    const e=Math.min(1,(now-fo.t0)/380)-1,pop=1+2.70158*e*e*e+1.70158*e*e;/* entra con rebote */
+    fo.s.position.copy(cc).addScaledVector(uu,2*s+Math.sin(now/450)*.07*s);fo.s.scale.set(3.6*s*pop,.72*s*pop,1);fo.s.visible=pop>.01;if(fo.s.visible&&window.__fitRotulo)window.__fitRotulo(fo.s)}
+  const nQa=new TH.Quaternion(),nQ1=new TH.Quaternion(),nVo=new TH.Vector3(),nVv=new TH.Vector3();
+  const OB={};
+  function objeto(k){
+    if(OB[k])return OB[k];
+    const gr=k.indexOf("g:")===0?k.split(":"):null,hx=h=>new TH.Vector3(parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255);
+    const col=hx(FC[gr?gr[1]:k]),col2=hx(FC[gr?gr[2]:k]);
+    const mat=new TH.ShaderMaterial({uniforms:{uCol:{value:col},uCol2:{value:col2},uP1:{value:new TH.Vector2()},uP2:{value:new TH.Vector2()},uT:{value:0},uAge:{value:0},uA:{value:0},uFl:{value:0},uAni:{value:RM?0:1}},
+     vertexShader:VS,fragmentShader:FS,transparent:true,depthTest:false,depthWrite:false,side:TH.DoubleSide});
+    mat.premultipliedAlpha=true;
+    const mesh=new TH.Mesh(new TH.BufferGeometry(),mat);mesh.frustumCulled=false;mesh.renderOrder=18;mesh.visible=false;
+    return OB[k]={k,g:!!gr,mesh,mat,ref:null,key:"",n:0,on:0,t0:0,seen:0,al:0,fl:0,fin:0,sx:0,sz:0}}
+  function geometria(ob,S){
+    const r=construir(S,PASO,RAD,HW),g=new TH.BufferGeometry();
+    g.setAttribute("position",new TH.Float32BufferAttribute(r.P,3));g.setAttribute("aU",new TH.Float32BufferAttribute(r.U,1));
+    g.setAttribute("aV",new TH.Float32BufferAttribute(r.V,1));g.setAttribute("aL",new TH.Float32BufferAttribute(r.L,1));g.setIndex(r.I);
+    ob.mesh.geometry.dispose();ob.mesh.geometry=g}
+  let tp=performance.now();
+  (function tk(){requestAnimationFrame(tk);
+    const now=performance.now(),dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
+    const act={};let un=null;
+    const V=[];
+    for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
+    /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
+       de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
+    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(op.ne){const kf=FAMB&&U.us!=="flo"?(un.x.k===un.y.k?un.x.k:"g:"+un.x.k+":"+un.y.k):un.k;act[kf]=c}}}
+    /* con más de dos marcadores rige el neón de la familia */
+    if(op.ne&&!un){
+      const por={};for(const a of V)(por[a.k]=por[a.k]||[]).push(a);
+      for(const k in por){if(por[k].length<2)continue;const c=agrupar(por[k]);if(c)act[k]=c}}
+    window.__UNI.flo=un&&U.us==="flo"?1:0;window.__UNI.un=un;/* con el cartel flotante de la unión, el script del nombre de familia se aparta */
+    banner(now,U.us==="ban"?un:null);flotante(now,U.us==="flo"?un:null);
+    for(const k in act){
+      const c=act[k],ob=objeto(k);
+      /* referencia: se mantiene mientras siga en el grupo; si no, el marcador más cercano al centro del grupo */
+      let ref=ob.ref&&c.includes(ob.ref)?ob.ref:null;
+      if(!ref){ce.set(0,0,0);c.forEach(a=>ce.add(a.p));ce.multiplyScalar(1/c.length);let bd=1e9;c.forEach(a=>{const d=a.p.distanceTo(ce);if(d<bd){bd=d;ref=a}})}
+      /* cada marcador cae en una celda de la hoja (medida con el sistema de coordenadas del marcador de referencia, en anchos de marcador) */
+      inv.copy(ref.o.matrixWorld).invert();
+      const S=new Set(),cel=[];
+      for(const a of c){lp.copy(a.p).applyMatrix4(inv);const x=lp.x/PASO,z=lp.z/PASO;let i=Math.round(x),j=Math.round(z);
+        /* histéresis: un marcador no cambia de celda por un temblor de la medición (hace falta alejarse más de 0,65 pasos de su celda) */
+        if(a.cr===ref.id&&Math.abs(x-a.ci)<.65&&Math.abs(z-a.cj)<.65){i=a.ci;j=a.cj}
+        a.cr=ref.id;a.ci=i;a.cj=j;cel.push([i,j]);S.add(i+","+j)}
+      /* un hueco de una sola celda entre dos marcadores en línea se rellena, para que queden envueltos juntos */
+      for(const [i,j] of cel)for(const [di,dj] of [[2,0],[0,2]])if(S.has((i+di)+","+(j+dj)))S.add((i+di/2)+","+(j+dj/2));
+      const key=ref.id+"|"+[...S].sort().join(";"),nuevo=!ob.on;
+      if(nuevo){ob.on=1;ob.t0=now;ob.fl=0;ob.fin=0;ob.al=0;ob.n=0;ob.ref=null}
+      if(key!==ob.key){ob.key=key;geometria(ob,S);if(!nuevo&&S.size>ob.n&&!RM)ob.fl=.8;ob.n=S.size}
+      /* marco de la línea = promedio de TODOS los marcadores del grupo (el ruido de uno solo ya no la desalinea): orientación = promedio de las
+         rotaciones; origen = lo que "vota" cada marcador según su celda. Se filtra bastante cuando está quieto y casi nada cuando se mueve */
+      nQa.set(0,0,0,0);let ss=0;
+      for(const a of c){a.o.getWorldQuaternion(nQ1);const sg=nQa.dot(nQ1)<0?-1:1;nQa.x+=sg*nQ1.x;nQa.y+=sg*nQ1.y;nQa.z+=sg*nQ1.z;nQa.w+=sg*nQ1.w;ss+=a.s}
+      nQa.normalize();ss/=c.length;nVo.set(0,0,0);
+      c.forEach((a,q)=>{nVv.set(cel[q][0]*PASO*ss,0,cel[q][1]*PASO*ss).applyQuaternion(nQa);nVo.add(a.p).sub(nVv)});
+      nVo.multiplyScalar(1/c.length);
+      if(ref!==ob.ref||!ob.O){ob.ref=ref;ob.O=ob.O||new TH.Vector3();ob.Q=ob.Q||new TH.Quaternion();ob.O.copy(nVo);ob.Q.copy(nQa);ob.S=ss}
+      else{const al=Math.min(1,.18+3*(ob.O.distanceTo(nVo)/ss)+2.5*2*Math.acos(Math.min(1,Math.abs(ob.Q.dot(nQa)))));ob.O.lerp(nVo,al);ob.Q.slerp(nQa,al);ob.S+=(ss-ob.S)*al}
+      if(ob.mesh.parent!==rt)rt.add(ob.mesh);
+      ob.mesh.position.copy(ob.O);ob.mesh.quaternion.copy(ob.Q);ob.mesh.scale.setScalar(ob.S);ob.mesh.visible=true;ob.seen=now;
+      if(ob.g&&un){const w=ob.mat.uniforms;w.uP1.value.set(un.x.ci*PASO,un.x.cj*PASO);w.uP2.value.set(un.y.ci*PASO,un.y.cj*PASO)}/* extremos del degradé = las celdas de los dos marcadores */}
+    /* si se agranda mucho el átomo (el slider de tamaño) la línea se desvanece, para no tapar el modelo */
+    let mx=0;for(const zz of(window.SEL?window.SEL.zs:[]))mx=Math.max(mx,multDe(zz));if(!mx)mx=M0;
+    const grande=Math.min(1,Math.max(0,(6-mx)/3));
+    for(const k in OB){const ob=OB[k];if(!ob.on)continue;
+      if(!act[k]&&now-ob.seen>GRACIA){ob.al=Math.max(0,ob.al-dt*3);
+        if(ob.al<=0){ob.on=0;ob.mesh.visible=false;ob.key="";if(ob.mesh.parent)ob.mesh.parent.remove(ob.mesh);continue}}
+      else ob.al=Math.min(1,ob.al+dt*8);
+      const age=(now-ob.t0)/1000;
+      if(!ob.fin&&age>.9){ob.fin=1;if(!RM)ob.fl=.9}/* destello al terminar de trazarse */
+      ob.fl*=Math.exp(-dt*4);
+      const u=ob.mat.uniforms;u.uT.value=RM?0:(now/1000)%900;u.uAge.value=age;u.uA.value=ob.al*grande;u.uFl.value=ob.fl}})();
+})();
+</script>
+<script>
+/* ---------- Animación de la unión: los electrones cuentan qué pasa en el enlace ----------
+   Cuando hay solo dos marcadores a la vista y juntos (los mismos que muestran el cartel «Unión …» y el neón), sus electrones se mueven según el tipo de unión:
+     iónica    → el/los electrones de la última capa del metal viajan de verdad hasta el no metal (se apagan en uno y aparecen en el otro):
+                 el metal queda con carga + y el no metal con carga − (Na⁺ · Cl⁻). Si faltan o sobran electrones (Na + O, Mg + Cl) se ve que viene/va otro átomo.
+     covalente → un electrón de cada átomo se comparten: giran en ocho alrededor de los dos núcleos y entre ellos brilla la nube de la unión (simple, doble o triple).
+     metálica  → los electrones de la última capa se sueltan y forman un «mar» que fluye alrededor de los dos átomos.
+     sin unión → gas noble: capa completa, los átomos se «rechazan» (las chispas rebotan).
+   Los electrones se leen del modelo (partes «Electron_n#…»): el que viaja se apaga de su capa y aparece (una copia) en la capa del otro. Si el modelo no se puede separar, se anima igual con chispas.
+   Todo vive dentro del primer marcador: acompaña a los átomos sin retraso. Se apaga desde Capas (Animar los electrones), o con ?anim=0. Respeta «reducir movimiento». */
+(function(){
+ if(Q.get("anim")==="0"||Q.get("par")==="0")return;
+ const TH=AFRAME.THREE,sc=document.querySelector("a-scene"),RM=matchMedia("(prefers-reduced-motion:reduce)").matches,GRACIA=450;
+ const V=()=>new TH.Vector3(),cl=(x,a,b)=>x<a?a:x>b?b:x,sm=x=>{x=cl(x,0,1);return x*x*(3-2*x)},ez=x=>{x=cl(x,0,1);return x*x*x*(x*(x*6-15)+10)};
+ const hex=h=>[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255],mx=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+ const COL={ion:hex("#ff6a00"),cov:hex("#00d9ff"),met:hex("#d24dff"),gn:hex("#8fa0ff")},ELE=hex("#3da5ff"),WH=[1,1,1];
+ const DAT=window.__DAT||{},FAM={};for(const k in G)G[k].forEach(z=>FAM[z]=k);
+ /* ---- química de colegio ---- */
+ const sh=z=>{const d=DAT[z];return d&&d.sh&&d.sh.length?d.sh:[1]},val=z=>{const s=sh(z);return s[s.length-1]};
+ function carga(z){const f=FAM[z],g=DAT[z]&&DAT[z].g;if(f==="alc")return 1;if(f==="alt")return 2;if(f==="lan"||f==="act")return 3;
+  if(f==="pt")return g===13?3:g===14?2:g===15?3:g===16?2:1;return cl(val(z),1,3)}/* carga habitual del catión */
+ const anion=z=>z===1?1:cl(8-val(z),1,3);/* carga habitual del anión */
+ const enlaces=z=>{if(z===1)return 1;const v=val(z);return cl(Math.min(v,8-v),1,3)};/* enlaces que forma */
+ /* ---- interruptor en Capas ---- */
+ const op={on:1};try{const g=JSON.parse(localStorage.getItem("unfx1")||"null");if(g)op.on=g.on?1:0}catch(e){}
+ {const b0=document.getElementById("unS");
+  if(b0){b0.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="unFx" style="margin-top:6px">Animar los electrones</button>');
+   const b=document.getElementById("unFx"),pint=()=>{b.classList.toggle("on",!!op.on);b.setAttribute("aria-pressed",!!op.on)};
+   b.addEventListener("click",()=>{op.on=op.on?0:1;try{localStorage.setItem("unfx1",JSON.stringify(op))}catch(e){}pint()});pint()}}
+ /* ---- partículas: cuadritos que miran a la cámara, con brillo suave (una sola malla) ---- */
+ const VS=`attribute vec2 aQ;attribute float aS;attribute vec4 aC;attribute float aK;
+varying vec2 vQ;varying vec4 vC;varying float vK;
+void main(){float k=length(modelViewMatrix[0].xyz);vec4 mv=modelViewMatrix*vec4(position,1.0);mv.xy+=aQ*aS*k;gl_Position=projectionMatrix*mv;vQ=aQ*2.0;vC=aC;vK=aK;}`;
+ const FS=`varying vec2 vQ;varying vec4 vC;varying float vK;
+void main(){float r=length(vQ);if(r>1.0)discard;
+ float e=1.0-smoothstep(0.7,1.0,r),g=exp(-r*r*3.4)*e,core=exp(-r*r*38.0),ring=exp(-pow((r-0.7)/0.11,2.0))*e;
+ float a;vec3 c=vC.rgb;
+ if(vK<0.5){a=clamp(g*0.95+core,0.0,1.0);c=mix(c,vec3(1.0),clamp(core*1.3,0.0,0.97));}
+ else if(vK<1.5){a=g*0.9;}
+ else{a=ring;c=mix(c,vec3(1.0),0.3);}
+ a*=vC.a;gl_FragColor=vec4(c*a,a);}`;
+ const MAXP=520,aP=new Float32Array(MAXP*12),aQ=new Float32Array(MAXP*8),aS=new Float32Array(MAXP*4),aC=new Float32Array(MAXP*16),aK=new Float32Array(MAXP*4),ix=new Uint16Array(MAXP*6);
+ {const cn=[-.5,-.5,.5,-.5,.5,.5,-.5,.5];for(let q=0;q<MAXP;q++){for(let i=0;i<8;i++)aQ[q*8+i]=cn[i];const b=q*4;ix.set([b,b+1,b+2,b,b+2,b+3],q*6)}}
+ const geo=new TH.BufferGeometry(),at=(n,a,s,d)=>{const x=new TH.BufferAttribute(a,s);if(d)x.setUsage(TH.DynamicDrawUsage);geo.setAttribute(n,x)};
+ at("position",aP,3,1);at("aQ",aQ,2,0);at("aS",aS,1,1);at("aC",aC,4,1);at("aK",aK,1,1);geo.setIndex(new TH.BufferAttribute(ix,1));
+ const mat=new TH.ShaderMaterial({vertexShader:VS,fragmentShader:FS,transparent:true,depthTest:false,depthWrite:false,side:TH.DoubleSide});mat.premultipliedAlpha=true;
+ const mesh=new TH.Mesh(geo,mat);mesh.frustumCulled=false;mesh.renderOrder=19;mesh.visible=false;
+ const fx=new TH.Group();fx.add(mesh);
+ let np=0;
+ function PT(v,s,c,a,k){if(np>=MAXP||!(a>.004)||!(s>0))return;const i=np++,p=i*12,q=i*4,w=i*16;
+  for(let j=0;j<4;j++){aP[p+j*3]=v.x;aP[p+j*3+1]=v.y;aP[p+j*3+2]=v.z;aS[q+j]=s;aK[q+j]=k;aC[w+j*4]=c[0];aC[w+j*4+1]=c[1];aC[w+j*4+2]=c[2];aC[w+j*4+3]=a}}
+ /* ---- carteles de carga (Na⁺, Cl⁻) ---- */
+ const TAGS={};
+ function tag(sym,n,pos){const k=sym+n+pos;if(TAGS[k])return TAGS[k];
+  const c=document.createElement("canvas");c.width=320;c.height=160;const x=c.getContext("2d"),col=pos?"#ff8a50":"#4db8ff",
+   f1="700 76px system-ui,-apple-system,'Segoe UI',sans-serif",f2="700 48px system-ui,-apple-system,'Segoe UI',sans-serif",ch=(n>1?n:"")+(pos?"+":"\u2212");
+  x.font=f1;const w1=x.measureText(sym).width;x.font=f2;const w2=x.measureText(ch).width,x0=160-(w1+4+w2)/2;x.textBaseline="middle";x.textAlign="left";
+  const dib=()=>{x.font=f1;x.fillText(sym,x0,94);x.font=f2;x.fillText(ch,x0+w1+4,60)};
+  x.shadowColor="rgba(4,8,20,.9)";x.shadowBlur=16;x.fillStyle="rgba(4,8,20,.9)";dib();dib();/* halo oscuro: se lee también sobre fondos claros */
+  x.shadowColor=col;x.shadowBlur=22;x.fillStyle=col;dib();dib();x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.95;dib();
+  const sp=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));sp.renderOrder=21;sp.visible=false;fx.add(sp);return TAGS[k]=sp}
+ /* ---- los átomos y sus electrones ---- */
+ const REC={};
+ function rec(z){if(REC[z]!==undefined)return REC[z];const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity"),inner=w&&w.querySelector("[gltf-model]");
+  return REC[z]=m&&w&&inner?{z,o:m.object3D,w,inner,sym:D[z]?D[z][1]:"?",root:null,ok:false,E:[],out:[],rvm:0,erm:0}:null}
+ const inv=new TH.Matrix4(),m4=new TH.Matrix4(),sv3=V();
+ function descubrir(r){/* busca los electrones sueltos del modelo y separa los de la última capa */
+  const root=r.inner.getObject3D&&r.inner.getObject3D("mesh");if(!root)return;if(r.root===root)return;
+  r.root=root;r.ok=false;r.E=[];r.out=[];root.updateWorldMatrix(true,true);
+  const im=new TH.Matrix4().copy(root.matrixWorld).invert(),m=new TH.Matrix4();
+  root.traverse(o=>{if(!o.isMesh||!o.geometry||CAPAS.categoria(o)!=="ele")return;
+   if(!o.geometry.boundingSphere)o.geometry.computeBoundingSphere();const bs=o.geometry.boundingSphere;if(!bs)return;
+   m.multiplyMatrices(im,o.matrixWorld);const s3=V().setFromMatrixScale(m);
+   r.E.push({o,c:bs.center.clone(),cl:bs.center.clone().applyMatrix4(m),rl:bs.radius*Math.max(s3.x,s3.y,s3.z),n:CAPAS.nivel(o),hid:0})});
+  if(r.E.length<1)return;
+  const rs=r.E.map(e=>e.rl).sort((a,b)=>a-b),med=rs[rs.length>>1],rr=r.E.map(e=>e.rl/Math.max(e.cl.length(),1e-9)).sort((a,b)=>a-b);
+  if(!(med>0&&rr[rr.length>>1]<.8))return;/* una sola malla con todos los electrones juntos (su centro cae en el núcleo): no se pueden separar */
+  let nm=-1;r.E.forEach(e=>{if(e.n!=null&&e.n>nm)nm=e.n});
+  if(nm>=0)r.out=r.E.filter(e=>e.n===nm);else{const mxl=Math.max(...r.E.map(e=>e.cl.length()));r.out=r.E.filter(e=>e.cl.length()>.9*mxl)}
+  if(!r.out.length)return;
+  r.rvm=r.out.reduce((s,e)=>s+e.cl.length(),0)/r.out.length;r.erm=med;r.ok=true}
+ const escRoot=r=>{m4.multiplyMatrices(inv,r.root.matrixWorld);return sv3.setFromMatrixScale(m4).x||1};
+ /* ---- referencias de cada cuadro (todo en el espacio del primer marcador) ---- */
+ const C={pa:V(),pb:V(),ax:V(),mid:V(),sv:V(),cb:V(),cu:V(),cr:V(),d:1,ra:.5,rb:.5,rva:.4,rvb:.4,es:.1,rho:.5,gap:.3};
+ function contexto(S){
+  const cam=sc.camera;if(!cam)return false;const A=S.A,B=S.B;inv.copy(A.o.matrixWorld).invert();
+  const sA=sv3.setFromMatrixScale(A.o.matrixWorld).x||1,sB=sv3.setFromMatrixScale(B.o.matrixWorld).x||1,f=sB/sA;
+  C.pa.copy(A.w.object3D.position);B.w.object3D.getWorldPosition(C.pb);C.pb.applyMatrix4(inv);
+  C.ax.subVectors(C.pb,C.pa);C.d=C.ax.length();if(!(C.d>1e-4))return false;C.ax.multiplyScalar(1/C.d);C.mid.addVectors(C.pa,C.pb).multiplyScalar(.5);
+  const e=cam.matrixWorld;C.cr.setFromMatrixColumn(e,0).transformDirection(inv);C.cu.setFromMatrixColumn(e,1).transformDirection(inv);C.cb.setFromMatrixColumn(e,2).transformDirection(inv);
+  C.sv.crossVectors(C.ax,C.cb);const l=C.sv.length();if(l<.2)C.sv.copy(C.cu);else C.sv.multiplyScalar(1/l);if(C.sv.dot(C.cu)<0)C.sv.negate();
+  const AR=window.__ATR||{};C.ra=AR[A.z]||.5;C.rb=(AR[B.z]||.5)*f;
+  C.rva=A.ok?A.rvm*escRoot(A):.86*C.ra;C.rvb=B.ok?B.rvm*escRoot(B):.86*C.rb;
+  C.es=Math.max(.2*Math.min(C.ra,C.rb),.05);if(A.ok&&B.ok)C.es=Math.max(C.es,1.8*Math.max(A.erm*escRoot(A),B.erm*escRoot(B)));
+  C.rho=Math.max(C.rva,C.rvb)*.98+.2*C.es;C.gap=C.d-C.ra-C.rb;return true}
+ const elec=(e,out)=>out.copy(e.c).applyMatrix4(e.o.matrixWorld).applyMatrix4(inv);
+ const t1=V(),t2=V(),t3=V(),t4=V(),o0=V(),d0=V(),tt=V(),tp=V(),m1=V(),m2=V();
+ /* un punto sobre la capa externa mirando al otro átomo (si el modelo no se puede separar) */
+ function synth(side,a,out){const n=a.n||1,k=a.k||0,an=(k-(n-1)/2)*.6,c=Math.cos(an),s=Math.sin(an);
+  t4.copy(C.ax).multiplyScalar(side?-c:c).addScaledVector(C.sv,s);return out.copy(t4).multiplyScalar(side?C.rvb:C.rva).add(side?C.pb:C.pa)}
+ const extA=(a,out)=>out.copy(C.pa).addScaledVector(C.ax,-C.ra*2.3).addScaledVector(C.sv,C.ra*.9*a.sg).addScaledVector(C.cb,C.ra*.35);
+ const extB=(a,out)=>out.copy(C.pb).addScaledVector(C.ax,C.rb*2.3).addScaledVector(C.sv,C.rb*.9*a.sg).addScaledVector(C.cb,C.ra*.35);
+ const slotW=(S,a,out)=>out.copy(a.slotL).applyMatrix4(S.B.root.matrixWorld).applyMatrix4(inv);
+ function bez(P0,P1,u,sg,out){const L=P0.distanceTo(P1);tp.addVectors(P0,P1).multiplyScalar(.5).addScaledVector(C.sv,sg*.3*L).addScaledVector(C.cb,.2*L);
+  const a=(1-u)*(1-u),b=2*(1-u)*u,c=u*u;return out.set(P0.x*a+tp.x*b+P1.x*c,P0.y*a+tp.y*b+P1.y*c,P0.z*a+tp.z*b+P1.z*c)}
+ /* ---- elegir qué electrón sale y dónde queda ---- */
+ function elegirE(r,dir,usados){let best=null,bs=-9;const cen=r===S.A?C.pa:C.pb;
+  for(const e of r.out){if(usados.includes(e))continue;elec(e,t1);t1.sub(cen).normalize();const s=t1.dot(dir);if(s>bs){bs=s;best=e}}return best}
+ function elegirSlot(r,dirW,usados){/* un hueco libre en la capa externa del receptor, mirando al donante (en el espacio del modelo) */
+  const R=r.rvm,dir=V().copy(dirW).transformDirection(m4.copy(inv).invert()).transformDirection(m4.copy(r.root.matrixWorld).invert()).normalize();
+  const u=Math.abs(dir.y)<.9?V().set(0,1,0):V().set(1,0,0),e1=V().crossVectors(dir,u).normalize(),e2=V().crossVectors(dir,e1),N=56,cone=Math.cos(78*Math.PI/180),cand=[];
+  for(let j=0;j<N;j++){const t=(j+.5)/N,ct=1-t*(1-cone),st=Math.sqrt(1-ct*ct),ph=j*2.39996;
+   cand.push(V().copy(dir).multiplyScalar(ct).addScaledVector(e1,st*Math.cos(ph)).addScaledVector(e2,st*Math.sin(ph)).multiplyScalar(R))}
+  let best=null,bs=-1e9;
+  for(const c of cand){let md=1e9;for(const e of r.out)md=Math.min(md,c.distanceTo(e.cl));for(const p of usados)md=Math.min(md,c.distanceTo(p));
+   const an=Math.acos(cl(c.clone().normalize().dot(dir),-1,1)),s=md/R-.22*an;if(s>bs){bs=s;best=c}}
+  return best.clone()}
+ function crear(S,a){/* copia de un electrón de la capa externa del receptor, puesta en el hueco */
+  const r=S.B,t=r.out[0],par=t.o.parent;if(!par)return null;const c=t.o.clone(false);
+  const pm=new TH.Matrix4().copy(par.matrixWorld).invert().multiply(r.root.matrixWorld),tg=a.slotL.clone().applyMatrix4(pm),
+   off=t.c.clone().applyMatrix4(new TH.Matrix4().compose(V(),t.o.quaternion,t.o.scale));
+  c.position.copy(tg.sub(off));c.name=t.o.name+"_fx";c.userData={};c.visible=false;par.add(c);c.updateMatrix();return c}
+ function bloquear(S,a){/* se elige el electrón y el hueco poco antes de salir, así quedan alineados con el otro átomo */
+  a.lock=1;
+  if(a.src==="A"&&S.A.ok){const ya=S.act.filter(x=>x.eE&&x.src==="A").map(x=>x.eE);a.eE=elegirE(S.A,C.ax,ya)}
+  else if(a.src==="B"&&S.B.ok){const ya=S.act.filter(x=>x.eE&&x.src==="B").map(x=>x.eE);t2.copy(C.ax).negate();a.eE=elegirE(S.B,t2,ya)}
+}
+ function setHide(S,a,f){if(!a.eE)return;if(f){a.hid=1;a.eE.o.visible=false}else if(a.hid){a.hid=0;S.fix=1}}
+ /* ---- sesión: una por cada pareja de marcadores y tipo de unión ---- */
+ let S=null,lastU=null,lastT=-1e9,bad="";
+ function nuevo(u,key,now){const A=rec(u.x.z),B=rec(u.y.z);if(!A||!B)return null;return{key,t:u.t,A,B,t0:now,Tc:0,act:[],ready:0,cyc:-1,fix:0}}
+ function fin(){const s=S;S=null;if(!s)return;
+  for(const a of s.act){if(a.cl&&a.cl.parent)a.cl.parent.remove(a.cl);a.hid=0}
+  for(const r of[s.A,s.B])if(r.root)CAPAS.aplicarModelo(r.inner.object3D);
+  if(fx.parent)fx.parent.remove(fx);mesh.visible=false;for(const k in TAGS)TAGS[k].visible=false}
+ function planificar(S){
+  const A=S.A,B=S.B,t=S.t;
+  if(t==="ion"){const nA=cl(carga(A.z),1,3),nB=cl(anion(B.z),1,3),nF=Math.max(nA,nB);
+   Object.assign(S,{nA,nB,nF,P0:.35,F0:1.15,DF:1.25,ST:.26,SR:.18,DR:1.0});
+   S.Ttag=S.F0+(nF-1)*S.ST+S.DF+.1;S.TR=S.Ttag+3.8;S.Tend=S.TR+(nF-1)*S.SR+S.DR;S.Tloop=S.Tend+.9;S.Thold=S.Ttag+1.6;
+   for(let i=0;i<nF;i++){const mode=i<nA&&i<nB?"tr":i<nA?"out":"in",td=S.F0+i*S.ST,tr=S.TR+i*S.SR;
+    S.act.push({i,mode,sg:(i%2?-1:1)*(i===2?1.5:1),n:nA,k:i,td,tr,tl:td-.5,src:mode==="in"?"E":"A",dst:mode==="out"?"E":"B",
+     hide:Tc=>mode!=="in"&&Tc>=td-.02&&Tc<tr+S.DR,cln:Tc=>mode!=="out"&&Tc>=td+S.DF&&Tc<tr})}}
+  else if(t==="cov"){const b=cl(Math.min(enlaces(A.z),enlaces(B.z)),1,3);Object.assign(S,{b,C0:1.05,W:2*Math.PI/2.1});
+   for(let j=0;j<b;j++)for(let s=0;s<2;s++){const idx=j*2+s,tc=S.C0+idx*.12;
+    S.act.push({j,s,idx,n:b,k:j,sg:s?-1:1,tc,tl:tc-.5,ph:j*Math.PI/b+s*Math.PI,src:s?"B":"A",dst:"E",hide:Tc=>Tc>=tc-.02,cln:()=>false})}}
+  else if(t==="met"){const nr=Math.min(4,cl(carga(A.z),1,2)+cl(carga(B.z),1,2)),nd=20,N=nr+nd;Object.assign(S,{nr,N,C0:1.05});
+   for(let i=0;i<N;i++){const real=i<nr,rn=(i*.6180339887)%1,tc=S.C0+(real?i*.1:.2+(i-nr)*.12);
+    S.act.push({i,real,n:Math.ceil(nr/2),k:real?(i>>1):0,sg:i%2?-1:1,tc,tl:tc-.5,w0:i/N,v:.75+.5*rn,f1:1+rn*.9,f2:2.1+rn*1.3,p1:rn*6.283,p2:(rn*7.31)%6.283,p3:(rn*3.7)%6.283,z:.8+.5*((rn*5.3)%1),
+     src:real?(i%2?"B":"A"):"E",dst:"E",hide:Tc=>real&&Tc>=tc-.02,cln:()=>false})}}
+ }
+ /* ---- tiempo del ciclo ---- */
+ function ciclo(S,T){
+  if(S.t==="ion"){if(RM)return S.Thold;if(T<=S.P0)return T;const L=S.Tloop-S.P0;return S.P0+((T-S.P0)%L)}
+  if(S.t==="cov")return RM?S.C0+5:T;if(S.t==="met")return RM?S.C0+4:T;return RM?.9:T}
+ function frame(now){
+  const s=S;if(!contexto(s)){mesh.visible=false;return}
+  if(!s.ready){descubrir(s.A);descubrir(s.B);if((s.A.ok&&s.B.ok)||(s.A.root&&s.B.root)||now-s.t0>1500){planificar(s);s.ready=1}}
+  if(fx.parent!==s.A.o)s.A.o.add(fx);
+  const T=(now-s.t0)/1000,Tc=s.ready?ciclo(s,T):0;s.Tc=Tc;np=0;
+  if(s.ready){
+   if(s.t==="ion"){const cy=T<=s.P0?0:Math.floor((T-s.P0)/(s.Tloop-s.P0));if(cy!==s.cyc){s.cyc=cy;for(const a of s.act){if(a.cl&&a.cl.parent)a.cl.parent.remove(a.cl);a.cl=null;a.eE=null;a.slotL=null;a.lock=0;a.hid=0}s.fix=1}}
+   const eleOn=a=>{const r=a.src==="B"?s.B:s.A,t=CAPAS.estado(r.z);return !!(t.est.ele||t.atenuar)};
+   for(const a of s.act){if(!a.lock&&Tc>=a.tl)bloquear(s,a);
+    setHide(s,a,a.hide(Tc)&&eleOn(a));
+    if(a.dst==="B"&&!a.slotL&&s.B.ok&&Tc>=a.td+s.DF-.02){const ya=s.act.filter(x=>x.slotL).map(x=>x.slotL);t2.copy(C.ax).negate();a.slotL=elegirSlot(s.B,t2,ya)}
+    if(a.slotL){const w=a.cln(Tc);if(w&&!a.cl)a.cl=crear(s,a);if(a.cl)a.cl.visible=w&&eleOn(a)}}
+   if(s.fix){s.fix=0;for(const r of[s.A,s.B])if(r.root)CAPAS.aplicarModelo(r.inner.object3D);
+    for(const a of s.act){if(a.eE&&a.hide(Tc)&&eleOn(a))a.eE.o.visible=false}}
+   const al=sm((now-s.t0)/350)*1;
+   if(s.t==="ion")dibIon(s,Tc,al);else if(s.t==="cov")dibCov(s,Tc,al);else if(s.t==="met")dibMet(s,Tc,al);else dibGn(s,Tc,al)}
+  if(!np){mesh.visible=false;return}
+  geo.setDrawRange(0,np*6);for(const n of["position","aS","aC","aK"])geo.attributes[n].needsUpdate=true;mesh.visible=true}
+ /* ---- dibujo: un electrón con cola (posAt devuelve la opacidad del instante T y deja la posición en tt) ---- */
+ function electron(posAt,T,K,lag,al,sz,col){const tc=mx(col,COL[S.t]||COL.ion,.35);
+  for(let k=K;k>=0;k--){const a=posAt(T-k*lag,tt);if(a<=.004)continue;const f=k?Math.pow(1-k/(K+1),1.6):1;PT(tt,sz*(k?Math.max(.25,.68-k*.035):1),k?tc:col,a*al*(k?.9*f:1),k?1:0)}}
+ /* ===== IÓNICA ===== */
+ function ionOrig(S,a,out){if(a.mode==="in")return extB(a,out);if(a.eE)return elec(a.eE,out);return synth(0,a,out)}
+ function ionDest(S,a,out){if(a.mode==="out")return extA(a,out);if(a.slotL)return slotW(S,a,out);return synth(1,a,out)}
+ const orgOf=(a,out)=>a.eE?elec(a.eE,out):synth(a.src==="B"?1:0,a,out);
+ function ionPos(S,a,T,out){let tau,rev=0;
+  if(T>=a.td&&T<a.td+S.DF)tau=(T-a.td)/S.DF;else if(T>=a.tr&&T<a.tr+S.DR){tau=(T-a.tr)/S.DR;rev=1}else return 0;
+  ionOrig(S,a,o0);ionDest(S,a,d0);bez(o0,d0,rev?1-ez(tau):ez(tau),a.sg,out);
+  if(a.mode==="out")return rev?sm(tau/.6):1-sm((tau-.4)/.6);if(a.mode==="in")return rev?1-sm((tau-.4)/.6):sm(tau/.45);return 1}
+ function dibIon(S,Tc,al){
+  const es=C.es,co=COL.ion,sz=es*3.7,nF=S.nF,K=10,lag=.032;
+  /* campo entre los iones (cuando ya hay cargas) */
+  const hold=sm((Tc-S.Ttag)/.5)*(1-sm((Tc-(S.TR-.3))/.4));
+  if(hold>.01){t1.copy(C.pa).addScaledVector(C.ax,C.ra);t2.copy(C.pb).addScaledVector(C.ax,-C.rb);
+   PT(C.mid,Math.max(C.gap,.3)*1.2+es*2,co,hold*(.2+.1*Math.sin(Tc*3.2)),1);
+   if(C.gap>.06)for(let k=0;k<3;k++){const f=(Tc*.8+k/3)%1,a=Math.sin(Math.PI*f)*hold*.75;
+    tt.lerpVectors(t1,C.mid,f);PT(tt,es*1.5,[1,.7,.4],a,0);tt.lerpVectors(t2,C.mid,f);PT(tt,es*1.5,[.45,.8,1],a,0)}}
+  for(const a of S.act){
+   const last=a.td+S.DF;
+   /* carga: brillo en el electrón que se va y marca del hueco donde va a quedar */
+   if(Tc<a.td){const p=sm((Tc-(a.td-.6))/.6),pu=.5+.5*Math.sin(Tc*13);
+    if(p>0){ionOrig(S,a,o0);PT(o0,es*(2.4+.7*pu),ELE,.6*p*al,1);PT(o0,es*1.2,ELE,.9*p*al,0);
+     if(a.mode!=="out"){ionDest(S,a,d0);PT(d0,es*(2.8+.5*pu),co,.5*p*al,2)}}}
+   /* salida */
+   if(Tc>=a.td&&Tc<a.td+.45){const q=(Tc-a.td)/.45;ionOrig(S,a,o0);PT(o0,es*(1.6+4*q),co,.85*(1-q)*(1-q)*al,2);PT(o0,es*3.2*(1-q)+es,ELE,.8*(1-q)*al,1)}
+   /* en vuelo (ida y vuelta) */
+   electron((T,out)=>ionPos(S,a,T,out),Tc,K,lag,al,sz,ELE);
+   /* llegada: onda, destello y luz del electrón nuevo */
+   if(a.mode!=="out"&&Tc>=last&&Tc<a.tr+S.DR*.2){ionDest(S,a,d0);const q=(Tc-last)/.55;
+    if(q<1){PT(d0,es*(1.6+4.6*q),co,.9*Math.pow(1-q,1.5)*al,2);PT(d0,es*(4.2*(1-q)+1),WH,.7*(1-q)*al,1)}
+    if(Tc<a.tr&&a.slotL)PT(d0,es*(2.1+.3*Math.sin(Tc*5)),ELE,.34*al,1)}
+   /* sin copia del modelo: el electrón recibido orbita en la capa externa del otro átomo */
+   if(a.mode!=="out"&&!a.slotL&&Tc>=last+.3&&Tc<a.tr){const th0=1.3*(Tc-last)+a.i*2.1+.6,fa=sm((Tc-last-.3)/.4)*(1-sm((Tc-(a.tr-.4))/.4));
+    for(let k=5;k>=0;k--){const th=th0-k*.13;tt.copy(C.pb).addScaledVector(C.cr,Math.cos(th)*C.rvb).addScaledVector(C.cu,Math.sin(th)*C.rvb);PT(tt,es*(k?2.2-k*.2:2.8),ELE,(k?.5*(1-k/6):1)*fa*al,k?1:0)}}
+   /* vacío que deja en el átomo que lo cede */
+   if(a.mode!=="in"&&Tc>=last&&Tc<a.tr){ionOrig(S,a,o0);PT(o0,es*2.4,co,(.22+.1*Math.sin(Tc*4+a.i))*al,2)}
+   /* regreso: llegada a casa */
+   if(a.mode!=="in"&&Tc>=a.tr+S.DR&&Tc<a.tr+S.DR+.4){const q=(Tc-a.tr-S.DR)/.4;ionOrig(S,a,o0);PT(o0,es*(1.4+2.4*q),ELE,.7*(1-q)*al,2)}}
+  /* carteles de carga */
+  const A=S.A,B=S.B,ta=tag(A.sym,S.nA,1),tb=tag(B.sym,S.nB,0),e=Math.min(1,(Tc-S.Ttag)/.38)-1,pop=Tc<S.Ttag?0:1+2.70158*e*e*e+1.70158*e*e,fade=1-sm((Tc-(S.TR-.35))/.35);
+  const tw=Math.max(.62,1.45*Math.min(C.ra,C.rb)),sg=C.ax.dot(C.cr)>=0?-1:1;
+  for(const[sp,side]of[[ta,0],[tb,1]]){const R=side?C.rb:C.ra,c=side?C.pb:C.pa,sd=side?-sg:sg;
+   sp.position.copy(c).addScaledVector(C.cu,R*1.02+.3*tw).addScaledVector(C.cr,sd*(R*.22));const k=Math.max(0,pop)*tw;sp.scale.set(k,k*.5,1);sp.material.opacity=Math.min(1,Math.max(0,pop))*fade*al;sp.visible=pop>.02&&fade>.01}
+  for(const k in TAGS)if(TAGS[k]!==ta&&TAGS[k]!==tb)TAGS[k].visible=false}
+ /* ===== COVALENTE ===== */
+ const loopV=V();
+ function loopPos(S,a,T,out){const j=a.j,ph=S.W*(T-S.C0)+a.ph,X=.7071*C.d,Y=C.rho*(1-.27*j);
+  return out.copy(C.mid).addScaledVector(C.ax,X*Math.cos(ph)).addScaledVector(C.sv,Y*Math.sin(2*ph)).addScaledVector(C.cb,.32*Y*Math.sin(ph+.7*j))}
+ function covPos(S,a,T,out){if(T<a.tc)return 0;const u=ez((T-a.tc)/1.0);loopPos(S,a,T,out);
+  if(u<1){orgOf(a,o0);bez(o0,out,u,a.sg,loopV);out.copy(loopV)}return 1}
+ function dibCov(S,Tc,al){
+  const es=C.es,co=COL.cov,sz=es*2.9,lens=sm((Tc-(S.C0+.9))/.9)*al;
+  /* nube de la unión entre los dos núcleos */
+  if(lens>.01){const pu=.5+.5*Math.sin(Tc*2.6);t1.copy(C.pa).addScaledVector(C.ax,C.rva*.5);t2.copy(C.pb).addScaledVector(C.ax,-C.rvb*.5);
+   for(let k=0;k<5;k++){const f=k/4;tt.lerpVectors(t1,t2,f);const mid=1-Math.abs(f-.5)*1.1;PT(tt,C.rho*(1.35+.2*pu)*mid+es,co,lens*(.16+.06*S.b)*(.7+.3*pu)*mid,1)}
+   PT(C.mid,es*3.2,WH,lens*.28,1)}
+  for(const a of S.act){
+   if(Tc<a.tc){const p=sm((Tc-(a.tc-.6))/.6),pu=.5+.5*Math.sin(Tc*13);if(p>0){orgOf(a,o0);PT(o0,es*(2.4+.7*pu),ELE,.6*p*al,1);PT(o0,es*1.2,ELE,.9*p*al,0)}}
+   if(Tc>=a.tc&&Tc<a.tc+.4){const q=(Tc-a.tc)/.4;orgOf(a,o0);PT(o0,es*(1.6+3.6*q),co,.8*(1-q)*(1-q)*al,2)}
+   electron((T,out)=>covPos(S,a,T,out),Tc,12,.04,al,sz,ELE)}}
+ /* ===== METÁLICA ===== */
+ function stad(w,out){/* recorrido alrededor de los dos átomos: arriba, casquete B, abajo, casquete A */
+  const d=C.d,r=C.rho*.8,L=2*d+2*Math.PI*r;let s=((w%1)+1)%1*L,x,y;
+  if(s<d){x=-d/2+s;y=r}else if((s-=d)<Math.PI*r){const th=Math.PI/2-s/r;x=d/2+r*Math.cos(th);y=r*Math.sin(th)}
+  else if((s-=Math.PI*r)<d){x=d/2-s;y=-r}else{s-=d;const th=-Math.PI/2-s/r;x=-d/2+r*Math.cos(th);y=r*Math.sin(th)}
+  return out.copy(C.mid).addScaledVector(C.ax,x).addScaledVector(C.sv,y)}
+ function metPos(S,a,T,out){if(T<a.tc)return 0;const q=T-S.C0,r=C.rho;
+  stad(a.w0+a.v*q*.3,out);
+  out.addScaledVector(C.sv,.46*r*Math.sin(a.f1*q+a.p1)).addScaledVector(C.ax,.25*r*Math.sin(a.f2*q+a.p2)).addScaledVector(C.cb,.38*r*a.z*Math.sin(.8*q+a.p3));
+  if(a.real){const u=ez((T-a.tc)/1.0);if(u<1){orgOf(a,o0);loopV.copy(out);bez(o0,loopV,u,a.sg,out)}return 1}
+  return sm((T-a.tc)/.8)*.9}
+ function dibMet(S,Tc,al){
+  const es=C.es,co=COL.met,pu=.5+.5*Math.sin(Tc*1.7),ar=sm((Tc-S.C0)/1.2)*al;
+  if(ar>.01){PT(C.pa,C.rva*2.8,co,ar*(.17+.06*pu),1);PT(C.pb,C.rvb*2.8,co,ar*(.17+.06*(1-pu)),1);PT(C.mid,C.d*1.1+C.rho,co,ar*.12,1)}
+  for(const a of S.act){
+   if(a.real&&Tc<a.tc){const p=sm((Tc-(a.tc-.6))/.6),q=.5+.5*Math.sin(Tc*13);if(p>0){orgOf(a,o0);PT(o0,es*(2.4+.7*q),ELE,.6*p*al,1);PT(o0,es*1.2,ELE,.9*p*al,0)}}
+   electron((T,out)=>{const k=metPos(S,a,T,out);if(k<=0)return 0;return k*(.62+.38*cl(.5-(out.dot(C.cb)-C.mid.dot(C.cb))/(2*C.rho),0,1))},Tc,6,.05,al,es*(a.real?3:2.6),a.real?ELE:mx(ELE,co,.45))}}
+ /* ===== SIN UNIÓN (gas noble) ===== */
+ function dibGn(S,Tc,al){
+  const es=C.es,co=COL.gn,per=3.8,q=((Tc-.7)%per+per)%per,boost=sm(1-Math.abs(q-.62)/.34);
+  for(const side of[0,1]){const c=side?C.pb:C.pa,R=(side?C.rvb:C.rva)*1.06,N=30;
+   for(let i=0;i<N;i++){const th=i/N*6.2832;tt.copy(c).addScaledVector(C.cr,Math.cos(th)*R).addScaledVector(C.cu,Math.sin(th)*R);
+    PT(tt,es*(1.3+.6*boost),co,(.2+.16*(.5+.5*Math.sin(3*th-1.6*Tc)))*(1+1.2*boost)*al,1)}}
+  if(q<1.25){const g=Math.max(C.gap,.12),mA=m1.copy(C.mid).addScaledVector(C.ax,-g*.09),mB=m2.copy(C.mid).addScaledVector(C.ax,g*.09);
+   for(const side of[0,1]){const oo=synth(side,{n:1,k:0},o0),mm=side?mB:mA;let f,a=1;
+    if(q<.55)f=ez(q/.55)*.97;else{f=1-ez((q-.5)/.65);a=.75-.5*cl((q-.55)/.6,0,1)}
+    if(q<1.15){tt.lerpVectors(oo,mm,f);PT(tt,es*3,co,a*al,0);PT(tt,es*2,co,a*.45*al,1)}}
+   if(q>.5&&q<1){const p=(q-.5)/.5;PT(C.mid,es*(1.6+5*p),co,.9*(1-p)*(1-p)*al,2);PT(C.mid,es*(3.4*(1-p)+1),co,.6*(1-p)*al,1)}}}
+ /* ---- cada cuadro (antes de dibujar) ---- */
+ function pre(){
+  const now=performance.now();
+  if(!op.on){if(S)fin();return}
+  const un=window.__UNI&&window.__UNI.un;if(un&&un.x&&un.y&&un.t){lastU=un;lastT=now}
+  const u=lastU&&now-lastT<GRACIA?lastU:null;
+  if(!u){if(S)fin();return}
+  const key=u.t+"|"+u.x.z+"|"+u.y.z;
+  if(!S||S.key!==key){if(S)fin();if(bad===key)return;S=nuevo(u,key,now);if(!S){bad=key;return}}
+  frame(now)}
+ window.__FX={get S(){return S},C,fx,mesh};
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);r.render=function(a,b){try{pre()}catch(e){window.__fxerr=e.message+" @"+(e.stack||"").split("\n")[1]}return o(a,b)}})();
+})();
+</script>
+<script>
+/* ---------- Tutorial: cartelitos animados que guían a quien lo usa por primera vez ----------
+   Sale solo la primera vez (cuando termina la pantalla de entrada) · se repite con el botón «Tutorial» del banner · ?tut=1 lo fuerza · ?tut=0 lo desactiva */
+(function(){
+ const Q=new URLSearchParams(location.search);
+ const PASOS=[
+  {h:"Apuntá a un marcador",p:"Poné la cámara frente a un marcador de la hoja y aparece su átomo en 3D. Podés enfocar varios a la vez: con dos o más, tocá un átomo para seleccionarlo y todo lo que cambies (tamaño, giro, capas, datos) afecta solo a ese.",d:"mk",esp:1,libre:1,big:1},
+  {p:"Si eres lo suficientemente curioso, ¡anímate a saltear el tutorial y diviértete descubriendo! (el tutorial siempre estará disponible)",dec:1,big:1},
+  {t:"#ui",h:"Tamaño",p:"Con − y + (o el deslizador) agrandás o achicás los átomos. Tocá el porcentaje para volver al tamaño inicial."},
+  {h:"Girar",p:"Arrastrá un dedo por la pantalla para girar el átomo. ¡Probalo ahora!",d:"hand",libre:1},
+  {t:"#datp",h:"Datos del elemento",p:"Arriba ves el nombre, el símbolo y la configuración electrónica externa. «Ver más» abre la ficha completa y «Tutorial» te muestra estos pasos otra vez."},
+  {t:"#capb",h:"Capas",p:"Acá personalizás lo que ves. Te muestro qué hay en cada categoría del menú."},
+  {cat:"Capas del átomo",h:"Capas del átomo",p:"Elegí qué partes del átomo se dibujan: protones, neutrones, electrones, los niveles de energía y los subniveles s, p, d y f. «Todo» y «Nada» los activan o apagan de una vez."},
+  {cat:"Niveles de energía",h:"Niveles de energía",p:"Mostrá solo los niveles (n) que quieras, del 1 al 7. Con «Atenuar en vez de ocultar», los que apagues quedan tenues en lugar de desaparecer."},
+  {cat:"Movimiento",h:"Movimiento",p:"«Rotación» hace girar solo al átomo. «Posición original» lo deja en su orientación inicial, frena la rotación y bloquea el arrastre."},
+  {cat:"Destacar información",h:"Destacar información",p:"«Nombre de la familia» muestra flotando el nombre del grupo, y «Contorno de neón» dibuja una línea de color alrededor de los grupos y de las uniones."},
+  {cat:"Tipo de unión",h:"Tipo de unión",p:"Con dos marcadores juntos, el visor dice si la unión es iónica, covalente o metálica y anima sus electrones. Elegí si el cartel flota sobre ellos, va en el banner de arriba o no se muestra, y prendé o apagá la animación."},
+  {h:"Dos marcadores = una unión",p:"Acercá solo dos: arriba de ellos flota si la unión es iónica, covalente o metálica, un neón de color los rodea y sus electrones se mueven como en esa unión.",d:"par",big:1},
+  {h:"Tres o más: el grupo",p:"Con varios de una misma familia flota el nombre del grupo y un neón los envuelve.",d:"grp",big:1},
+  {t:"#back",h:"Grupos",p:"Volvé acá para elegir otras familias de la tabla."}];
+ const DEM={mk:'<i class="q"></i><svg class="at" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><ellipse cx="12" cy="12" rx="10.5" ry="4.2"/><ellipse cx="12" cy="12" rx="10.5" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10.5" ry="4.2" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>',hand:'<span class="hd">👆</span>',par:'<i class="gl"></i><i class="q a"></i><i class="q b"></i><span class="pl p1">Unión iónica</span><span class="pl p2">Unión covalente</span>',grp:'<i class="gl g"></i><i class="q"></i><i class="q"></i><i class="q"></i><span class="pl p3">Halógenos</span>'};
+ const st=document.createElement("style");st.textContent=`
+#tut{position:fixed;inset:0;z-index:60;pointer-events:none;font:14px system-ui,sans-serif;color:#fff}#tut[hidden]{display:none}
+#tut .sp{position:absolute;border-radius:14px;box-shadow:0 0 0 100vmax rgba(5,7,13,.62);transition:left .4s,top .4s,width .4s,height .4s,opacity .3s}
+#tut .sp::after{content:"";position:absolute;inset:0;border-radius:inherit;border:2px solid #3de6ff;box-shadow:0 0 14px #3de6ff;animation:tpu 1.4s ease-in-out infinite}#tut .sp.nt::after{display:none}
+#tut .cd{position:absolute;width:min(300px,calc(100vw - 20px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(8,12,24,.95);border:1.5px solid rgba(61,230,255,.6);box-shadow:0 0 18px rgba(61,230,255,.3),0 8px 24px rgba(0,0,0,.5);pointer-events:auto;animation:tin .4s cubic-bezier(.2,1.3,.4,1)}
+#tut .th{font:700 16px system-ui,sans-serif;margin-bottom:4px;text-shadow:0 0 8px rgba(61,230,255,.8)}#tut .tp{color:#d7e6ff;line-height:1.35}
+#tut .dt{display:flex;justify-content:center;flex-wrap:wrap;gap:5px;margin-top:10px}#tut .dt i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:.3s}#tut .dt i.on{background:#3de6ff;box-shadow:0 0 8px #3de6ff;transform:scale(1.35)}
+#tut .tf{display:flex;align-items:center;gap:6px;margin-top:8px}#tut .tf button{padding:7px 12px;border-radius:12px;border:0;background:rgba(255,255,255,.14);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}
+#tut .tf .sk{margin-right:auto;background:none;color:#9fb0d0;padding-left:0}#tut .tf .nx{background:rgba(61,230,255,.3);box-shadow:0 0 8px rgba(61,230,255,.4)}
+#tut .dm{position:relative;height:56px;margin-top:8px;display:flex;align-items:flex-end;justify-content:center;gap:6px;padding-bottom:4px}
+#tut .q{width:24px;height:24px;border-radius:4px;background:#fff;border:3px solid #111;box-sizing:border-box;flex:none}#tut .a{animation:qa 6s ease-in-out .3s infinite backwards}#tut .b{animation:qb 6s ease-in-out .3s infinite backwards}
+#tut .gl{position:absolute;bottom:0;left:50%;box-sizing:border-box;width:92px;height:32px;margin-left:-46px;border-radius:12px;border:2px solid #ff6a00;box-shadow:0 0 10px #ff6a00;animation:gc 6s ease-in-out .3s infinite backwards}#tut .gl.g{width:104px;margin-left:-52px;border-color:#b8ff3d;box-shadow:0 0 10px #b8ff3d;animation:tpu 1.4s infinite}
+#tut .pl{position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 13px system-ui,sans-serif;text-shadow:0 0 8px currentColor}
+#tut .p1{color:#ff6a00;animation:p1k 6s ease-in-out .3s infinite backwards}#tut .p2{color:#00d9ff;animation:p2k 6s ease-in-out .3s infinite backwards}#tut .p3{color:#b8ff3d}
+#tut .at{display:block;flex:none;width:24px;height:24px;color:#3de6ff;animation:spin 3s linear infinite;margin-left:8px}#tut .hd{font-size:30px;animation:hs 1.6s ease-in-out infinite}
+@keyframes tin{from{opacity:0;transform:translateY(12px) scale(.94)}}@keyframes tpu{50%{opacity:.4;transform:scale(1.03)}}
+@keyframes qa{0%,6%{transform:translateX(-34px)}28%,88%{transform:translateX(0)}96%,100%{transform:translateX(-34px)}}@keyframes qb{0%,6%{transform:translateX(34px)}28%,88%{transform:translateX(0)}96%,100%{transform:translateX(34px)}}
+@keyframes gc{0%,26%{opacity:0;transform:scale(.85);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}34%,48%{opacity:1;transform:scale(1);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}56%,86%{opacity:1;transform:scale(1);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}92%,100%{opacity:0;transform:scale(.85);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
+@keyframes p1k{0%,30%{opacity:0}36%,46%{opacity:1}51%,100%{opacity:0}}@keyframes p2k{0%,55%{opacity:0}61%,86%{opacity:1}92%,100%{opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes hs{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
+#tutb{box-sizing:border-box;text-align:center;white-space:nowrap;position:fixed;left:8px;top:calc(46px + env(safe-area-inset-top,0px));z-index:13;min-width:70px;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(8,12,24,.7);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#tutb.bajo{top:calc(80px + env(safe-area-inset-top,0px))}
+#tut.dec .tf .sk{background:rgba(255,255,255,.14);color:#fff;padding-left:12px}#tut .nx:disabled{opacity:.75;animation:tpu 1.4s ease-in-out infinite}#tut .tf button{white-space:nowrap}
+#tut .bg{position:absolute;inset:0;background:rgba(2,4,10,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .35s}
+#tut.big .cd{width:min(340px,calc(100vw - 32px));padding:18px 18px 14px;border-radius:18px;box-shadow:0 0 22px rgba(61,230,255,.32),0 10px 30px rgba(0,0,0,.5)}
+#tut.big .th{font:300 24px system-ui,sans-serif;letter-spacing:.5px;color:#f2f9ff;text-shadow:0 0 6px #3de6ff,0 0 18px rgba(61,230,255,.4);margin-bottom:6px}
+#tut.big .tp{font-size:14.5px;line-height:1.4}#tut.dec .tp{font-size:16px;line-height:1.45}
+#tut.big .dm{transform:scale(1.2);margin:16px 0 14px}#tut .dm.mk{height:32px}#tut.big .dm.mk{margin:14px 0 12px}
+#tut.big .tf{margin-top:12px}#tut.big .tf button{padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px}
+#tut.big .tf .nx{background:none;border:1.5px solid #3de6ff;color:#3de6ff;text-shadow:0 0 8px rgba(61,230,255,.7);box-shadow:0 0 10px rgba(61,230,255,.35)}
+@media (prefers-reduced-motion:reduce){#tut *{animation:none!important;transition:none!important}#tut .p2{display:none}}`;
+ document.head.appendChild(st);
+ const t=document.createElement("div");t.id="tut";t.hidden=true;t.innerHTML='<div class="bg"></div><div class="sp"></div><div class="cd"></div>';document.body.appendChild(t);
+ const bgE=t.children[0],sp=t.children[1],cd=t.children[2];let n=0,on=0,manual=0,wt=0,ab=0;
+ const vis=()=>[...document.querySelectorAll("a-marker")].some(m=>m.object3D.visible);
+ const sig=()=>n===0&&manual?2:n+1;/* abierto a mano desde Capas se salta la pregunta «¿tutorial?» */
+ /* pasos de categoría: el tutorial abre el panel Capas (y lo cierra al salir) y resalta el bloque de cada categoría */
+ const cpn=()=>document.getElementById("capp"),cbn=()=>document.getElementById("capb");
+ function panel(s){const cp=cpn(),cb=cbn();if(!cp||!cb)return;
+  if(s.cat){if(cp.hidden){cb.click();ab=1}setTimeout(()=>{const h=[...cp.querySelectorAll(".ch")].find(e=>e.textContent.trim().startsWith(s.cat));if(h)cp.scrollTo({top:Math.max(0,h.offsetTop-10),behavior:"smooth"})},90)}
+  else if(ab){if(!cp.hidden)cb.click();ab=0}}
+ function catRect(nom){const cp=cpn();if(!cp||cp.hidden)return null;const h=[...cp.querySelectorAll(".ch")].find(e=>e.textContent.trim().startsWith(nom));if(!h)return null;
+  const c=cp.getBoundingClientRect(),a=h.getBoundingClientRect();let t=a.top,b=a.bottom;
+  for(let e=h.nextElementSibling;e&&!e.classList.contains("ch");e=e.nextElementSibling){const q=e.getBoundingClientRect();if(q.height){t=Math.min(t,q.top);b=Math.max(b,q.bottom)}}
+  t=Math.max(t,c.top+2);b=Math.min(b,c.bottom-2);return b>t?{left:c.left+4,top:t,width:c.width-8,height:b-t}:null}
+ function show(i){n=i;const s=PASOS[i],at=i>2||(i===2&&!manual);panel(s);cd.style.animation="none";void cd.offsetWidth;cd.style.animation="";
+  t.classList.toggle("dec",!!s.dec);t.classList.toggle("big",!!s.big);
+  cd.innerHTML=(s.h?'<div class="th">'+s.h+'</div>':"")+'<div class="tp">'+s.p+'</div>'+(s.d?'<div class="dm'+(s.d==="mk"?' mk':'')+'">'+DEM[s.d]+'</div>':'')
+   +'<div class="dt">'+PASOS.map((_,j)=>'<i'+(j===i?' class="on"':'')+'></i>').join("")+'</div>'
+   +'<div class="tf"><button class="sk" data-a="x">'+(s.dec?"¡Descubrir solo!":"Saltar")+'</button>'+(at?'<button data-a="p">‹ Atrás</button>':'')
+   +(s.esp?'<button class="nx" disabled>Esperando un marcador…</button>':'<button class="nx" data-a="n">'+(s.dec?"Guíame":i===PASOS.length-1?"¡Listo!":"Siguiente")+'</button>')+'</div>'}
+ function lay(){if(!on)return;requestAnimationFrame(lay);const s=PASOS[n],W=innerWidth,H=innerHeight,ui=document.getElementById("ui");
+  /* el cartel de «Apuntá a un marcador» no se quita hasta que aparece un modelo (y se mantiene 0,8 s a la vista) */
+  if(s.esp){if(vis()){const now=performance.now();if(!wt)wt=now;else if(now-wt>800){wt=0;show(sig());return}}else wt=0}
+  if(ui&&s.t==="#ui")ui.classList.add("act");
+  const el=s.t&&document.querySelector(s.t),r=s.cat?catRect(s.cat):(el&&el.offsetWidth&&el.offsetHeight?el.getBoundingClientRect():(s.t==="#datp"?{left:8,top:8,width:W-16,height:84}:null)),cw=cd.offsetWidth,ch=cd.offsetHeight;let x,y;
+  if(r){sp.style.left=r.left-6+"px";sp.style.top=r.top-6+"px";sp.style.width=r.width+12+"px";sp.style.height=r.height+12+"px";
+   y=r.top+r.height+ch+24<H?r.top+r.height+14:r.top-ch-24>8?r.top-ch-14:(r.top+r.height/2<H/2?H-ch-12:96);x=r.left+r.width/2-cw/2}/* el cartel nunca tapa lo que explica: abajo, arriba o, si no entra, del lado opuesto de la pantalla */
+  else{sp.style.left=W/2+"px";sp.style.top=H/2+"px";sp.style.width=sp.style.height="0px";x=(W-cw)/2;y=s.libre&&!s.big?H-ch-96:(H-ch)/2}/* sin oscurecer: la cámara y el modelo se ven limpios */
+  sp.style.opacity=s.libre||s.big?0:1;sp.classList.toggle("nt",!r);bgE.style.opacity=s.big&&!s.libre?1:0;/* fondo oscurecido y desenfocado en los carteles grandes (menos en «Apuntá», para ver la cámara) */
+  cd.style.left=Math.min(W-cw-10,Math.max(10,x))+"px";cd.style.top=y+"px"}
+ function fin(){on=0;t.hidden=true;panel({});try{localStorage.setItem("tut1","1")}catch(e){}}
+ function ini(m){if(on)return;manual=m?1:0;on=1;wt=0;t.hidden=false;show(manual&&vis()?2:0);requestAnimationFrame(lay)}
+ t.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;if(a==="n")n<PASOS.length-1?show(sig()):fin();else if(a==="p")show(n-1);else fin()});
+ /* botón «Tutorial»: siempre visible, fijo debajo de «Grupos» (del otro lado, «Ver más» queda debajo de «Capas»), haya o no banner de datos.
+    Cuando el banner baja el botón «Ver más» (datos largos), «Tutorial» baja con él para que queden alineados */
+ const bk=document.getElementById("back");
+ {const tb=document.createElement("button");tb.id="tutb";tb.type="button";tb.textContent="Tutorial";document.body.appendChild(tb);
+  const fit=()=>{if(bk&&bk.offsetWidth)tb.style.width=bk.offsetWidth+"px"};
+  fit();addEventListener("resize",fit);addEventListener("load",fit);tb.addEventListener("click",()=>ini(1));
+  const dp=document.getElementById("datp");
+  if(dp){const sy=()=>tb.classList.toggle("bajo",dp.classList.contains("bajo")&&!dp.classList.contains("vacia")&&!dp.hidden);
+   new MutationObserver(sy).observe(dp,{attributes:true,attributeFilter:["class","hidden"]});sy()}}
+ let visto=0;try{visto=localStorage.getItem("tut1")==="1"}catch(e){}
+ const f=Q.get("tut");
+ if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
+})();
+</script></body></html>
