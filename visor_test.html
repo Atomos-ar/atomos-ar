@@ -159,7 +159,7 @@ window.SEL=(function(){
  const subs=[],T=AFRAME.THREE,c0=new T.Vector3(),c1=new T.Vector3(),rg=new T.Vector3(),s3=new T.Vector3();
  let user=null,eff=null,last="";
  const S={z:null,n:0,zs:[],on(f){subs.push(f)},sel(z){user=z;pasar()}};
- const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut");
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut,#tutb");
  function leer(){const r=[];document.querySelectorAll("a-marker").forEach(m=>{if(m.object3D&&m.object3D.visible&&/^m\d+$/.test(m.id))r.push(+m.id.slice(1))});return r}
  function pasar(){const zs=leer(),n=zs.length;
   /* "user" es solo lo que se eligió tocando; si ese átomo sale de la vista, se pierde la elección */
@@ -490,7 +490,7 @@ const CAPAS=(function(){
 (function(){
  const TH=AFRAME.THREE,EJE=new TH.Vector3(0,0,1),EJX=new TH.Vector3(1,0,0),DIAG=new TH.Vector3(1,0,1).normalize(),K=.01,q=new TH.Quaternion(),qy=new TH.Quaternion(),qd=new TH.Quaternion(),qm=new TH.Quaternion(),qc=new TH.Quaternion(),a=new TH.Vector3(),b2=new TH.Vector3(),ce=document.querySelector("a-entity[camera]");
  const st=document.createElement("style");st.textContent="a-scene,a-scene canvas,video{touch-action:none}";document.head.appendChild(st);
- const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut");
+ const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut,#tutb");
  const marcadores=()=>[...document.querySelectorAll("a-marker")];
  const GV=.7;let ON0=0;try{ON0=localStorage.getItem("giro")==="1"?1:0}catch(e){}
  /* Cada átomo gira por su cuenta: g.on = rotación automática, g.ang = su ángulo, g.lock = posición original.
@@ -690,9 +690,35 @@ const ITEMS=[
   x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(FN[k],320,66);x.fillText(FN[k],320,66);
   x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(FN[k],320,66);
   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));
-  s.renderOrder=20;s.scale.set(3.6,.72,1);s.visible=false;root.add(s);return lbl[k]=s}
+  s.userData.tw=Math.min(.98,(Math.min(w,590)+50)/640);s.renderOrder=20;s.scale.set(3.6,.72,1);s.visible=false;root.add(s);return lbl[k]=s}
  const ms=[...document.querySelectorAll("a-marker")].map(m=>{const z=+m.id.slice(1);return{m,w:m.querySelector(":scope > a-entity"),k:FAM[z],p:new TH.Vector3(),u:new TH.Vector3(),s:1}}).filter(a=>a.k&&a.w);
  const sv=new TH.Vector3(),MAXE=3.5,cq=new TH.Quaternion(),cr=new TH.Vector3(),cu=new TH.Vector3(),off={};
+ /* ---- Ajuste a la pantalla: un nombre flotante nunca se sale ni queda tapado ----
+    Se achica lo justo para entrar en el ancho disponible y, si el punto donde flota queda cerca o fuera de un borde, se corre hacia adentro.
+    Lo disponible deja afuera el banner de arriba (con sus botones) y la barra de tamaño de abajo. Sirve también para el nombre de la unión. */
+ const FR=new TH.Vector3(),FU=new TH.Vector3(),FF=new TH.Vector3(),FP=new TH.Vector3(),FA=new TH.Vector3(),FE=new TH.Vector3(),FV=new TH.Vector3(),CJ={l:8,r:0,t:0,b:0};let cjT=-1e9;
+ function caja(now){if(now-cjT<250)return;cjT=now;const W=innerWidth,H=innerHeight;let t=0,b=H;
+  for(const sl of["#datp","#capb","#back","#tutb"]){const e=document.querySelector(sl);if(!e||e.hidden)continue;const cs=getComputedStyle(e);if(cs.display==="none"||cs.visibility==="hidden")continue;
+   const q=e.getBoundingClientRect();if(q.height>0&&q.top<H*.45)t=Math.max(t,q.bottom)}
+  const u=document.getElementById("ui");if(u){const q=u.getBoundingClientRect();if(q.height>0&&q.top>H*.5)b=Math.min(b,q.top)}
+  CJ.l=8;CJ.r=W-8;CJ.t=t+6;CJ.b=b-6;if(CJ.b-CJ.t<H*.25){CJ.t=8;CJ.b=H-8}/* si el banner está muy extendido (ficha abierta), se ignora para no dejar sin lugar */}
+ function ajustar(sp){const cam=sc.camera,cv=sc.canvas;if(!cam||!cv)return;const r=cv.getBoundingClientRect(),W=r.width,H=r.height;if(!(W>0&&H>0))return;
+  caja(performance.now());cam.updateMatrixWorld();FR.setFromMatrixColumn(cam.matrixWorld,0).normalize();FU.setFromMatrixColumn(cam.matrixWorld,1).normalize();
+  FF.setFromMatrixColumn(cam.matrixWorld,2).negate();FP.setFromMatrixPosition(cam.matrixWorld);
+  if(FV.copy(sp.position).sub(FP).dot(FF)<.05)return;/* detrás de la cámara */
+  const sx=sp.scale.x,sy=sp.scale.y,tw=(sp.userData&&sp.userData.tw)||1;
+  FA.copy(sp.position).project(cam);
+  FE.copy(sp.position).addScaledVector(FR,sx/2).project(cam);const ex=Math.abs(FE.x-FA.x);
+  FE.copy(sp.position).addScaledVector(FU,sy/2).project(cam);const ey=Math.abs(FE.y-FA.y);
+  if(!(ex>1e-6&&ey>1e-6))return;
+  let hw=ex*W/2*tw,hh=ey*H/2*.62;/* semitamaño del texto en píxeles */
+  const k=Math.min(1,(CJ.r-CJ.l)/2/hw,(CJ.b-CJ.t)/2/hh);hw*=k;hh*=k;
+  const cx=r.left+(FA.x*.5+.5)*W,cy=r.top+(.5-FA.y*.5)*H;
+  const nx=Math.min(Math.max(cx,CJ.l+hw),CJ.r-hw),ny=Math.min(Math.max(cy,CJ.t+hh),CJ.b-hh);
+  if(k<1){sp.scale.x*=k;sp.scale.y*=k}
+  const dx=(nx-cx)/(W/2)*(sx/2)/ex,dy=-(ny-cy)/(H/2)*(sy/2)/ey;
+  if(dx)sp.position.addScaledVector(FR,dx);if(dy)sp.position.addScaledVector(FU,dy)}
+ window.__fitRotulo=ajustar;
  (function tk(){requestAnimationFrame(tk);
   {const so=sc.object3D,ch=so.children;if(ch[ch.length-1]!==root)so.add(root)}/* siempre el último: se dibuja encima del neón */
   const nom={};
@@ -709,6 +735,7 @@ const ITEMS=[
     if(bn>=2){const c=new TH.Vector3(),u=new TH.Vector3();let s=0,n=0;
      L.forEach((a,i)=>{if(f(i)===best){c.add(a.p);u.add(a.u);s+=a.s;n++}});c.multiplyScalar(1/n);u.normalize();s/=n;
      const sp=label(k);sp.position.copy(c).addScaledVector(u,2*s);sp.scale.set(3.6*s,.72*s,1);sp.visible=true;nom[k]=1}}}
+  for(const k in nom)ajustar(lbl[k]);/* primero: que entren en la pantalla */
   /* los nombres no se pisan: si dos se superponen en pantalla, el de arriba sube lo justo (suavizado, para que no salte) */
   {const cam=sc.camera;if(cam){cam.getWorldQuaternion(cq);cr.set(1,0,0).applyQuaternion(cq);cu.set(0,1,0).applyQuaternion(cq);
    const A=[];for(const k in nom){const s=lbl[k];A.push({k,s,x:s.position.dot(cr),y:s.position.dot(cu),w:s.scale.x,h:s.scale.y})}
@@ -716,6 +743,7 @@ const ITEMS=[
    for(const e of A){let y=e.y;
     for(let it=0;it<4;it++){let mv=0;for(const q of ok)if(Math.abs(e.x-q.x)<(e.w+q.w)*.46&&Math.abs(y-q.y)<(e.h+q.h)*.52){y=q.y+(e.h+q.h)*.52;mv=1}if(!mv)break}
     ok.push({x:e.x,y,w:e.w,h:e.h});const o=off[e.k]||0;off[e.k]=o+(y-e.y-o)*.3;e.s.position.addScaledVector(cu,off[e.k])}}}
+  for(const k in nom)ajustar(lbl[k]);/* otra vez: el empuje para no pisarse no puede sacarlos de la pantalla */
   for(const k in lbl)if(!nom[k]){lbl[k].visible=false;off[k]=0}
  })();
 })();
@@ -910,7 +938,7 @@ void main(){
   function sprite(k,txt){if(sps[k])return sps[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d"),f=n=>"700 "+n+"px system-ui,-apple-system,'Segoe UI',sans-serif";
    x.font=f(62);const w=x.measureText(txt).width;if(w>590)x.font=f(Math.floor(62*590/w));
    x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(txt,320,66);x.fillText(txt,320,66);x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(txt,320,66);
-   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.renderOrder=20;s.visible=false;rt.add(s);return sps[k]={s,t0:0,k}}
+   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.userData.tw=Math.min(.98,(Math.min(w,590)+50)/640);s.renderOrder=20;s.visible=false;rt.add(s);return sps[k]={s,t0:0,k}}
   function flotante(now,un){
     if(un){if(!fo||fo.k!==un.k){fo=sprite(un.k,un.titulo);fo.t0=now}fSeen=now;fc=un.c}
     for(const k in sps)if(sps[k]!==fo)sps[k].s.visible=false;
@@ -919,7 +947,7 @@ void main(){
     cc.set(0,0,0);uu.set(0,0,0);let s=0;fc.forEach(a=>{cc.add(a.p);uu.add(t3.set(0,1,0).transformDirection(a.o.matrixWorld));s+=a.s});
     cc.multiplyScalar(1/fc.length);uu.normalize();s/=fc.length;
     const e=Math.min(1,(now-fo.t0)/380)-1,pop=1+2.70158*e*e*e+1.70158*e*e;/* entra con rebote */
-    fo.s.position.copy(cc).addScaledVector(uu,2*s+Math.sin(now/450)*.07*s);fo.s.scale.set(3.6*s*pop,.72*s*pop,1);fo.s.visible=pop>.01}
+    fo.s.position.copy(cc).addScaledVector(uu,2*s+Math.sin(now/450)*.07*s);fo.s.scale.set(3.6*s*pop,.72*s*pop,1);fo.s.visible=pop>.01;if(fo.s.visible&&window.__fitRotulo)window.__fitRotulo(fo.s)}
   const nQa=new TH.Quaternion(),nQ1=new TH.Quaternion(),nVo=new TH.Vector3(),nVv=new TH.Vector3();
   const OB={};
   function objeto(k){
@@ -1311,8 +1339,8 @@ void main(){float r=length(vQ);if(r>1.0)discard;
 @keyframes gc{0%,26%{opacity:0;transform:scale(.85);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}34%,48%{opacity:1;transform:scale(1);border-color:#ff6a00;box-shadow:0 0 10px #ff6a00}56%,86%{opacity:1;transform:scale(1);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}92%,100%{opacity:0;transform:scale(.85);border-color:#00d9ff;box-shadow:0 0 10px #00d9ff}}
 @keyframes p1k{0%,30%{opacity:0}36%,46%{opacity:1}51%,100%{opacity:0}}@keyframes p2k{0%,55%{opacity:0}61%,86%{opacity:1}92%,100%{opacity:0}}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes hs{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
-#tutb{box-sizing:border-box;text-align:center;white-space:nowrap;position:absolute;left:-4px;bottom:0;min-width:70px;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(5,7,13,.35);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-#datp.vacia #tutb{top:calc(44px + env(safe-area-inset-top,0px));bottom:auto;position:fixed;left:8px;background:rgba(8,12,24,.7)}
+#tutb{box-sizing:border-box;text-align:center;white-space:nowrap;position:fixed;left:8px;top:calc(46px + env(safe-area-inset-top,0px));z-index:13;min-width:70px;padding:5px 0;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:rgba(8,12,24,.7);color:#fff;font:12.5px system-ui,sans-serif;text-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#tutb.bajo{top:calc(80px + env(safe-area-inset-top,0px))}
 #tut.dec .tf .sk{background:rgba(255,255,255,.14);color:#fff;padding-left:12px}#tut .nx:disabled{opacity:.75;animation:tpu 1.4s ease-in-out infinite}#tut .tf button{white-space:nowrap}
 #tut .bg{position:absolute;inset:0;background:rgba(2,4,10,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .35s}
 #tut.big .cd{width:min(340px,calc(100vw - 32px));padding:18px 18px 14px;border-radius:18px;box-shadow:0 0 22px rgba(61,230,255,.32),0 10px 30px rgba(0,0,0,.5)}
@@ -1355,10 +1383,15 @@ void main(){float r=length(vQ);if(r>1.0)discard;
  function fin(){on=0;t.hidden=true;panel({});try{localStorage.setItem("tut1","1")}catch(e){}}
  function ini(m){if(on)return;manual=m?1:0;on=1;wt=0;t.hidden=false;show(manual&&vis()?2:0);requestAnimationFrame(lay)}
  t.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;if(a==="n")n<PASOS.length-1?show(sig()):fin();else if(a==="p")show(n-1);else fin()});
- /* botón «Tutorial» dentro del banner de datos, debajo de «Grupos» (del otro lado, «Ver más» queda debajo de «Capas») */
- const dc=document.querySelector("#datp .dc"),bk=document.getElementById("back");
- if(dc){dc.insertAdjacentHTML("beforeend",'<button id="tutb" type="button">Tutorial</button>');const tb=document.getElementById("tutb"),fit=()=>{if(bk&&bk.offsetWidth)tb.style.width=bk.offsetWidth+"px"};
-  fit();addEventListener("resize",fit);addEventListener("load",fit);tb.addEventListener("click",()=>ini(1))}
+ /* botón «Tutorial»: siempre visible, fijo debajo de «Grupos» (del otro lado, «Ver más» queda debajo de «Capas»), haya o no banner de datos.
+    Cuando el banner baja el botón «Ver más» (datos largos), «Tutorial» baja con él para que queden alineados */
+ const bk=document.getElementById("back");
+ {const tb=document.createElement("button");tb.id="tutb";tb.type="button";tb.textContent="Tutorial";document.body.appendChild(tb);
+  const fit=()=>{if(bk&&bk.offsetWidth)tb.style.width=bk.offsetWidth+"px"};
+  fit();addEventListener("resize",fit);addEventListener("load",fit);tb.addEventListener("click",()=>ini(1));
+  const dp=document.getElementById("datp");
+  if(dp){const sy=()=>tb.classList.toggle("bajo",dp.classList.contains("bajo")&&!dp.classList.contains("vacia")&&!dp.hidden);
+   new MutationObserver(sy).observe(dp,{attributes:true,attributeFilter:["class","hidden"]});sy()}}
  let visto=0;try{visto=localStorage.getItem("tut1")==="1"}catch(e){}
  const f=Q.get("tut");
  if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
