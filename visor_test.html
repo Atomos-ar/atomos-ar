@@ -391,10 +391,12 @@ const CAPAS=(function(){
  const est={},niv={};CATS.forEach(c=>est[c[0]]=1);NIVS.forEach(n=>niv[n]=1);let atenuar=0;const DIM=.15;
  try{const g=JSON.parse(localStorage.getItem("capas")||"null");if(g){CATS.forEach(c=>{if(g.est&&c[0] in g.est)est[c[0]]=g.est[c[0]]?1:0});
   NIVS.forEach(n=>{if(g.niv&&n in g.niv)niv[n]=g.niv[n]?1:0});atenuar=g.atenuar?1:0}}catch(e){}
- /* Un estado de capas por átomo: cada uno parte de lo último que se guardó y después cambia solo. CAPAS.est / niv / atenuar son los del átomo seleccionado (CAPAS.usar(z)) */
- const copia=()=>({est:Object.assign({},est),niv:Object.assign({},niv),atenuar});
- const ESTS={},ESN=copia();let cur=ESN;
- const estDe=z=>ESTS[z]||(ESTS[z]=copia());
+ /* Un estado de capas por átomo: cada uno parte de los valores generales (ESN) y después cambia solo. CAPAS.est / niv / atenuar son los del átomo seleccionado (CAPAS.usar(z));
+    si no hay ninguno seleccionado son los generales (ESN), y CAPAS.muta(fn) aplica el cambio a todos los átomos y a los que aparezcan después */
+ const copiaDe=o=>({est:Object.assign({},o.est),niv:Object.assign({},o.niv),atenuar:o.atenuar});
+ const ESTS={},ESN=copiaDe({est,niv,atenuar});let cur=ESN;
+ const estDe=z=>ESTS[z]||(ESTS[z]=copiaDe(ESN));
+ function muta(fn){if(cur===ESN){fn(ESN);for(const z in ESTS)fn(ESTS[z])}else fn(cur)}
  function usar(z){cur=z==null?ESN:estDe(z)}
  const guardar=()=>{try{localStorage.setItem("capas",JSON.stringify({est:cur.est,niv:cur.niv,atenuar:cur.atenuar}))}catch(e){}};
  function zDe(root){let z=root.userData.__z;if(z==null){const el=root.el,mk=el&&el.closest&&el.closest("a-marker");z=mk&&/^m\d+$/.test(mk.id)?+mk.id.slice(1):null;if(z!=null)root.userData.__z=z}return z}
@@ -445,14 +447,13 @@ const CAPAS=(function(){
    if(lob&&c.tr)burbuja(m);
    const op=dim?c.op*DIM:c.op,tr=dim?true:c.tr,dw=dim?false:c.dw;
    if(m.opacity!==op||m.transparent!==tr||m.depthWrite!==dw){const t=m.transparent!==tr;m.opacity=op;m.transparent=tr;m.depthWrite=dw;if(t)m.needsUpdate=true}}})}
- return{CATS,NIVS,get est(){return cur.est},get niv(){return cur.niv},get atenuar(){return cur.atenuar},set atenuar(v){cur.atenuar=v?1:0},guardar,categoria,nivel,aplicarModelo,usar,estado:z=>z==null?ESN:estDe(z)}})();
+ return{CATS,NIVS,get est(){return cur.est},get niv(){return cur.niv},get atenuar(){return cur.atenuar},set atenuar(v){cur.atenuar=v?1:0},guardar,categoria,nivel,aplicarModelo,usar,muta,estado:z=>z==null?ESN:estDe(z)}})();
 /*FIN LOGICA*/
 
 /* ---------- Capas: botones para mostrar, ocultar o atenuar partes del modelo, y selector de niveles ---------- */
 (function(){
  const raices=()=>[...document.querySelectorAll("[gltf-model]")].map(e=>e.object3D).filter(Boolean);
  const todo=()=>raices().forEach(r=>CAPAS.aplicarModelo(r));
- const ok=()=>!!(window.SEL&&window.SEL.z!=null);
  const b=document.createElement("button");b.id="capb";b.textContent="Capas";b.setAttribute("aria-expanded","false");
  const p=document.createElement("div");p.id="capp";p.hidden=true;
  p.innerHTML='<div class="ch">Capas del átomo</div><div class="cg"></div><div class="cf"><button data-a="todo">Todo</button><button data-a="nada">Nada</button></div>'
@@ -462,22 +463,22 @@ const CAPAS=(function(){
  const g=p.querySelector(".cg"),gn=p.querySelector(".cn"),ch={},cn={};
  CAPAS.CATS.forEach(([k,n,col])=>{const x=document.createElement("button");x.className="chip";x.dataset.k=k;x.style.setProperty("--c",col);
   x.innerHTML="<i></i>"+n;g.appendChild(x);ch[k]=x;
-  x.addEventListener("click",()=>{if(!ok())return;CAPAS.est[k]=CAPAS.est[k]?0:1;sync();todo()})});
+  x.addEventListener("click",()=>{const v=CAPAS.est[k]?0:1;CAPAS.muta(s=>{s.est[k]=v});sync();todo()})});
  CAPAS.NIVS.forEach(n=>{const x=document.createElement("button");x.textContent=n;x.setAttribute("aria-label","Nivel "+n);gn.appendChild(x);cn[n]=x;
-  x.addEventListener("click",()=>{if(!ok())return;CAPAS.niv[n]=CAPAS.niv[n]?0:1;sync();todo()})});
+  x.addEventListener("click",()=>{const v=CAPAS.niv[n]?0:1;CAPAS.muta(s=>{s.niv[n]=v});sync();todo()})});
  const t=p.querySelector("#capt");
  function sync(ns){for(const k in ch){const on=!!CAPAS.est[k];ch[k].classList.toggle("on",on);ch[k].setAttribute("aria-pressed",on)}
   for(const n in cn){const on=!!CAPAS.niv[n];cn[n].classList.toggle("on",on);cn[n].setAttribute("aria-pressed",on)}
   t.checked=!!CAPAS.atenuar;if(!ns)CAPAS.guardar()}
- p.querySelectorAll(".cf:not(.cv) button").forEach(x=>x.addEventListener("click",()=>{if(!ok())return;const v=x.dataset.a=="todo"?1:0;for(const k in CAPAS.est)CAPAS.est[k]=v;sync();todo()}));
- p.querySelectorAll(".cv button").forEach(x=>x.addEventListener("click",()=>{if(!ok())return;const v=x.dataset.v=="todo"?1:0;for(const n in CAPAS.niv)CAPAS.niv[n]=v;sync();todo()}));
- t.addEventListener("change",()=>{if(!ok()){t.checked=!!CAPAS.atenuar;return}CAPAS.atenuar=t.checked;sync();todo()});
+ p.querySelectorAll(".cf:not(.cv) button").forEach(x=>x.addEventListener("click",()=>{const v=x.dataset.a=="todo"?1:0;CAPAS.muta(s=>{for(const k in s.est)s.est[k]=v});sync();todo()}));
+ p.querySelectorAll(".cv button").forEach(x=>x.addEventListener("click",()=>{const v=x.dataset.v=="todo"?1:0;CAPAS.muta(s=>{for(const n in s.niv)s.niv[n]=v});sync();todo()}));
+ t.addEventListener("change",()=>{const v=t.checked?1:0;CAPAS.muta(s=>{s.atenuar=v});sync();todo()});
  b.addEventListener("click",()=>{p.hidden=!p.hidden;b.setAttribute("aria-expanded",!p.hidden);b.classList.toggle("on",!p.hidden)});
  sync();
- /* el panel muestra y cambia las capas del átomo seleccionado; sin selección queda apagado */
- {const hd=p.querySelector(".ch"),sty=document.createElement("style");sty.textContent="#capp.sinsel>*:not(:first-child){opacity:.35;pointer-events:none}";document.head.appendChild(sty);
+ /* el panel siempre está activo: con un átomo seleccionado cambia solo ese; sin selección cambia a todos */
+ {const hd=p.querySelector(".ch");
   const sel=()=>{const S=window.SEL;if(!S)return;CAPAS.usar(S.z);const z=S.z,d=window.__DAT&&window.__DAT[z];
-   hd.textContent="Capas del átomo";if(z==null?S.n>=2:true){const sp=document.createElement("span");sp.style.cssText="font-weight:400;opacity:.8";sp.textContent=z==null?" · tocá un átomo para elegir cuál modificar":" · "+(d?d.n:"seleccionado");hd.appendChild(sp)}p.classList.toggle("sinsel",z==null);sync(1)};
+   hd.textContent="Capas del átomo";if(z==null?S.n>=2:true){const sp=document.createElement("span");sp.style.cssText="font-weight:400;opacity:.8";sp.textContent=z==null?" · afecta a todos (tocá un átomo para elegir uno)":" · "+(d?d.n:"seleccionado");hd.appendChild(sp)}sync(1)};
   if(window.SEL){window.SEL.on(sel);sel()}}
  document.addEventListener("model-loaded",e=>{const o=e.target&&e.target.object3D;if(o)CAPAS.aplicarModelo(o)});
  document.querySelectorAll("a-marker").forEach(m=>m.addEventListener("markerFound",()=>{const e=m.querySelector("[gltf-model]");if(e&&e.object3D)CAPAS.aplicarModelo(e.object3D)}));
@@ -512,13 +513,16 @@ const CAPAS=(function(){
  /* el átomo gira sobre su propio centro: el contenedor ya está ubicado en el centro del átomo */
  {const cp=document.getElementById("capp");
   if(cp){cp.insertAdjacentHTML("beforeend",'<div class="ch sec">Movimiento</div><div class="cg"><button type="button" class="tgl" id="giroB">Rotación</button><button type="button" class="tgl" id="posB">Posición original</button></div>');
-   const b=cp.querySelector("#giroB"),p=cp.querySelector("#posB"),
-    pint=()=>{const m=selM(),g=m?gs(m):null;b.classList.toggle("on",!!(g&&g.on));b.setAttribute("aria-pressed",!!(g&&g.on));b.disabled=!g||!!g.lock;p.classList.toggle("on",!!(g&&g.lock));p.setAttribute("aria-pressed",!!(g&&g.lock));p.disabled=!g};
-   b.addEventListener("click",()=>{const m=selM();if(!m)return;const g=gs(m);if(g.lock)return;g.on=g.on?0:1;try{localStorage.setItem("giro",g.on)}catch(e){}pint()});
+   /* con un átomo seleccionado, estos botones actúan sobre ese; sin selección, sobre todos */
+   const objs=()=>{const m=selM();return m?[m]:marcadores()},
+    b=cp.querySelector("#giroB"),p=cp.querySelector("#posB"),
+    pint=()=>{const T=objs(),on=T.length>0&&T.every(m=>gs(m).on),lk=T.length>0&&T.every(m=>gs(m).lock);b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);b.disabled=!T.length||lk;p.classList.toggle("on",lk);p.setAttribute("aria-pressed",lk);p.disabled=!T.length};
+   b.addEventListener("click",()=>{const T=objs().filter(m=>!gs(m).lock);if(!T.length)return;const nv=T.every(m=>gs(m).on)?0:1;T.forEach(m=>{gs(m).on=nv});try{localStorage.setItem("giro",nv)}catch(e){}pint()});
    /* Posición original: deja el átomo en su orientación predeterminada, frena su rotación y bloquea el arrastre.
       Al desactivarlo solo se desbloquea: el átomo se queda donde está, no vuelve a la posición anterior. */
-   p.addEventListener("click",()=>{const m=selM();if(!m)return;const g=gs(m);g.lock=g.lock?0:1;
-    if(g.lock){g.on=0;g.ang=0;try{localStorage.setItem("giro",0)}catch(e){}m.__tilt=0;m.__tx=0;pid=null}
+   p.addEventListener("click",()=>{const T=objs();if(!T.length)return;const nv=T.every(m=>gs(m).lock)?0:1;
+    T.forEach(m=>{const g=gs(m);g.lock=nv;if(nv){g.on=0;g.ang=0;m.__tilt=0;m.__tx=0}});
+    if(nv){try{localStorage.setItem("giro",0)}catch(e){}pid=null}
     pint()});pint();if(window.SEL)window.SEL.on(pint)}}
  let tp=performance.now();
  (function tk(now){requestAnimationFrame(tk);now=now||performance.now();const dt=Math.min(.1,Math.max(0,(now-tp)/1000));tp=now;
@@ -679,7 +683,7 @@ const ITEMS=[
   const bn=cp.querySelector("#hoNo"),gu=()=>{try{localStorage.setItem("hoja2",JSON.stringify(op))}catch(e){}},
    pint=()=>{bn.classList.toggle("on",!!op.no);bn.setAttribute("aria-pressed",!!op.no)};
   bn.addEventListener("click",()=>{op.no=op.no?0:1;gu();pint()});pint()}
- const root=new TH.Group();sc.object3D.add(root);
+ const root=new TH.Group();sc.object3D.add(root);window.__rotuloRoot=root;/* el cartel de la unión flotante también va en este grupo, que siempre se dibuja último */
  /* A-Frame dibuja lo transparente en el orden en que está en la escena (no ordena por renderOrder), así que el grupo de los nombres tiene que ser el ÚLTIMO hijo de la escena
     para que quede por encima del contorno de neón y de todo lo demás. renderOrder alto por si algún día se activa el ordenado. */
  root.renderOrder=1000;
@@ -773,7 +777,8 @@ const ITEMS=[
   const U={us:"flo"};
   try{const g=JSON.parse(localStorage.getItem("union1")||"null");if(g&&["flo","ban","no"].includes(g.us))U.us=g.us}catch(e){}
   window.__UNI={flo:0};
-  /* con el tipo de unión en el BANNER (el cartel ya dice cuál es), el contorno toma el color de la familia de los elementos; si son de familias distintas, degradé de una a la otra. ?famb=0 lo quita */
+  /* con el tipo de unión en BANNER o en NINGUNO (con «Flotante» el cartel ya lleva el color del tipo de unión), el contorno toma el color de la familia de los elementos; si son de familias distintas, degradé de una a la otra.
+     Con «Ninguno» y de la misma familia, además aparece el nombre flotante de la familia (lo dibuja el script del nombre de la familia). ?famb=0 lo quita */
   const FAMB=Q.get("famb")!=="0";
   {const bn=document.getElementById("hoNo");
    if(bn){bn.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="hoNe" style="margin-top:6px">Contorno de neón</button>');
@@ -938,7 +943,7 @@ void main(){
   function sprite(k,txt){if(sps[k])return sps[k];const c=document.createElement("canvas");c.width=640;c.height=128;const x=c.getContext("2d"),f=n=>"700 "+n+"px system-ui,-apple-system,'Segoe UI',sans-serif";
    x.font=f(62);const w=x.measureText(txt).width;if(w>590)x.font=f(Math.floor(62*590/w));
    x.textAlign="center";x.textBaseline="middle";x.shadowColor=FC[k];x.shadowBlur=22;x.fillStyle=FC[k];x.fillText(txt,320,66);x.fillText(txt,320,66);x.shadowBlur=5;x.fillStyle="#fff";x.globalAlpha=.9;x.fillText(txt,320,66);
-   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.userData.tw=Math.min(.98,(Math.min(w,590)+50)/640);s.renderOrder=20;s.visible=false;rt.add(s);return sps[k]={s,t0:0,k}}
+   const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));s.userData.tw=Math.min(.98,(Math.min(w,590)+50)/640);s.renderOrder=20;s.visible=false;(window.__rotuloRoot||rt).add(s);return sps[k]={s,t0:0,k}}
   function flotante(now,un){
     if(un){if(!fo||fo.k!==un.k){fo=sprite(un.k,un.titulo);fo.t0=now}fSeen=now;fc=un.c}
     for(const k in sps)if(sps[k]!==fo)sps[k].s.visible=false;
@@ -972,7 +977,7 @@ void main(){
     for(const a of ms){const o=a.o;if(!o.visible)continue;a.p.setFromMatrixPosition(o.matrixWorld);vs.setFromMatrixScale(o.matrixWorld);a.s=vs.x>1e-6?vs.x:1;V.push(a)}
     /* solo dos marcadores a la vista y juntos: forman una unión. El cartel de arriba dice cuál es y la línea los envuelve con el color de ese tipo
        de unión (con dos marcadores manda la unión, aunque sean de la misma familia). El cartel sale aunque la línea neón esté apagada */
-    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(op.ne){const kf=FAMB&&U.us==="ban"?(un.x.k===un.y.k?un.x.k:"g:"+un.x.k+":"+un.y.k):un.k;act[kf]=c}}}
+    if(PAR&&V.length===2){const c=agrupar(V);if(c){un=union(c[0],c[1]);un.c=c;if(op.ne){const kf=FAMB&&U.us!=="flo"?(un.x.k===un.y.k?un.x.k:"g:"+un.x.k+":"+un.y.k):un.k;act[kf]=c}}}
     /* con más de dos marcadores rige el neón de la familia */
     if(op.ne&&!un){
       const por={};for(const a of V)(por[a.k]=por[a.k]||[]).push(a);
