@@ -321,7 +321,7 @@ function __makeFUS(TH){
   for(let r=0;r<3;r++)e[p[r]*4+r]=(s>>r&1)?-1:1;if(m.determinant()>0)CAND.push(m)}});
  /* lo normal en AR.js: X a la derecha, Y sale del papel, Z hacia abajo del marcador */
  const PRI=CAND.findIndex(m=>{const e=m.elements;return e[0]===1&&e[9]===-1&&e[6]===1});
- const S={cost:new Float64Array(CAND.length),neff:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
+ const S={cost:new Float64Array(CAND.length),neff:0,err:0,ref:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
  const V3=()=>new TH.Vector3(),Q4=()=>new TH.Quaternion(),tq=Q4(),iq=Q4(),w=V3(),dg=V3(),pr=V3(),pc=V3(),gc=V3(),aa=V3(),bb=V3(),cr=V3(),om=V3(),qb=Q4(),dq=Q4(),qM=Q4(),qMi=Q4(),A=new TH.Matrix3();
  /* aprende ejes y escala mirando pares de marcadores recién detectados (sin usar poses ya corregidas) */
  function calib(V,u){
@@ -334,7 +334,8 @@ function __makeFUS(TH){
   if(rs.length){rs.sort((x,y)=>x-y);const m=rs[rs.length>>1];S.ks=S.ks===null?m:S.ks+(m-S.ks)*.05}
   let b=0;for(let k=1;k<CAND.length;k++)if(S.cost[k]<S.cost[b])b=k;
   S.sel=S.cost[PRI]<=S.cost[b]*1.5+.05?PRI:b;
-  S.ready=S.neff>=20&&S.cost[S.sel]/S.neff<.15&&S.ks>.7&&S.ks<1.4?1:0}
+  const med=[...S.cost].sort((x,y)=>x-y)[CAND.length>>1],nf=S.neff||1;S.err=S.cost[S.sel]/nf;S.ref=med/nf;
+  S.ready=S.neff>=15&&S.err<.5*S.ref&&S.ks>.4&&S.ks<2.5?1:0}
  /* una sola pose para toda la hoja; cada marcador se coloca donde le toca. Devuelve false si no cuadra con lo medido */
  function fuse(V,u){
   const n=V.length,sk=S.ks*u;
@@ -447,7 +448,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+" · desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej:"apagada (agrega ?fus=1)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+" · error "+window.__FUS.err.toFixed(2)+" (típico "+window.__FUS.ref.toFixed(2)+") · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+" · desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej:"apagada (agrega ?fus=1)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
