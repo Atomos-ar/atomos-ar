@@ -154,7 +154,7 @@ if(!Q.get("info"))document.getElementById("info").style.display="none";else docu
 /* ---------- Selección de átomo ----------
    Con UN solo marcador a la vista, ese átomo es el seleccionado. Con DOS O MÁS hay que tocar un átomo para seleccionarlo (tocar fuera de los átomos deselecciona).
    Tamaño, capas, giro, posición original y los datos del banner de arriba actúan solo sobre el seleccionado, y los demás no cambian.
-   Si el seleccionado sale de la vista, queda sin selección; si queda uno solo, ese pasa a ser el seleccionado. */
+   Si el seleccionado sale de la vista, queda sin selección; si queda uno solo, ese pasa a ser el seleccionado. Cuando aparece un segundo marcador no queda ninguno seleccionado hasta tocar uno. */
 window.SEL=(function(){
  const subs=[],T=AFRAME.THREE,c0=new T.Vector3(),c1=new T.Vector3(),rg=new T.Vector3(),s3=new T.Vector3();
  let user=null,eff=null,last="";
@@ -162,21 +162,45 @@ window.SEL=(function(){
  const ui=e=>e.target&&e.target.closest&&e.target.closest("#ui,#capb,#capp,#back,#fijar,#fhint,#info,#datb,#datp,#tut");
  function leer(){const r=[];document.querySelectorAll("a-marker").forEach(m=>{if(m.object3D&&m.object3D.visible&&/^m\d+$/.test(m.id))r.push(+m.id.slice(1))});return r}
  function pasar(){const zs=leer(),n=zs.length;
-  if(n===1){user=eff=zs[0]}
-  else if(n>=2){if(user!=null&&zs.indexOf(user)<0)user=null;eff=user}
+  /* "user" es solo lo que se eligió tocando; si ese átomo sale de la vista, se pierde la elección */
+  if(user!=null&&zs.indexOf(user)<0)user=null;
+  /* con un marcador, ese átomo es el seleccionado; con 2 o más, solo el que se tocó (al aparecer el segundo no queda ninguno elegido) */
+  if(n===1)eff=zs[0];else if(n>=2)eff=user;
   /* con 0 marcadores se conserva el último (el banner queda atenuado, como antes) */
   const k=n+"|"+eff+"|"+zs.join(",");S.n=n;S.zs=zs;S.z=eff;
   if(k!==last){last=k;subs.forEach(f=>{try{f(eff,n)}catch(e){console.error(e)}})}}
+ /* radio real (en el mundo) del átomo z; deja su centro en c0 */
+ function geo(z){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(!w)return 0;
+  w.object3D.getWorldPosition(c0);m.object3D.getWorldScale(s3);
+  return((window.__ATR&&window.__ATR[z])||(D[z]?D[z][5]:.5)*w.object3D.scale.x)*s3.x}
  /* qué átomo está bajo el dedo: se proyecta el centro de cada átomo y su radio a pantalla; gana el que tenga el dedo más adentro (en proporción a su radio) */
  function hit(x,y){const sc=document.querySelector("a-scene"),cam=sc&&sc.camera,cv=sc&&sc.canvas;if(!cam||!cv)return null;
   const r=cv.getBoundingClientRect();let best=1.05,bz=null;cam.updateMatrixWorld();rg.setFromMatrixColumn(cam.matrixWorld,0).normalize();
-  for(const z of S.zs){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity");if(!w)continue;
-   w.object3D.getWorldPosition(c0);m.object3D.getWorldScale(s3);
-   const R=((window.__ATR&&window.__ATR[z])||(D[z]?D[z][5]:.5)*w.object3D.scale.x)*s3.x;
+  for(const z of S.zs){const R=geo(z);if(!(R>0))continue;
    c1.copy(c0).project(cam);const sx=r.left+(c1.x*.5+.5)*r.width,sy=r.top+(.5-c1.y*.5)*r.height;
    c1.copy(c0).addScaledVector(rg,R).project(cam);const rp=Math.hypot(r.left+(c1.x*.5+.5)*r.width-sx,r.top+(.5-c1.y*.5)*r.height-sy);
    if(!(rp>4))continue;const d=Math.hypot(x-sx,y-sy)/rp;if(d<best){best=d;bz=z}}
   return bz}
+ /* Resaltado del átomo seleccionado (solo cuando hay 2 o más a la vista): aro de rayitas celestes con un halo, que gira despacio y pulsa suave.
+    Se dibuja encima del modelo, mirando siempre a la cámara, con el mismo radio que se usa para tocar el átomo. ?resalte=0 lo quita */
+ const RESALTE=new URLSearchParams(location.search).get("resalte")!=="0",QUIETO=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+ let hl=null,hlA=0;
+ function crearHL(){const sc=document.querySelector("a-scene");if(!sc||!sc.object3D)return null;
+  const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.translate(128,128);
+  const g=x.createRadialGradient(0,0,92,0,0,126);g.addColorStop(0,"rgba(61,230,255,0)");g.addColorStop(.72,"rgba(61,230,255,.24)");g.addColorStop(1,"rgba(61,230,255,0)");
+  x.fillStyle=g;x.beginPath();x.arc(0,0,126,0,6.2832);x.fill();
+  x.lineWidth=5.5;x.lineCap="round";x.strokeStyle="#c9f8ff";x.shadowColor="#3de6ff";x.shadowBlur=12;
+  const N=28;for(let i=0;i<N;i++){const a0=i/N*6.2832;x.beginPath();x.arc(0,0,108,a0,a0+6.2832/N*.62);x.stroke()}
+  const sp=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),transparent:true,depthTest:false,depthWrite:false}));
+  sp.frustumCulled=false;sp.visible=false;sc.object3D.add(sp);return sp}
+ function resaltar(now){const mostrar=RESALTE&&S.n>=2&&S.z!=null;
+  if(!hl){if(!mostrar)return;hl=crearHL();if(!hl)return}
+  const R=mostrar?geo(S.z):0;
+  hlA=mostrar&&R>0?Math.min(1,hlA+.12):Math.max(0,hlA-.15);/* aparece y se va con un fundido corto */
+  if(hlA<=0){hl.visible=false;return}
+  const sz=R>0?R*1.06*256/108:hl.scale.x;
+  if(R>0)hl.position.copy(c0);hl.scale.set(sz,sz,1);hl.visible=true;
+  hl.material.opacity=hlA*(QUIETO?.95:.8+.2*Math.sin(now/260));hl.material.rotation=QUIETO?0:(now/6000)%6.2832}
  S.hit=hit;
  /* un toque (no un arrastre) selecciona; el arrastre sigue siendo para girar */
  let dn=null;
@@ -185,7 +209,7 @@ window.SEL=(function(){
  addEventListener("pointerup",e=>{const d=dn;dn=null;if(!d||d.id!==e.pointerId||S.n<2)return;
   if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>10||performance.now()-d.t>650)return;
   user=hit(e.clientX,e.clientY);pasar()},true);
- (function lp(){requestAnimationFrame(lp);pasar()})();
+ (function lp(now){requestAnimationFrame(lp);pasar();resaltar(now||performance.now())})();
  {const st=document.createElement("style");st.textContent="#ui.sinsel{opacity:.4!important;filter:grayscale(1);pointer-events:none}";document.head.appendChild(st);
   const u=document.getElementById("ui");
   S.on(()=>{if(u)u.classList.toggle("sinsel",S.z==null);try{aplicar()}catch(e){}});if(u)u.classList.add("sinsel")}
@@ -453,7 +477,7 @@ const CAPAS=(function(){
  /* el panel muestra y cambia las capas del átomo seleccionado; sin selección queda apagado */
  {const hd=p.querySelector(".ch"),sty=document.createElement("style");sty.textContent="#capp.sinsel>*:not(:first-child){opacity:.35;pointer-events:none}";document.head.appendChild(sty);
   const sel=()=>{const S=window.SEL;if(!S)return;CAPAS.usar(S.z);const z=S.z,d=window.__DAT&&window.__DAT[z];
-   hd.textContent=z==null?(S.n>=2?"Tocá un átomo para elegir cuál modificar":"Capas del átomo"):"Capas · "+(d?d.n:"átomo");p.classList.toggle("sinsel",z==null);sync(1)};
+   hd.textContent="Capas del átomo";if(z==null?S.n>=2:true){const sp=document.createElement("span");sp.style.cssText="font-weight:400;opacity:.8";sp.textContent=z==null?" · tocá un átomo para elegir cuál modificar":" · "+(d?d.n:"seleccionado");hd.appendChild(sp)}p.classList.toggle("sinsel",z==null);sync(1)};
   if(window.SEL){window.SEL.on(sel);sel()}}
  document.addEventListener("model-loaded",e=>{const o=e.target&&e.target.object3D;if(o)CAPAS.aplicarModelo(o)});
  document.querySelectorAll("a-marker").forEach(m=>m.addEventListener("markerFound",()=>{const e=m.querySelector("[gltf-model]");if(e&&e.object3D)CAPAS.aplicarModelo(e.object3D)}));
@@ -570,7 +594,7 @@ const ITEMS=[
    const ub=!!(window.__UNI&&window.__UNI.ban);p.hidden=!ub;p.classList.toggle("sinsel",ub);if(!ub)return;
    ex=false;more.hidden=true;p.classList.remove("ex","bajo");p.classList.add("vacia");p.classList.toggle("off",!vis.size);
    rw.innerHTML='<div class="t"></div><div class="f"></div>';return}
-  p.classList.remove("sinsel");
+  p.hidden=false;p.classList.remove("sinsel");
   p.classList.toggle("ex",ex);p.classList.toggle("off",!vis.size);
   /* fila de arriba (entre Grupos y Capas): nombre y símbolo; después Z y A; después CEE */
   const nom=ver.n&&ver.s?d.n+' <span class="sy">('+d.s+')</span>':ver.n?d.n:ver.s?d.s:"";
