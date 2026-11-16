@@ -300,6 +300,80 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
   r.render=function(a,b){try{sync()}catch(e){window.__pjerr=e.message}return o(a,b)}})();
 })();
+/* ---------- Hoja rígida (activa; ?fus=0 la apaga) ----------
+   La hoja impresa es una sola pieza plana y se sabe dónde va cada marcador (grilla de 1,57 anchos de marcador).
+   Con 2 o más marcadores a la vista se calcula UNA pose de la hoja y cada átomo se coloca donde le toca:
+   separación exacta (no se pegan) y menos temblor (mucho menos con 3 o más marcadores).
+   Parte con los ejes y la escala medidos en la práctica, los sigue verificando y los guarda en el navegador; si lo calculado no cuadra
+   con lo medido, se usa la pose de siempre. Está ACTIVA por defecto: ?fus=0 la apaga · ?fusreset=1 borra lo aprendido.
+   Necesita que ?lock=0 no esté puesto. */
+function __makeFUS(TH){
+ const PIT=1.567,LRr=7.45,ARr=8.45,LAY={};
+ const put=(z,c,r)=>{LAY[z]=[c*PIT,r*PIT]};
+ put(1,0,0);put(2,17,0);
+ for(let i=0;i<2;i++){put(3+i,i,1);put(11+i,i,2)}
+ for(let i=0;i<6;i++){put(5+i,12+i,1);put(13+i,12+i,2)}
+ for(let i=0;i<18;i++){put(19+i,i,3);put(37+i,i,4)}
+ put(55,0,5);put(56,1,5);put(87,0,6);put(88,1,6);
+ for(let i=0;i<15;i++){put(72+i,3+i,5);put(104+i,3+i,6);put(57+i,2+i,LRr);put(89+i,2+i,ARr)}
+ /* las 24 formas posibles de que los ejes de la hoja (x der., y abajo, z hacia adentro) correspondan a los del marcador */
+ const CAND=[];
+ [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]].forEach(p=>{for(let s=0;s<8;s++){const m=new TH.Matrix4(),e=m.elements;e.fill(0);e[15]=1;
+  for(let r=0;r<3;r++)e[p[r]*4+r]=(s>>r&1)?-1:1;if(m.determinant()>0)CAND.push(m)}});
+ /* lo normal en AR.js: X a la derecha, Y sale del papel, Z hacia abajo del marcador */
+ const PRI=CAND.findIndex(m=>{const e=m.elements;return e[0]===1&&e[9]===-1&&e[6]===1});
+ const S={cost:new Float64Array(CAND.length),neff:0,err:0,ref:0,why:"",saved:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
+ const V3=()=>new TH.Vector3(),Q4=()=>new TH.Quaternion(),tq=Q4(),iq=Q4(),w=V3(),dg=V3(),pr=V3(),pc=V3(),gc=V3(),aa=V3(),bb=V3(),cr=V3(),om=V3(),qb=Q4(),dq=Q4(),qM=Q4(),qMi=Q4(),A=new TH.Matrix3();
+ /* aprende ejes y escala mirando pares de marcadores recién detectados (sin usar poses ya corregidas) */
+ function calib(V,u){
+  const rs=[];let np=0;
+  for(let i=0;i<V.length&&np<8;i++)for(let j=i+1;j<V.length&&np<8;j++){
+   const a=V[i],b=V[j],L=Math.hypot(b.gx-a.gx,b.gy-a.gy);if(L<1e-6)continue;np++;
+   for(let s=0;s<2;s++){
+    const x=s?b:a,y=s?a:b;dg.set((b.gx-a.gx)*(s?-1:1),(b.gy-a.gy)*(s?-1:1),0);
+    iq.copy(x.q).invert();w.copy(y.p).sub(x.p).applyQuaternion(iq).multiplyScalar(1/u);const wl=w.length();if(wl<1e-9)continue;
+    if(!s)rs.push(wl/L);w.multiplyScalar(L/wl);S.neff=S.neff*.995+1;
+    for(let k=0;k<CAND.length;k++){pr.copy(dg).applyMatrix4(CAND[k]);S.cost[k]=S.cost[k]*.995+pr.sub(w).lengthSq()/(L*L)}}}
+  if(rs.length){rs.sort((x,y)=>x-y);const m=rs[rs.length>>1];S.ks=S.ks===null?m:S.ks+(m-S.ks)*.05}
+  let b=0;for(let k=1;k<CAND.length;k++)if(S.cost[k]<S.cost[b])b=k;
+  S.sel=S.cost[PRI]<=S.cost[b]*1.5+.05?PRI:b;
+  const med=[...S.cost].sort((x,y)=>x-y)[CAND.length>>1],nf=S.neff||1;S.err=S.cost[S.sel]/nf;S.ref=med/nf;
+  S.ready=S.neff>=12&&S.err<(S.ready?.8:.5)*S.ref&&S.ks>.4&&S.ks<2.5?1:0}/* histéresis: cuesta más apagarse que encenderse */
+ /* una sola pose para toda la hoja; cada marcador se coloca donde le toca. Devuelve false si no cuadra con lo medido */
+ function fuse(V,u){
+  const n=V.length,sk=S.ks*u;
+  qM.setFromRotationMatrix(CAND[S.sel]);qMi.copy(qM).invert();
+  pc.set(0,0,0);gc.set(0,0,0);
+  for(const a of V){pc.add(a.p);a.g.set(a.gx*sk,a.gy*sk,0);gc.add(a.g)}
+  pc.multiplyScalar(1/n);gc.multiplyScalar(1/n);
+  qb.set(0,0,0,0);/* rotación inicial: promedio de las de cada marcador */
+  for(const a of V){tq.copy(a.q).multiply(qM);if(qb.dot(tq)<0)tq.set(-tq.x,-tq.y,-tq.z,-tq.w);qb.set(qb.x+tq.x,qb.y+tq.y,qb.z+tq.z,qb.w+tq.w)}
+  qb.normalize();
+  for(let it=0;it<3;it++){/* afinada con las posiciones (más precisas que los giros) */
+   let s=0,e0=0,e1=0,e2=0,e4=0,e5=0,e8=0;cr.set(0,0,0);
+   for(const a of V){aa.copy(a.g).sub(gc).applyQuaternion(qb);bb.copy(a.p).sub(pc);const q2=aa.lengthSq();s+=q2;
+    e0+=q2-aa.x*aa.x;e1-=aa.x*aa.y;e2-=aa.x*aa.z;e4+=q2-aa.y*aa.y;e5-=aa.y*aa.z;e8+=q2-aa.z*aa.z;cr.add(w.crossVectors(aa,bb))}
+   const l=.02*s+1e-9;A.set(e0+l,e1,e2,e1,e4+l,e5,e2,e5,e8+l);
+   if(Math.abs(A.determinant())<1e-12)break;
+   om.copy(cr).applyMatrix3(A.invert());const ang=Math.min(.5,om.length());if(ang<1e-7)break;
+   dq.setFromAxisAngle(om.normalize(),ang);qb.premultiply(dq)}
+  let mx=0,sm=0,sa=0;
+  for(const a of V){a.fp.copy(a.g).sub(gc).applyQuaternion(qb).add(pc);a.fq.copy(qb).multiply(qMi);
+   const d=a.fp.distanceTo(a.p)/u;mx=Math.max(mx,d);sm+=d;sa+=2*Math.acos(Math.min(1,Math.abs(a.fq.dot(a.q))))}
+  S.dev=sm/n;S.why=mx>=1?"un marcador se desvía "+mx.toFixed(2):sm/n>=.5?"desvío medio "+(sm/n).toFixed(2):sa/n>=1.1?"giro distinto "+Math.round(sa/n*57.3)+"°":"";return !S.why}
+ const KEY="fus_cal_v1";
+ function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(j&&j.sel>=0&&j.sel<CAND.length&&j.ks>.4&&j.ks<2.5){S.cost.fill(40);S.cost[j.sel]=0;S.neff=20;S.sel=j.sel;S.ks=j.ks;S.err=0;S.ref=2;S.ready=1;S.saved=j.sel+1}}catch(e){}}
+ function save(){if(S.saved===S.sel+1)return;try{localStorage.setItem(KEY,JSON.stringify({sel:S.sel,ks:S.ks}));S.saved=S.sel+1}catch(e){}}
+ /* valores de fábrica (medidos en la práctica: ejes estándar de AR.js, escala 1,02); se siguen verificando con lo que ve la cámara */
+ S.cost.fill(40);S.cost[PRI]=0;S.neff=20;S.sel=PRI;S.ks=1.02;S.err=0;S.ref=2;S.ready=1;
+ return{LAY,CAND,S,calib,fuse,load,save}}
+
+const FUS=__makeFUS(AFRAME.THREE);
+try{if(new URLSearchParams(location.search).get("fusreset")==="1")localStorage.removeItem("fus_cal_v1")}catch(e){}
+FUS.load();
+const __sigPose=o=>o.matrixAutoUpdate?[o.position.x,o.position.y,o.position.z,o.quaternion.x,o.quaternion.y,o.quaternion.z,o.quaternion.w]:o.matrix.elements.slice();
+const __samePose=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
 /* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
    Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
    y los dos modelos terminan en el punto medio; además, como el ajuste de tamaño usa la distancia entre marcadores,
@@ -317,15 +391,24 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  const L=[...document.querySelectorAll("a-marker")].map(m=>({id:m.id,o:m.object3D,w:m.querySelector(":scope > a-entity"),has:0,seen:-1e9,hid:0,snap:0,ok:0,u:1,cn:0,
   p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V()}));
  window.__LK={no:0};
+ const FUSE=Q.get("fus")!=="0";window.__FUS=FUSE?FUS.S:null;
+ if(FUSE)L.forEach(a=>{const l=FUS.LAY[+a.id.slice(1)];a.lay=l||null;a.it=l?{p:a.rp,q:a.rq,gx:l[0],gy:l[1],g:V(),fp:V(),fq:new TH.Quaternion()}:null});
+ function fusiona(v){const S=FUS.S,F=v.filter(a=>a.it);S.n=F.length;S.on=0;if(F.length<2)return;
+  let u=0;F.forEach(a=>u+=a.rs.x);u/=F.length;if(!(u>1e-6))return;
+  const fr=F.filter(a=>a.fr);if(fr.length>=2)FUS.calib(fr.map(a=>a.it),u);/* aprende solo con detecciones nuevas */
+  if(S.ready&&S.neff>=40&&S.err<.3*S.ref)FUS.save();
+  if(!S.ready)return;
+  if(FUS.fuse(F.map(a=>a.it),u)){F.forEach(a=>{a.rp.copy(a.it.fp);a.rq.copy(a.it.fq)});S.on=1}else S.rej++}
  const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
- const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true};
+ const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true;a.sg=__sigPose(o)};
  function paso(){
   const now=performance.now(),v=[];
   for(const a of L){
    const st=window.__ST&&window.__ST[a.id]?window.__ST[a.id]():null,real=st?st[0]:a.o.visible;
    if(!real)continue;
    if(now-a.seen>GAP){a.has=0;a.cn=0}/* estuvo perdido: la posición vieja ya no sirve */
-   a.seen=now;leer(a);v.push(a)}
+   a.seen=now;a.fr=!a.sg||!__samePose(a.sg,__sigPose(a.o));leer(a);v.push(a)}
+  if(FUSE)try{fusiona(v)}catch(e){window.__lkerr="fus "+e.message}
   for(const a of v){a.ok=1;a.u=a.rs.x>1e-6?a.rs.x:1;
    for(const b of v){if(b===a)continue;
     if(a.rp.distanceTo(b.rp)/a.u<COL){a.ok=0;break}/* A: encimados */
@@ -377,7 +460,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (?fus=0)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
