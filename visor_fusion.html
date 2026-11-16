@@ -304,8 +304,8 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
    La hoja impresa es una sola pieza plana y se sabe dónde va cada marcador (grilla de 1,57 anchos de marcador).
    Con 2 o más marcadores a la vista se calcula UNA pose de la hoja y cada átomo se coloca donde le toca:
    separación exacta (no se pegan) y menos temblor (mucho menos con 3 o más marcadores).
-   Aprende solo la orientación de los ejes y la escala; si lo calculado no cuadra con lo medido, se usa la pose de siempre.
-   Sin ?fus=1 no hace nada. Se aplica antes del anclaje de abajo, así que necesita que ?lock=0 no esté puesto. */
+   Aprende solo la orientación de los ejes y la escala (y lo guarda en el navegador); si lo calculado no cuadra con lo medido,
+   se usa la pose de siempre. Sin ?fus=1 no hace nada. ?fusreset=1 borra lo aprendido. Necesita que ?lock=0 no esté puesto. */
 function __makeFUS(TH){
  const PIT=1.567,LRr=7.45,ARr=8.45,LAY={};
  const put=(z,c,r)=>{LAY[z]=[c*PIT,r*PIT]};
@@ -321,21 +321,23 @@ function __makeFUS(TH){
   for(let r=0;r<3;r++)e[p[r]*4+r]=(s>>r&1)?-1:1;if(m.determinant()>0)CAND.push(m)}});
  /* lo normal en AR.js: X a la derecha, Y sale del papel, Z hacia abajo del marcador */
  const PRI=CAND.findIndex(m=>{const e=m.elements;return e[0]===1&&e[9]===-1&&e[6]===1});
- const S={cost:new Float64Array(CAND.length),neff:0,err:0,ref:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
+ const S={cost:new Float64Array(CAND.length),neff:0,err:0,ref:0,why:"",saved:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
  const V3=()=>new TH.Vector3(),Q4=()=>new TH.Quaternion(),tq=Q4(),iq=Q4(),w=V3(),dg=V3(),pr=V3(),pc=V3(),gc=V3(),aa=V3(),bb=V3(),cr=V3(),om=V3(),qb=Q4(),dq=Q4(),qM=Q4(),qMi=Q4(),A=new TH.Matrix3();
  /* aprende ejes y escala mirando pares de marcadores recién detectados (sin usar poses ya corregidas) */
  function calib(V,u){
   const rs=[];let np=0;
   for(let i=0;i<V.length&&np<8;i++)for(let j=i+1;j<V.length&&np<8;j++){
-   const a=V[i],b=V[j];dg.set(b.gx-a.gx,b.gy-a.gy,0);const L=dg.length();
-   iq.copy(a.q).invert();w.copy(b.p).sub(a.p).applyQuaternion(iq).multiplyScalar(1/u);const wl=w.length();
-   if(L<1e-6||wl<1e-9)continue;np++;rs.push(wl/L);w.multiplyScalar(L/wl);S.neff=S.neff*.995+1;
-   for(let k=0;k<CAND.length;k++){pr.copy(dg).applyMatrix4(CAND[k]);S.cost[k]=S.cost[k]*.995+pr.sub(w).lengthSq()/(L*L)}}
+   const a=V[i],b=V[j],L=Math.hypot(b.gx-a.gx,b.gy-a.gy);if(L<1e-6)continue;np++;
+   for(let s=0;s<2;s++){
+    const x=s?b:a,y=s?a:b;dg.set((b.gx-a.gx)*(s?-1:1),(b.gy-a.gy)*(s?-1:1),0);
+    iq.copy(x.q).invert();w.copy(y.p).sub(x.p).applyQuaternion(iq).multiplyScalar(1/u);const wl=w.length();if(wl<1e-9)continue;
+    if(!s)rs.push(wl/L);w.multiplyScalar(L/wl);S.neff=S.neff*.995+1;
+    for(let k=0;k<CAND.length;k++){pr.copy(dg).applyMatrix4(CAND[k]);S.cost[k]=S.cost[k]*.995+pr.sub(w).lengthSq()/(L*L)}}}
   if(rs.length){rs.sort((x,y)=>x-y);const m=rs[rs.length>>1];S.ks=S.ks===null?m:S.ks+(m-S.ks)*.05}
   let b=0;for(let k=1;k<CAND.length;k++)if(S.cost[k]<S.cost[b])b=k;
   S.sel=S.cost[PRI]<=S.cost[b]*1.5+.05?PRI:b;
   const med=[...S.cost].sort((x,y)=>x-y)[CAND.length>>1],nf=S.neff||1;S.err=S.cost[S.sel]/nf;S.ref=med/nf;
-  S.ready=S.neff>=15&&S.err<.5*S.ref&&S.ks>.4&&S.ks<2.5?1:0}
+  S.ready=S.neff>=12&&S.err<.5*S.ref&&S.ks>.4&&S.ks<2.5?1:0}
  /* una sola pose para toda la hoja; cada marcador se coloca donde le toca. Devuelve false si no cuadra con lo medido */
  function fuse(V,u){
   const n=V.length,sk=S.ks*u;
@@ -357,10 +359,16 @@ function __makeFUS(TH){
   let mx=0,sm=0,sa=0;
   for(const a of V){a.fp.copy(a.g).sub(gc).applyQuaternion(qb).add(pc);a.fq.copy(qb).multiply(qMi);
    const d=a.fp.distanceTo(a.p)/u;mx=Math.max(mx,d);sm+=d;sa+=2*Math.acos(Math.min(1,Math.abs(a.fq.dot(a.q))))}
-  S.dev=sm/n;return mx<1&&sm/n<.5&&sa/n<1.1}
- return{LAY,CAND,S,calib,fuse}}
+  S.dev=sm/n;S.why=mx>=1?"un marcador se desvía "+mx.toFixed(2):sm/n>=.5?"desvío medio "+(sm/n).toFixed(2):sa/n>=1.1?"giro distinto "+Math.round(sa/n*57.3)+"°":"";return !S.why}
+ const KEY="fus_cal_v1";
+ function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(j&&j.sel>=0&&j.sel<CAND.length&&j.ks>.4&&j.ks<2.5){S.cost.fill(40);S.cost[j.sel]=0;S.neff=20;S.sel=j.sel;S.ks=j.ks;S.err=0;S.ref=2;S.ready=1;S.saved=j.sel+1}}catch(e){}}
+ function save(){if(S.saved===S.sel+1)return;try{localStorage.setItem(KEY,JSON.stringify({sel:S.sel,ks:S.ks}));S.saved=S.sel+1}catch(e){}}
+ return{LAY,CAND,S,calib,fuse,load,save}}
 
 const FUS=__makeFUS(AFRAME.THREE);
+try{if(new URLSearchParams(location.search).get("fusreset")==="1")localStorage.removeItem("fus_cal_v1")}catch(e){}
+FUS.load();
 const __sigPose=o=>o.matrixAutoUpdate?[o.position.x,o.position.y,o.position.z,o.quaternion.x,o.quaternion.y,o.quaternion.z,o.quaternion.w]:o.matrix.elements.slice();
 const __samePose=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
 /* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
@@ -385,6 +393,7 @@ const __samePose=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
  function fusiona(v){const S=FUS.S,F=v.filter(a=>a.it);S.n=F.length;S.on=0;if(F.length<2)return;
   let u=0;F.forEach(a=>u+=a.rs.x);u/=F.length;if(!(u>1e-6))return;
   const fr=F.filter(a=>a.fr);if(fr.length>=2)FUS.calib(fr.map(a=>a.it),u);/* aprende solo con detecciones nuevas */
+  if(S.ready&&S.neff>=40&&S.err<.3*S.ref)FUS.save();
   if(!S.ready)return;
   if(FUS.fuse(F.map(a=>a.it),u)){F.forEach(a=>{a.rp.copy(a.it.fp);a.rq.copy(a.it.fq)});S.on=1}else S.rej++}
  const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
@@ -448,7 +457,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+" · error "+window.__FUS.err.toFixed(2)+" (típico "+window.__FUS.ref.toFixed(2)+") · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+" · desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej:"apagada (agrega ?fus=1)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (agrega ?fus=1)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
