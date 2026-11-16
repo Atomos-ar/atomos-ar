@@ -1033,7 +1033,7 @@ void main(){
      iónica    → el/los electrones de la última capa del metal viajan de verdad hasta el no metal (se apagan en uno y aparecen en el otro), SIEMPRE en un solo sentido:
                  del átomo que lo cede al que lo recibe. El metal queda con carga + y el no metal con carga − (Na⁺ · Cl⁻). Si faltan o sobran electrones (Na + O, Mg + Cl) se ve que viene/va otro átomo.
                  Al cerrar el ciclo el electrón recibido se deshace en el no metal y el original reaparece en el metal (sin viaje de vuelta), y el salto empieza de nuevo, en bucle.
-                 El electrón que se transfiere titila en dorado/amarillo (se carga, vuela y queda pegado al otro átomo) para que se vea bien cuál es.
+                 El electrón se carga y vuela celeste; al impactar y quedarse en el otro átomo se pone dorado/amarillo y titila (hasta que se deshace), para que se vea bien cuál es.
      covalente → un electrón de cada átomo se comparten: giran en ocho alrededor de los dos núcleos y entre ellos brilla la nube de la unión (simple, doble o triple).
      metálica  → los electrones de la última capa se sueltan y forman un «mar» que fluye alrededor de los dos átomos.
      sin unión → gas noble: capa completa, los átomos se «rechazan» (las chispas rebotan).
@@ -1158,7 +1158,7 @@ void main(){float r=length(vQ);if(r>1.0)discard;
   else if(a.src==="B"&&S.B.ok){const ya=S.act.filter(x=>x.eE&&x.src==="B").map(x=>x.eE);t2.copy(C.ax).negate();a.eE=elegirE(S.B,t2,ya)}
 }
  function quitar(a){if(!a.cl)return;if(a.cl.parent)a.cl.parent.remove(a.cl);for(const m of[].concat(a.cl.material))if(m&&m.dispose)m.dispose()}
-/* el electrón que se pega al otro átomo titila en dorado/amarillo: la copia se tiñe y late entre dorado y amarillo claro */
+/* desde que impacta y se queda en el otro átomo, el electrón titila en dorado/amarillo: la copia se tiñe y late entre dorado y amarillo claro */
 function dorar(c,Tc,i){const b=RM?.5:.5+.5*Math.sin(Tc*12+i*1.9),k=mx(GOLD,GOLD2,b);
  for(const m of[].concat(c.material)){if(!m)continue;if(m.color)m.color.setRGB(k[0],k[1],k[2]);if(m.emissive){m.emissive.setRGB(k[0]*.55,k[1]*.55,k[2]*.55);if("emissiveIntensity"in m)m.emissiveIntensity=.35+.65*b}}}
 function setHide(S,a,f){if(!a.eE)return;if(f){a.hid=1;a.eE.o.visible=false}else if(a.hid){a.hid=0;S.fix=1}}
@@ -1230,13 +1230,13 @@ function setHide(S,a,f){if(!a.eE)return;if(f){a.hid=1;a.eE.o.visible=false}else 
    const last=a.td+S.DF,bk=RM?.5:.5+.5*Math.sin(Tc*12+a.i*1.9),gc=mx(GOLD,GOLD2,bk);/* bk: titileo; gc: dorado ↔ amarillo claro */
    /* carga: brillo en el electrón que se va y marca del hueco donde va a quedar */
    if(Tc<a.td){const p=sm((Tc-(a.td-.6))/.6),pu=.5+.5*Math.sin(Tc*13);
-    if(p>0){ionOrig(S,a,o0);PT(o0,es*(2.4+.7*pu),GOLD,.6*p*al,1);PT(o0,es*1.2,gc,.9*p*al,0);
+    if(p>0){ionOrig(S,a,o0);PT(o0,es*(2.4+.7*pu),ELE,.6*p*al,1);PT(o0,es*1.2,ELE,.9*p*al,0);
      if(a.mode!=="out"){ionDest(S,a,d0);PT(d0,es*(2.8+.5*pu),co,.5*p*al,2)}}}
    /* salida */
-   if(Tc>=a.td&&Tc<a.td+.45){const q=(Tc-a.td)/.45;ionOrig(S,a,o0);PT(o0,es*(1.6+4*q),co,.85*(1-q)*(1-q)*al,2);PT(o0,es*3.2*(1-q)+es,GOLD,.8*(1-q)*al,1)}
+   if(Tc>=a.td&&Tc<a.td+.45){const q=(Tc-a.td)/.45;ionOrig(S,a,o0);PT(o0,es*(1.6+4*q),co,.85*(1-q)*(1-q)*al,2);PT(o0,es*3.2*(1-q)+es,ELE,.8*(1-q)*al,1)}
    /* en vuelo (solo de ida) */
-   electron((T,out)=>ionPos(S,a,T,out),Tc,K,lag,al*(.72+.28*bk),sz,gc);
-   /* llegada: onda, destello y luz del electrón nuevo */
+   electron((T,out)=>ionPos(S,a,T,out),Tc,K,lag,al,sz,ELE);
+   /* llegada: onda, destello y, desde el impacto, el electrón queda dorado y titila en el otro átomo */
    if(a.mode!=="out"&&Tc>=last&&Tc<a.tr+S.DR*.2){ionDest(S,a,d0);const q=(Tc-last)/.55;
     if(q<1){PT(d0,es*(1.6+4.6*q),co,.9*Math.pow(1-q,1.5)*al,2);PT(d0,es*(4.2*(1-q)+1),WH,.7*(1-q)*al,1)}
     if(Tc<a.tr&&a.slotL){PT(d0,es*(2.9+.7*bk),GOLD,(.3+.4*bk)*al,1);PT(d0,es*1.5,gc,(.25+.5*bk)*al,0)}}
