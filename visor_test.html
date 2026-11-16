@@ -300,80 +300,6 @@ window.__ST={};document.querySelectorAll("a-marker").forEach(m=>{const o=m.objec
  (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);
   r.render=function(a,b){try{sync()}catch(e){window.__pjerr=e.message}return o(a,b)}})();
 })();
-/* ---------- Hoja rígida (activa; ?fus=0 la apaga) ----------
-   La hoja impresa es una sola pieza plana y se sabe dónde va cada marcador (grilla de 1,57 anchos de marcador).
-   Con 2 o más marcadores a la vista se calcula UNA pose de la hoja y cada átomo se coloca donde le toca:
-   separación exacta (no se pegan) y menos temblor (mucho menos con 3 o más marcadores).
-   Parte con los ejes y la escala medidos en la práctica, los sigue verificando y los guarda en el navegador; si lo calculado no cuadra
-   con lo medido, se usa la pose de siempre. Está ACTIVA por defecto: ?fus=0 la apaga · ?fusreset=1 borra lo aprendido.
-   Necesita que ?lock=0 no esté puesto. */
-function __makeFUS(TH){
- const PIT=1.567,LRr=7.45,ARr=8.45,LAY={};
- const put=(z,c,r)=>{LAY[z]=[c*PIT,r*PIT]};
- put(1,0,0);put(2,17,0);
- for(let i=0;i<2;i++){put(3+i,i,1);put(11+i,i,2)}
- for(let i=0;i<6;i++){put(5+i,12+i,1);put(13+i,12+i,2)}
- for(let i=0;i<18;i++){put(19+i,i,3);put(37+i,i,4)}
- put(55,0,5);put(56,1,5);put(87,0,6);put(88,1,6);
- for(let i=0;i<15;i++){put(72+i,3+i,5);put(104+i,3+i,6);put(57+i,2+i,LRr);put(89+i,2+i,ARr)}
- /* las 24 formas posibles de que los ejes de la hoja (x der., y abajo, z hacia adentro) correspondan a los del marcador */
- const CAND=[];
- [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]].forEach(p=>{for(let s=0;s<8;s++){const m=new TH.Matrix4(),e=m.elements;e.fill(0);e[15]=1;
-  for(let r=0;r<3;r++)e[p[r]*4+r]=(s>>r&1)?-1:1;if(m.determinant()>0)CAND.push(m)}});
- /* lo normal en AR.js: X a la derecha, Y sale del papel, Z hacia abajo del marcador */
- const PRI=CAND.findIndex(m=>{const e=m.elements;return e[0]===1&&e[9]===-1&&e[6]===1});
- const S={cost:new Float64Array(CAND.length),neff:0,err:0,ref:0,why:"",saved:0,sel:PRI,pri:PRI,ready:0,ks:null,n:0,rej:0,dev:0,on:0};
- const V3=()=>new TH.Vector3(),Q4=()=>new TH.Quaternion(),tq=Q4(),iq=Q4(),w=V3(),dg=V3(),pr=V3(),pc=V3(),gc=V3(),aa=V3(),bb=V3(),cr=V3(),om=V3(),qb=Q4(),dq=Q4(),qM=Q4(),qMi=Q4(),A=new TH.Matrix3();
- /* aprende ejes y escala mirando pares de marcadores recién detectados (sin usar poses ya corregidas) */
- function calib(V,u){
-  const rs=[];let np=0;
-  for(let i=0;i<V.length&&np<8;i++)for(let j=i+1;j<V.length&&np<8;j++){
-   const a=V[i],b=V[j],L=Math.hypot(b.gx-a.gx,b.gy-a.gy);if(L<1e-6)continue;np++;
-   for(let s=0;s<2;s++){
-    const x=s?b:a,y=s?a:b;dg.set((b.gx-a.gx)*(s?-1:1),(b.gy-a.gy)*(s?-1:1),0);
-    iq.copy(x.q).invert();w.copy(y.p).sub(x.p).applyQuaternion(iq).multiplyScalar(1/u);const wl=w.length();if(wl<1e-9)continue;
-    if(!s)rs.push(wl/L);w.multiplyScalar(L/wl);S.neff=S.neff*.995+1;
-    for(let k=0;k<CAND.length;k++){pr.copy(dg).applyMatrix4(CAND[k]);S.cost[k]=S.cost[k]*.995+pr.sub(w).lengthSq()/(L*L)}}}
-  if(rs.length){rs.sort((x,y)=>x-y);const m=rs[rs.length>>1];S.ks=S.ks===null?m:S.ks+(m-S.ks)*.05}
-  let b=0;for(let k=1;k<CAND.length;k++)if(S.cost[k]<S.cost[b])b=k;
-  S.sel=S.cost[PRI]<=S.cost[b]*1.5+.05?PRI:b;
-  const med=[...S.cost].sort((x,y)=>x-y)[CAND.length>>1],nf=S.neff||1;S.err=S.cost[S.sel]/nf;S.ref=med/nf;
-  S.ready=S.neff>=12&&S.err<(S.ready?.8:.5)*S.ref&&S.ks>.4&&S.ks<2.5?1:0}/* histéresis: cuesta más apagarse que encenderse */
- /* una sola pose para toda la hoja; cada marcador se coloca donde le toca. Devuelve false si no cuadra con lo medido */
- function fuse(V,u){
-  const n=V.length,sk=S.ks*u;
-  qM.setFromRotationMatrix(CAND[S.sel]);qMi.copy(qM).invert();
-  pc.set(0,0,0);gc.set(0,0,0);
-  for(const a of V){pc.add(a.p);a.g.set(a.gx*sk,a.gy*sk,0);gc.add(a.g)}
-  pc.multiplyScalar(1/n);gc.multiplyScalar(1/n);
-  qb.set(0,0,0,0);/* rotación inicial: promedio de las de cada marcador */
-  for(const a of V){tq.copy(a.q).multiply(qM);if(qb.dot(tq)<0)tq.set(-tq.x,-tq.y,-tq.z,-tq.w);qb.set(qb.x+tq.x,qb.y+tq.y,qb.z+tq.z,qb.w+tq.w)}
-  qb.normalize();
-  for(let it=0;it<3;it++){/* afinada con las posiciones (más precisas que los giros) */
-   let s=0,e0=0,e1=0,e2=0,e4=0,e5=0,e8=0;cr.set(0,0,0);
-   for(const a of V){aa.copy(a.g).sub(gc).applyQuaternion(qb);bb.copy(a.p).sub(pc);const q2=aa.lengthSq();s+=q2;
-    e0+=q2-aa.x*aa.x;e1-=aa.x*aa.y;e2-=aa.x*aa.z;e4+=q2-aa.y*aa.y;e5-=aa.y*aa.z;e8+=q2-aa.z*aa.z;cr.add(w.crossVectors(aa,bb))}
-   const l=.02*s+1e-9;A.set(e0+l,e1,e2,e1,e4+l,e5,e2,e5,e8+l);
-   if(Math.abs(A.determinant())<1e-12)break;
-   om.copy(cr).applyMatrix3(A.invert());const ang=Math.min(.5,om.length());if(ang<1e-7)break;
-   dq.setFromAxisAngle(om.normalize(),ang);qb.premultiply(dq)}
-  let mx=0,sm=0,sa=0;
-  for(const a of V){a.fp.copy(a.g).sub(gc).applyQuaternion(qb).add(pc);a.fq.copy(qb).multiply(qMi);
-   const d=a.fp.distanceTo(a.p)/u;mx=Math.max(mx,d);sm+=d;sa+=2*Math.acos(Math.min(1,Math.abs(a.fq.dot(a.q))))}
-  S.dev=sm/n;S.why=mx>=1?"un marcador se desvía "+mx.toFixed(2):sm/n>=.5?"desvío medio "+(sm/n).toFixed(2):sa/n>=1.1?"giro distinto "+Math.round(sa/n*57.3)+"°":"";return !S.why}
- const KEY="fus_cal_v1";
- function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||"null");
-  if(j&&j.sel>=0&&j.sel<CAND.length&&j.ks>.4&&j.ks<2.5){S.cost.fill(40);S.cost[j.sel]=0;S.neff=20;S.sel=j.sel;S.ks=j.ks;S.err=0;S.ref=2;S.ready=1;S.saved=j.sel+1}}catch(e){}}
- function save(){if(S.saved===S.sel+1)return;try{localStorage.setItem(KEY,JSON.stringify({sel:S.sel,ks:S.ks}));S.saved=S.sel+1}catch(e){}}
- /* valores de fábrica (medidos en la práctica: ejes estándar de AR.js, escala 1,02); se siguen verificando con lo que ve la cámara */
- S.cost.fill(40);S.cost[PRI]=0;S.neff=20;S.sel=PRI;S.ks=1.02;S.err=0;S.ref=2;S.ready=1;
- return{LAY,CAND,S,calib,fuse,load,save}}
-
-const FUS=__makeFUS(AFRAME.THREE);
-try{if(new URLSearchParams(location.search).get("fusreset")==="1")localStorage.removeItem("fus_cal_v1")}catch(e){}
-FUS.load();
-const __sigPose=o=>o.matrixAutoUpdate?[o.position.x,o.position.y,o.position.z,o.quaternion.x,o.quaternion.y,o.quaternion.z,o.quaternion.w]:o.matrix.elements.slice();
-const __samePose=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
 /* ---------- Anclaje de marcadores cercanos: cada modelo se queda en SU lugar ----------
    Problema: con dos marcadores muy juntos, el detector a veces le asigna a uno la posición del otro (o promedia las dos),
    y los dos modelos terminan en el punto medio; además, como el ajuste de tamaño usa la distancia entre marcadores,
@@ -391,24 +317,15 @@ const __samePose=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
  const L=[...document.querySelectorAll("a-marker")].map(m=>({id:m.id,o:m.object3D,w:m.querySelector(":scope > a-entity"),has:0,seen:-1e9,hid:0,snap:0,ok:0,u:1,cn:0,
   p:V(),q:new TH.Quaternion(),s:new TH.Vector3(1,1,1),rp:V(),rq:new TH.Quaternion(),rs:new TH.Vector3(1,1,1),cp:V()}));
  window.__LK={no:0};
- const FUSE=Q.get("fus")!=="0";window.__FUS=FUSE?FUS.S:null;
- if(FUSE)L.forEach(a=>{const l=FUS.LAY[+a.id.slice(1)];a.lay=l||null;a.it=l?{p:a.rp,q:a.rq,gx:l[0],gy:l[1],g:V(),fp:V(),fq:new TH.Quaternion()}:null});
- function fusiona(v){const S=FUS.S,F=v.filter(a=>a.it);S.n=F.length;S.on=0;if(F.length<2)return;
-  let u=0;F.forEach(a=>u+=a.rs.x);u/=F.length;if(!(u>1e-6))return;
-  const fr=F.filter(a=>a.fr);if(fr.length>=2)FUS.calib(fr.map(a=>a.it),u);/* aprende solo con detecciones nuevas */
-  if(S.ready&&S.neff>=40&&S.err<.3*S.ref)FUS.save();
-  if(!S.ready)return;
-  if(FUS.fuse(F.map(a=>a.it),u)){F.forEach(a=>{a.rp.copy(a.it.fp);a.rq.copy(a.it.fq)});S.on=1}else S.rej++}
  const leer=a=>{const o=a.o;if(o.matrixAutoUpdate){a.rp.copy(o.position);a.rq.copy(o.quaternion);a.rs.copy(o.scale)}else o.matrix.decompose(a.rp,a.rq,a.rs)};
- const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true;a.sg=__sigPose(o)};
+ const poner=a=>{const o=a.o;o.position.copy(a.p);o.quaternion.copy(a.q);o.scale.copy(a.s);if(!o.matrixAutoUpdate)o.matrix.compose(a.p,a.q,a.s);o.matrixWorldNeedsUpdate=true};
  function paso(){
   const now=performance.now(),v=[];
   for(const a of L){
    const st=window.__ST&&window.__ST[a.id]?window.__ST[a.id]():null,real=st?st[0]:a.o.visible;
    if(!real)continue;
    if(now-a.seen>GAP){a.has=0;a.cn=0}/* estuvo perdido: la posición vieja ya no sirve */
-   a.seen=now;a.fr=!a.sg||!__samePose(a.sg,__sigPose(a.o));leer(a);v.push(a)}
-  if(FUSE)try{fusiona(v)}catch(e){window.__lkerr="fus "+e.message}
+   a.seen=now;leer(a);v.push(a)}
   for(const a of v){a.ok=1;a.u=a.rs.x>1e-6?a.rs.x:1;
    for(const b of v){if(b===a)continue;
     if(a.rp.distanceTo(b.rp)/a.u<COL){a.ok=0;break}/* A: encimados */
@@ -460,7 +377,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (?fus=0)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
@@ -1113,8 +1030,9 @@ void main(){
 <script>
 /* ---------- Animación de la unión: los electrones cuentan qué pasa en el enlace ----------
    Cuando hay solo dos marcadores a la vista y juntos (los mismos que muestran el cartel «Unión …» y el neón), sus electrones se mueven según el tipo de unión:
-     iónica    → el/los electrones de la última capa del metal viajan de verdad hasta el no metal (se apagan en uno y aparecen en el otro):
-                 el metal queda con carga + y el no metal con carga − (Na⁺ · Cl⁻). Si faltan o sobran electrones (Na + O, Mg + Cl) se ve que viene/va otro átomo.
+     iónica    → el/los electrones de la última capa del metal viajan de verdad hasta el no metal (se apagan en uno y aparecen en el otro), SIEMPRE en un solo sentido:
+                 del átomo que lo cede al que lo recibe. El metal queda con carga + y el no metal con carga − (Na⁺ · Cl⁻). Si faltan o sobran electrones (Na + O, Mg + Cl) se ve que viene/va otro átomo.
+                 Al cerrar el ciclo el electrón recibido se deshace en el no metal y el original reaparece en el metal (sin viaje de vuelta), y el salto empieza de nuevo, en bucle.
      covalente → un electrón de cada átomo se comparten: giran en ocho alrededor de los dos núcleos y entre ellos brilla la nube de la unión (simple, doble o triple).
      metálica  → los electrones de la última capa se sueltan y forman un «mar» que fluye alrededor de los dos átomos.
      sin unión → gas noble: capa completa, los átomos se «rechazan» (las chispas rebotan).
@@ -1135,6 +1053,7 @@ void main(){
  const enlaces=z=>{if(z===1)return 1;const v=val(z);return cl(Math.min(v,8-v),1,3)};/* enlaces que forma */
  /* ---- interruptor en Capas ---- */
  const op={on:1};try{const g=JSON.parse(localStorage.getItem("unfx1")||"null");if(g)op.on=g.on?1:0}catch(e){}
+ window.__FXOP=op;/* lo lee también el módulo de radioactividad */
  {const b0=document.getElementById("unS");
   if(b0){b0.insertAdjacentHTML("afterend",'<button type="button" class="tgl" id="unFx" style="margin-top:6px">Animar los electrones</button>');
    const b=document.getElementById("unFx"),pint=()=>{b.classList.toggle("on",!!op.on);b.setAttribute("aria-pressed",!!op.on)};
@@ -1248,11 +1167,11 @@ void main(){float r=length(vQ);if(r>1.0)discard;
  function planificar(S){
   const A=S.A,B=S.B,t=S.t;
   if(t==="ion"){const nA=cl(carga(A.z),1,3),nB=cl(anion(B.z),1,3),nF=Math.max(nA,nB);
-   Object.assign(S,{nA,nB,nF,P0:.35,F0:1.15,DF:1.25,ST:.26,SR:.18,DR:1.0});
-   S.Ttag=S.F0+(nF-1)*S.ST+S.DF+.1;S.TR=S.Ttag+3.8;S.Tend=S.TR+(nF-1)*S.SR+S.DR;S.Tloop=S.Tend+.9;S.Thold=S.Ttag+1.6;
+   Object.assign(S,{nA,nB,nF,P0:.35,F0:1.15,DF:1.25,ST:.26,SR:.18,RB:.25,DR:.65});
+   S.Ttag=S.F0+(nF-1)*S.ST+S.DF+.1;S.TR=S.Ttag+3.8;S.Tend=S.TR+(nF-1)*S.SR+S.DR;S.Tloop=S.Tend+.6;S.Thold=S.Ttag+1.6;
    for(let i=0;i<nF;i++){const mode=i<nA&&i<nB?"tr":i<nA?"out":"in",td=S.F0+i*S.ST,tr=S.TR+i*S.SR;
     S.act.push({i,mode,sg:(i%2?-1:1)*(i===2?1.5:1),n:nA,k:i,td,tr,tl:td-.5,src:mode==="in"?"E":"A",dst:mode==="out"?"E":"B",
-     hide:Tc=>mode!=="in"&&Tc>=td-.02&&Tc<tr+S.DR,cln:Tc=>mode!=="out"&&Tc>=td+S.DF&&Tc<tr})}}
+     hide:Tc=>mode!=="in"&&Tc>=td-.02&&Tc<tr+S.RB,cln:Tc=>mode!=="out"&&Tc>=td+S.DF&&Tc<tr})}}
   else if(t==="cov"){const b=cl(Math.min(enlaces(A.z),enlaces(B.z)),1,3);Object.assign(S,{b,C0:1.05,W:2*Math.PI/2.1});
    for(let j=0;j<b;j++)for(let s=0;s<2;s++){const idx=j*2+s,tc=S.C0+idx*.12;
     S.act.push({j,s,idx,n:b,k:j,sg:s?-1:1,tc,tl:tc-.5,ph:j*Math.PI/b+s*Math.PI,src:s?"B":"A",dst:"E",hide:Tc=>Tc>=tc-.02,cln:()=>false})}}
@@ -1275,10 +1194,10 @@ void main(){float r=length(vQ);if(r>1.0)discard;
    const eleOn=a=>{const r=a.src==="B"?s.B:s.A,t=CAPAS.estado(r.z);return !!(t.est.ele||t.atenuar)};
    for(const a of s.act){if(!a.lock&&Tc>=a.tl)bloquear(s,a);
     setHide(s,a,a.hide(Tc)&&eleOn(a));
-    if(a.dst==="B"&&!a.slotL&&s.B.ok&&Tc>=a.td+s.DF-.02){const ya=s.act.filter(x=>x.slotL).map(x=>x.slotL);t2.copy(C.ax).negate();a.slotL=elegirSlot(s.B,t2,ya)}
+    if(a.dst==="B"&&!a.slotL&&s.B.ok&&Tc>=a.tl){/* el hueco se elige antes de salir: el electrón vuela directo a su lugar final, sin saltito al llegar */const ya=s.act.filter(x=>x.slotL).map(x=>x.slotL);t2.copy(C.ax).negate();a.slotL=elegirSlot(s.B,t2,ya)}
     if(a.slotL){const w=a.cln(Tc);if(w&&!a.cl)a.cl=crear(s,a);if(a.cl)a.cl.visible=w&&eleOn(a)}}
    if(s.fix){s.fix=0;for(const r of[s.A,s.B])if(r.root)CAPAS.aplicarModelo(r.inner.object3D);
-    for(const a of s.act){if(a.eE&&a.hide(Tc)&&eleOn(a))a.eE.o.visible=false}}
+    for(const a of s.act){if(a.eE&&a.hide(Tc)&&eleOn(a))a.eE.o.visible=false;if(a.cl)a.cl.visible=!!a.slotL&&a.cln(Tc)&&eleOn(a)}}/* y la copia del receptor vuelve a su estado (aplicarModelo la prendía un cuadro) */
    const al=sm((now-s.t0)/350)*1;
    if(s.t==="ion")dibIon(s,Tc,al);else if(s.t==="cov")dibCov(s,Tc,al);else if(s.t==="met")dibMet(s,Tc,al);else dibGn(s,Tc,al)}
   if(!np){mesh.visible=false;return}
@@ -1290,10 +1209,10 @@ void main(){float r=length(vQ);if(r>1.0)discard;
  function ionOrig(S,a,out){if(a.mode==="in")return extB(a,out);if(a.eE)return elec(a.eE,out);return synth(0,a,out)}
  function ionDest(S,a,out){if(a.mode==="out")return extA(a,out);if(a.slotL)return slotW(S,a,out);return synth(1,a,out)}
  const orgOf=(a,out)=>a.eE?elec(a.eE,out):synth(a.src==="B"?1:0,a,out);
- function ionPos(S,a,T,out){let tau,rev=0;
-  if(T>=a.td&&T<a.td+S.DF)tau=(T-a.td)/S.DF;else if(T>=a.tr&&T<a.tr+S.DR){tau=(T-a.tr)/S.DR;rev=1}else return 0;
-  ionOrig(S,a,o0);ionDest(S,a,d0);bez(o0,d0,rev?1-ez(tau):ez(tau),a.sg,out);
-  if(a.mode==="out")return rev?sm(tau/.6):1-sm((tau-.4)/.6);if(a.mode==="in")return rev?1-sm((tau-.4)/.6):sm(tau/.45);return 1}
+ function ionPos(S,a,T,out){/* solo de ida: del que lo cede al que lo recibe (no hay viaje de vuelta; el ciclo se reinicia con el electrón otra vez en su lugar) */
+  if(!(T>=a.td&&T<a.td+S.DF))return 0;const tau=(T-a.td)/S.DF;
+  ionOrig(S,a,o0);ionDest(S,a,d0);bez(o0,d0,ez(tau),a.sg,out);
+  if(a.mode==="out")return 1-sm((tau-.4)/.6);if(a.mode==="in")return sm(tau/.45);return 1}
  function dibIon(S,Tc,al){
   const es=C.es,co=COL.ion,sz=es*3.7,nF=S.nF,K=10,lag=.032;
   /* campo entre los iones (cuando ya hay cargas) */
@@ -1310,7 +1229,7 @@ void main(){float r=length(vQ);if(r>1.0)discard;
      if(a.mode!=="out"){ionDest(S,a,d0);PT(d0,es*(2.8+.5*pu),co,.5*p*al,2)}}}
    /* salida */
    if(Tc>=a.td&&Tc<a.td+.45){const q=(Tc-a.td)/.45;ionOrig(S,a,o0);PT(o0,es*(1.6+4*q),co,.85*(1-q)*(1-q)*al,2);PT(o0,es*3.2*(1-q)+es,ELE,.8*(1-q)*al,1)}
-   /* en vuelo (ida y vuelta) */
+   /* en vuelo (solo de ida) */
    electron((T,out)=>ionPos(S,a,T,out),Tc,K,lag,al,sz,ELE);
    /* llegada: onda, destello y luz del electrón nuevo */
    if(a.mode!=="out"&&Tc>=last&&Tc<a.tr+S.DR*.2){ionDest(S,a,d0);const q=(Tc-last)/.55;
@@ -1320,9 +1239,10 @@ void main(){float r=length(vQ);if(r>1.0)discard;
    if(a.mode!=="out"&&!a.slotL&&Tc>=last+.3&&Tc<a.tr){const th0=1.3*(Tc-last)+a.i*2.1+.6,fa=sm((Tc-last-.3)/.4)*(1-sm((Tc-(a.tr-.4))/.4));
     for(let k=5;k>=0;k--){const th=th0-k*.13;tt.copy(C.pb).addScaledVector(C.cr,Math.cos(th)*C.rvb).addScaledVector(C.cu,Math.sin(th)*C.rvb);PT(tt,es*(k?2.2-k*.2:2.8),ELE,(k?.5*(1-k/6):1)*fa*al,k?1:0)}}
    /* vacío que deja en el átomo que lo cede */
-   if(a.mode!=="in"&&Tc>=last&&Tc<a.tr){ionOrig(S,a,o0);PT(o0,es*2.4,co,(.22+.1*Math.sin(Tc*4+a.i))*al,2)}
-   /* regreso: llegada a casa */
-   if(a.mode!=="in"&&Tc>=a.tr+S.DR&&Tc<a.tr+S.DR+.4){const q=(Tc-a.tr-S.DR)/.4;ionOrig(S,a,o0);PT(o0,es*(1.4+2.4*q),ELE,.7*(1-q)*al,2)}}
+   if(a.mode!=="in"&&Tc>=last&&Tc<a.tr+S.RB){ionOrig(S,a,o0);PT(o0,es*2.4,co,(.22+.1*Math.sin(Tc*4+a.i))*al,2)}
+   /* fin del ciclo (sin viaje de vuelta): el electrón recibido se deshace en el otro átomo y, un instante después, el original reaparece en el que lo cede */
+   if(a.mode!=="out"&&Tc>=a.tr&&Tc<a.tr+.45){const q=(Tc-a.tr)/.45;ionDest(S,a,d0);PT(d0,es*(1.6+3.4*q),ELE,.8*(1-q)*(1-q)*al,2);PT(d0,es*(3*(1-q)+.6),ELE,.7*(1-q)*al,1)}
+   if(a.mode!=="in"&&Tc>=a.tr+S.RB&&Tc<a.tr+S.RB+.4){const q=(Tc-a.tr-S.RB)/.4;ionOrig(S,a,o0);PT(o0,es*(1.4+3*q),co,.8*(1-q)*(1-q)*al,2);PT(o0,es*(3*(1-q)+.8),ELE,.7*(1-q)*al,1)}}
   /* carteles de carga */
   const A=S.A,B=S.B,ta=tag(A.sym,S.nA,1),tb=tag(B.sym,S.nB,0),e=Math.min(1,(Tc-S.Ttag)/.38)-1,pop=Tc<S.Ttag?0:1+2.70158*e*e*e+1.70158*e*e,fade=1-sm((Tc-(S.TR-.35))/.35);
   const tw=Math.max(.62,1.45*Math.min(C.ra,C.rb)),sg=C.ax.dot(C.cr)>=0?-1:1;
@@ -1385,6 +1305,133 @@ void main(){float r=length(vQ);if(r>1.0)discard;
   frame(now)}
  window.__FX={get S(){return S},C,fx,mesh};
  (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);r.render=function(a,b){try{pre()}catch(e){window.__fxerr=e.message+" @"+(e.stack||"").split("\n")[1]}return o(a,b)}})();
+})();
+</script>
+<script>
+/* ---------- Radioactividad: los electrones de los átomos inestables se agitan cada vez más ----------
+   Cada elemento sin isótopos estables (Tc, Pm y del Po en adelante) tiene un «nivel de radioactividad» de 0,1 a 1 según la vida media de su isótopo más duradero,
+   en escala logarítmica: del torio y el uranio (miles de millones de años) hasta el oganesón (menos de un milisegundo). Cuanto más alto, más inquietos sus electrones:
+     0,1 – 0,3  → temblor leve y un halo celeste que respira.
+     0,3 – 0,6  → temblor firme; el halo parpadea y se vuelve verdoso; de a ratos un electrón lanza una chispa hacia afuera y retrocede (como una emisión).
+     0,6 – 0,85 → los electrones sacuden y destellan, las chispas salen seguido y del núcleo parten ondas de radiación.
+     0,85 – 1   → agitación frenética: halos verde-blancos que parpadean a ráfagas, lluvia de chispas, ondas seguidas y chispazos entre el núcleo y los electrones.
+   Los estables (todo lo demás, incluido el bismuto, que dura 2×10¹⁹ años) no se tocan.
+   Los electrones se mueven de verdad (son las mallas del modelo) y el brillo se dibuja con partículas que viven dentro del propio modelo: lo acompañan sin retraso.
+   Respeta Capas (electrones y niveles apagados o atenuados) y se apaga con «Animar los electrones», o con ?anim=0 / ?rad=0.
+   ?radx=0.8 fuerza ese nivel en TODOS los átomos (para probar con cualquier marcador). Con «reducir movimiento» queda solo un halo fijo. */
+(function(){
+ if(Q.get("anim")==="0"||Q.get("rad")==="0")return;
+ const TH=AFRAME.THREE,sc=document.querySelector("a-scene"),RM=matchMedia("(prefers-reduced-motion:reduce)").matches,R=Math.random;
+ const cl=(x,a,b)=>x<a?a:x>b?b:x,mx=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+ /* log10 de la vida media (en segundos) del isótopo más duradero conocido de cada elemento. Lo que no está en la lista se toma como estable */
+ const LG={43:14.12,61:8.75,84:9.59,85:4.46,86:5.52,87:3.12,88:10.70,89:8.84,90:17.65,91:12.01,92:17.15,93:13.83,94:15.41,95:11.37,96:14.69,97:10.64,98:10.45,
+  99:7.61,100:6.94,101:6.65,102:3.54,103:4.60,104:3.46,105:4.76,106:2.27,107:1.79,108:1.2,109:.65,110:1.10,111:2.1,112:1.46,113:.98,114:.28,115:-.19,116:-1.15,117:-1.29,118:-3.15};
+ const HI=18,LO=-3.2,FORCE=Q.get("radx")===null?0:cl(+Q.get("radx")||0,0,1);
+ const RAD=z=>FORCE>0?FORCE:LG[z]==null?0:.1+.9*cl((HI-LG[z])/(HI-LO),0,1);
+ const ZS=[];for(const z in D)if(RAD(+z)>0)ZS.push(+z);
+ if(!ZS.length)return;
+ /* color: celeste del electrón → verde → lima → blanco amarillento */
+ const B0=[.24,.65,1],G1=[.25,1,.5],Y2=[.8,1,.25],W3=[1,1,.85],WH=[1,1,1];
+ const tint=L=>{const t=cl((L-.1)/.9,0,1);return t<.4?mx(B0,G1,t/.4):t<.8?mx(G1,Y2,(t-.4)/.4):mx(Y2,W3,(t-.8)/.2*.6)};
+ /* ---- partículas (mismo estilo que las de la unión): cuadritos que miran a la cámara con brillo suave; una malla por átomo ---- */
+ const VS=`attribute vec2 aQ;attribute float aS;attribute vec4 aC;attribute float aK;
+varying vec2 vQ;varying vec4 vC;varying float vK;
+void main(){float k=length(modelViewMatrix[0].xyz);vec4 mv=modelViewMatrix*vec4(position,1.0);mv.xy+=aQ*aS*k;gl_Position=projectionMatrix*mv;vQ=aQ*2.0;vC=aC;vK=aK;}`;
+ const FS=`varying vec2 vQ;varying vec4 vC;varying float vK;
+void main(){float r=length(vQ);if(r>1.0)discard;
+ float e=1.0-smoothstep(0.7,1.0,r),g=exp(-r*r*3.4)*e,core=exp(-r*r*38.0),ring=exp(-pow((r-0.7)/0.11,2.0))*e;
+ float a;vec3 c=vC.rgb;
+ if(vK<0.5){a=clamp(g*0.95+core,0.0,1.0);c=mix(c,vec3(1.0),clamp(core*1.3,0.0,0.97));}
+ else if(vK<1.5){a=g*0.9;}
+ else{a=ring;c=mix(c,vec3(1.0),0.3);}
+ a*=vC.a;gl_FragColor=vec4(c*a,a);}`;
+ /* con prueba de profundidad: el brillo queda detrás del núcleo y de lo que tape al electrón, igual que el electrón mismo */
+ const MAT=new TH.ShaderMaterial({vertexShader:VS,fragmentShader:FS,transparent:true,depthTest:true,depthWrite:false,side:TH.DoubleSide});MAT.premultipliedAlpha=true;
+ const MAXP=480;
+ function mkLayer(){
+  const aP=new Float32Array(MAXP*12),aQ=new Float32Array(MAXP*8),aS=new Float32Array(MAXP*4),aC=new Float32Array(MAXP*16),aK=new Float32Array(MAXP*4),ix=new Uint16Array(MAXP*6);
+  {const cn=[-.5,-.5,.5,-.5,.5,.5,-.5,.5];for(let q=0;q<MAXP;q++){for(let i=0;i<8;i++)aQ[q*8+i]=cn[i];const b=q*4;ix.set([b,b+1,b+2,b,b+2,b+3],q*6)}}
+  const geo=new TH.BufferGeometry(),at=(n,a,s,d)=>{const x=new TH.BufferAttribute(a,s);if(d)x.setUsage(TH.DynamicDrawUsage);geo.setAttribute(n,x)};
+  at("position",aP,3,1);at("aQ",aQ,2,0);at("aS",aS,1,1);at("aC",aC,4,1);at("aK",aK,1,1);geo.setIndex(new TH.BufferAttribute(ix,1));
+  const mesh=new TH.Mesh(geo,MAT);mesh.name="fx_rad";mesh.frustumCulled=false;mesh.renderOrder=18;mesh.visible=false;
+  const L={mesh,np:0,
+   PT(x,y,z,s,c,a,k){if(L.np>=MAXP||!(a>.004)||!(s>0))return;const i=L.np++,p=i*12,q=i*4,w=i*16;
+    for(let j=0;j<4;j++){aP[p+j*3]=x;aP[p+j*3+1]=y;aP[p+j*3+2]=z;aS[q+j]=s;aK[q+j]=k;aC[w+j*4]=c[0];aC[w+j*4+1]=c[1];aC[w+j*4+2]=c[2];aC[w+j*4+3]=a}},
+   fin(){geo.setDrawRange(0,L.np*6);for(const n of["position","aS","aC","aK"])geo.attributes[n].needsUpdate=true;mesh.visible=L.np>0;L.np=0}};
+  return L}
+ /* ---- los electrones de cada átomo (las mallas «Electron_n#…» del modelo) ---- */
+ const AT={},HZ={},v=new TH.Vector3();
+ function build(z,inner,root){
+  root.updateWorldMatrix(true,true);
+  const im=new TH.Matrix4().copy(root.matrixWorld).invert(),mm=new TH.Matrix4(),pm=new TH.Matrix4(),E=[];
+  root.traverse(o=>{
+   if(!o.isMesh||!o.geometry||!o.parent||CAPAS.categoria(o)!=="ele")return;
+   if(!o.geometry.boundingSphere)o.geometry.computeBoundingSphere();const bs=o.geometry.boundingSphere;if(!bs)return;
+   mm.multiplyMatrices(im,o.matrixWorld);const s3=new TH.Vector3().setFromMatrixScale(mm),c=bs.center.clone().applyMatrix4(mm),rl=bs.radius*Math.max(s3.x,s3.y,s3.z);
+   if(!(rl>0)||rl/Math.max(c.length(),1e-9)>=.8)return;/* varios electrones en una sola malla: no se pueden mover por separado */
+   pm.copy(o.parent.matrixWorld).invert().multiply(root.matrixWorld);/* del espacio del modelo al del padre de la malla */
+   E.push({o,base:o.position.clone(),c,r:c.length(),rl,dir:c.clone().normalize(),n:CAPAS.nivel(o),m3:new TH.Matrix3().setFromMatrix4(pm),
+    p:[R()*6.2832,R()*6.2832,R()*6.2832,R()*6.2832],f:[.8+R()*.9,1.3+R()*1.1,1.9+R()*1.3,.7+R()*.8],cur:new TH.Vector3(),kk:-9,kd:null})});
+  if(!E.length)return null;
+  const rs=E.map(e=>e.rl).sort((a,b)=>a-b),grp=new TH.Group(),lay=mkLayer();grp.add(lay.mesh);inner.object3D.add(grp);
+  return{z,root,E,es:rs[rs.length>>1],R:Math.max(...E.map(e=>e.r)),grp,lay,sp:[],fl:[],arc:null,was:0}}
+ function rest(a){for(const e of a.E){e.o.position.copy(e.base);e.kk=-9}a.sp.length=0;a.fl.length=0;a.arc=null;a.lay.np=0;a.lay.fin();a.was=0}
+ /* ---- animación de un átomo con nivel L (0,1 – 1) en el instante t (segundos) ---- */
+ function anim(a,z,L,t,dt){
+  const lay=a.lay,es=a.es,Rr=a.R,col=tint(L),st=CAPAS.estado(z),eOn=!!st.est.ele,gv=eOn?1:st.atenuar?.25:0;
+  a.grp.position.copy(a.root.position);a.grp.quaternion.copy(a.root.quaternion);a.grp.scale.copy(a.root.scale);
+  const amp=RM?0:es*(.2+1.8*Math.pow(L,1.3)),ramp=RM?0:.035*Math.pow(L,1.5),w=t*(1+7*L),dn=Math.min(1,Math.sqrt(22/a.E.length));
+  for(const e of a.E){
+   const p=e.p,f=e.f;let ox=0,oy=0,oz=0;
+   if(!RM&&e.o.visible){/* temblor: tres vaivenes mezclados + un latido hacia adentro y afuera, y el retroceso cuando escupe una chispa (un electrón oculto —por Capas o porque viaja en una unión— se queda quieto en su lugar) */
+    const rd=Math.sin(w*f[3]+p[3])*ramp*e.r;
+    ox=amp*(Math.sin(w*f[0]+p[0])+.5*Math.sin(w*f[2]*1.7+p[3]))+e.dir.x*rd;
+    oy=amp*(Math.sin(w*f[1]+p[1])+.5*Math.sin(w*f[0]*1.9+p[2]))+e.dir.y*rd;
+    oz=amp*(Math.sin(w*f[2]+p[2])+.5*Math.sin(w*f[1]*2.1+p[0]))+e.dir.z*rd;
+    if(e.kk>0){const q=(t-e.kk)/.38;if(q<1){const k=(1-q)*(1-q)*es*(.8+2.4*L);ox-=e.kd.x*k;oy-=e.kd.y*k;oz-=e.kd.z*k}else e.kk=-9}}
+   v.set(ox,oy,oz).applyMatrix3(e.m3);e.o.position.set(e.base.x+v.x,e.base.y+v.y,e.base.z+v.z);
+   e.cur.set(e.c.x+ox,e.c.y+oy,e.c.z+oz);
+   /* halo del electrón: respira, y de a ratos destella (más y más con el nivel) */
+   const vis=e.o.visible?((eOn&&(e.n==null||st.niv[e.n]))?1:.22):0;
+   if(vis>0){const fl=RM?0:Math.max(0,Math.sin(t*(3+9*L)*f[3]+p[0])*Math.sin(t*(2+6*L)*f[1]+p[2])),fl2=fl*fl,
+     br=cl(((RM?.55:.55+.45*Math.sin(t*(1.6+3*L)*f[0]+p[1]))*(.2+.5*L)+fl2*(.15+.6*L))*dn*vis,0,1);
+    lay.PT(e.cur.x,e.cur.y,e.cur.z,es*(2.4+1.6*L)*(1+.18*fl),mx(col,WH,Math.min(.7,fl2*L)),br,1)}}
+  if(RM||gv<=0)return;
+  /* emisión: un electrón (de los de afuera, casi siempre) lanza una chispa hacia afuera, destella y retrocede */
+  if(R()<(.12+7*Math.pow(L,2.2))*dt&&a.sp.length<26){
+   let e=a.E[(R()*a.E.length)|0];const e2=a.E[(R()*a.E.length)|0];if(e2.r>e.r)e=e2;
+   if(e.o.visible){const d=new TH.Vector3(e.dir.x+(R()-.5)*.7,e.dir.y+(R()-.5)*.7,e.dir.z+(R()-.5)*.7).normalize(),sp=Rr*(.35+.5*R())*(.7+.5*L);
+    a.sp.push({x:e.cur.x,y:e.cur.y,z:e.cur.z,vx:d.x*sp,vy:d.y*sp,vz:d.z*sp,t0:t,life:.55+.6*R(),big:R()<.2+.3*L});
+    a.fl.push({x:e.cur.x,y:e.cur.y,z:e.cur.z,t0:t});e.kk=t;e.kd=d}}
+  /* chispazo entre el núcleo y un electrón (desde 0,6) */
+  if(L>.6&&!a.arc&&R()<(L-.5)*5*dt){const e=a.E[(R()*a.E.length)|0];if(e.o.visible)a.arc={t0:t,e}}
+  for(let i=a.sp.length-1;i>=0;i--){const s=a.sp[i],age=t-s.t0;if(age>s.life){a.sp.splice(i,1);continue}
+   for(let k=5;k>=0;k--){const tt=age-k*.03;if(tt<0)continue;const u=tt/s.life,d=tt*(1-.35*u);
+    lay.PT(s.x+s.vx*d,s.y+s.vy*d,s.z+s.vz*d,es*(k?1.15-k*.13:1.7)*(s.big?1.4:1),k?mx(col,B0,.35):mx(col,WH,.5),gv*(1-u)*(k?.55*(1-k/6):1),k?1:0)}}
+  for(let i=a.fl.length-1;i>=0;i--){const f=a.fl[i],q=(t-f.t0)/.45;if(q>=1){a.fl.splice(i,1);continue}
+   lay.PT(f.x,f.y,f.z,es*(2+6*q),col,gv*.9*Math.pow(1-q,1.6),2);lay.PT(f.x,f.y,f.z,es*(3.4*(1-q)+1),WH,gv*.7*(1-q),1)}
+  /* ondas de radiación desde el núcleo (desde 0,55): más seguidas cuanto más radioactivo */
+  if(L>.55){const per=2.6-1.7*L,n=L>.85?2:1;
+   for(let k=0;k<n;k++){const q=(t/per+k/n)%1,rho=Rr*(.15+1.05*q);lay.PT(0,0,0,rho*2.857,col,gv*(.22+.4*L)*Math.pow(1-q,1.5),2)}}
+  if(a.arc){const age=t-a.arc.t0;
+   if(age>.22||!a.arc.e.o.visible)a.arc=null;
+   else{const e=a.arc.e,N=8,fa=(1-age/.22)*gv;
+    for(let i=0;i<=N;i++){const f=i/N,j=Math.sin(Math.PI*f)*.13*e.r,x=e.cur.x*f+(R()-.5)*2*j,y=e.cur.y*f+(R()-.5)*2*j,z=e.cur.z*f+(R()-.5)*2*j;
+     lay.PT(x,y,z,es*.8,WH,.85*fa,0);lay.PT(x,y,z,es*2.4,col,.3*fa,1)}}}}
+ /* ---- cada cuadro (antes de dibujar) ---- */
+ let last=performance.now()/1000;
+ function paso(){
+  const now=performance.now()/1000,dt=cl(now-last,0,.1),on=(window.__FXOP||{on:1}).on;last=now;
+  for(const z of ZS){
+   let h=HZ[z];if(h===undefined){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity"),inner=w&&w.querySelector("[gltf-model]");h=HZ[z]=m&&inner?{m,inner}:null}
+   if(!h)continue;let a=AT[z];
+   if(!on||!h.m.object3D.visible){if(a&&a.was)rest(a);continue}
+   const root=h.inner.getObject3D&&h.inner.getObject3D("mesh");if(!root)continue;
+   if(!a||a.root!==root){a=AT[z]=build(z,h.inner,root)||{root,bad:1}}
+   if(a.bad)continue;
+   anim(a,z,RAD(z),now,dt);a.lay.fin();a.was=1}}
+ window.__RAD={AT,RAD,ZS};
+ (function w(){const r=sc&&sc.renderer;if(!r)return setTimeout(w,200);const o=r.render.bind(r);r.render=function(a,b){try{paso()}catch(e){window.__raderr=e.message+" @"+(e.stack||"").split("\n")[1]}return o(a,b)}})();
 })();
 </script>
 <script>
