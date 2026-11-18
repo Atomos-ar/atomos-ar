@@ -1734,4 +1734,88 @@ document.querySelectorAll("#crq button").forEach(b=>b.onclick=()=>{if(!root)retu
 document.getElementById("crr").onclick=()=>{if(root)rem()};
 requestAnimationFrame(tick);
 })();
+</script><style>#mtb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#mtb[hidden]{display:none}#mtb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#mtb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#mtb button:disabled{opacity:.35}#mtb b{font:600 20px system-ui,sans-serif;min-width:64px}#mtb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}#mtb .rw[hidden]{display:none}#mtb .rw+.rw,#mtb small+.rw{margin-top:6px}#mtb #mtq button{padding:6px 9px;font-size:12px}</style><div id="mtb" hidden><div class="rw"><button id="mtm" type="button">− electrón</button><b id="mtl">M</b><button id="mtp" type="button">+ electrón</button></div><small id="mtt"></small><div class="rw"><button id="mtw" type="button">¿Por qué rojo?</button><button id="mtr" type="button">Remediar con planta</button></div><div class="rw" id="mtq" hidden><button data-k="0" type="button">Entra</button><button data-k="1" type="button">Impostor</button><button data-k="2" type="button">Llave y cerradura</button></div></div><script>(function(){
+const TH=AFRAME.THREE,ez=x=>x*x*(3-2*x),cp=(x,a,b)=>x<a?a:x>b?b:x,SUP="⁰¹²³⁴⁵⁶⁷",lab=(s,q)=>s+(q?(q>1?SUP[q]:"")+"⁺":""),
+A=[1,.84,.29,.1],RD=[1,.16,.16,.42],OR=[1,.48,.1,.34],AM=[1,.62,.18,.3],DIR=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x/1.7321));
+const CF={
+82:{s:"Pb",max:4,col:[0,A,RD,AM,OR],tx:["Neutro: 4 electrones de valencia (6s² 6p²).","Estado inestable.","Pb²⁺: la forma tóxica habitual. Conserva el par 6s², imita al Ca²⁺ y se une al azufre de las enzimas.","Estado inestable.","Pb⁴⁺: oxidante fuerte (baterías de plomo). En el ambiente se reduce a Pb²⁺."],hide:[[/^nivel_?n?6/i,4],[/^orbital_?6s/i,4],[/^orbital_?6p/i,2]],ent:[2],imp:[2],lk:[2],host:{c:0x9ec5ff},zn:1,mc:0x7b8794,pl:"mostaza india",ch:"canal del calcio",
+ cap:["El Pb²⁺ cruza el canal que el cuerpo usa para el calcio.","El Pb²⁺ tiene la misma carga y un tamaño parecido al Ca²⁺: lo desplaza (por ejemplo en el hueso) y queda ahí por años.","El Pb²⁺ desplaza al Zn, se une al azufre de la enzima y la bloquea (por ejemplo la que fabrica el hemo de la sangre)."],hn:"Ca²⁺"},
+48:{s:"Cd",max:2,col:[0,A,RD],tx:["Neutro: 2 electrones de valencia (5s²).","Estado inestable.","Cd²⁺: su único estado estable. Imita al Zn²⁺ y al Ca²⁺ y se acumula en riñón y hueso."],hide:[[/^nivel_?n?5/i,2],[/^orbital_?5s/i,2]],ent:[2],imp:[2],lk:[2],host:{c:0x9fb4c8},zn:1,mc:0xd9c25a,pl:"Noccaea caerulescens",ch:"canal del zinc",
+ cap:["El Cd²⁺ entra por los canales del zinc y del calcio.","El Cd²⁺ ocupa el lugar del Zn²⁺ en las proteínas y las deja sin función.","El Cd²⁺ desplaza al Zn, se une al azufre de la enzima y la bloquea."],hn:"Zn²⁺"},
+33:{s:"As",max:5,col:[0,A,A,RD,A,OR],tx:["Neutro: 5 electrones de valencia (4s² 4p³).","Estado inestable.","Estado inestable.","As³⁺ (arsenito): se une al azufre de las enzimas y las bloquea. Es la forma más tóxica.","Estado inestable.","As⁵⁺ (arseniato): tiene forma casi idéntica a la del fosfato y se cuela en el ATP y el ADN."],hide:[[/^nivel_?n?4/i,5],[/^orbital_?4s/i,5],[/^orbital_?4p/i,3]],ent:[3,5],imp:[5],lk:[3],cl:1,zn:0,mc:0xb59a6a,pl:"helecho Pteris vittata",ch:"transportador de fosfato",o:q=>q===3?3:q===5?4:0,
+ cap:["El arseniato se parece al fosfato y cruza su transportador.","El arseniato reemplaza al fosfato en la cadena (ATP, ADN): el enlace es inestable y se rompe.","El As³⁺ se une a dos azufres de la enzima y la bloquea."],hn:"fosfato"}};
+const ST={},ZL=[48,33,82],q$=id=>document.getElementById(id),bx=q$("mtb"),bm=q$("mtm"),bp=q$("mtp"),bl=q$("mtl"),bt=q$("mtt");
+const MC=(()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),g=x.createRadialGradient(46,40,4,64,64,64);g.addColorStop(0,"#fff");g.addColorStop(.25,"#dcdcdc");g.addColorStop(.7,"#7c7c7c");g.addColorStop(1,"#2c2c2c");x.fillStyle=g;x.fillRect(0,0,128,128);return new TH.CanvasTexture(c)})(),
+GL=(()=>{const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d"),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,"rgba(255,255,255,1)");g.addColorStop(.3,"rgba(255,255,255,.5)");g.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=g;x.fillRect(0,0,64,64);return new TH.CanvasTexture(c)})(),
+GEO=new TH.SphereGeometry(1,24,16),CYL=new TH.CylinderGeometry(1,1,1,10,1),UP=new TH.Vector3(0,1,0),ZERO=new TH.Vector3(),v1=new TH.Vector3(),v2=new TH.Vector3(),QC=new TH.Quaternion(),QI=new TH.Quaternion(),V=(x,y,z)=>new TH.Vector3(x,y,z);
+let Z=0,cf=null,S=null,last=0;
+function newS(){return{q:0,po:0,R:1,EL:[],LV:[],hs:new Set(),gone:[],aura:null,G:null,fx:null,ox:[],bond:[],root:null,nl:4,sec:0}}
+function M(c,o){return new TH.MeshMatcapMaterial({color:c,matcap:MC,transparent:o!=null,opacity:o==null?1:o})}
+function add(o,p){if(p)p.add(o);else{S.G.add(o);S.fx.a.push(o)}return o}
+function orb(c,r,x,y,z,p){const m=new TH.Mesh(GEO,M(c));m.scale.setScalar(r);m.position.set(x,y,z);return add(m,p)}
+function cyl(c,p){return add(new TH.Mesh(CYL,M(c)),p)}
+function link(m,a,b,r){v1.copy(a);v2.copy(b).sub(v1);const l=v2.length();m.visible=l>1e-4&&r>0;if(!m.visible)return;m.position.copy(v1).addScaledVector(v2,.5);m.quaternion.setFromUnitVectors(UP,v2.divideScalar(l));m.scale.set(r,l,r)}
+function stick(c,r,a,b,p){const m=cyl(c,p);link(m,a,b,r);return m}
+function glow(c,s,x,y){const m=new TH.Sprite(new TH.SpriteMaterial({map:GL,color:c,transparent:true,blending:TH.AdditiveBlending,depthTest:false}));m.scale.setScalar(s);m.position.set(x,y,0);m.renderOrder=7;return add(m)}
+function L(t,x,y,w){const c=document.createElement("canvas");c.width=512;c.height=96;const g=c.getContext("2d");g.font="bold 44px system-ui,sans-serif";g.textAlign="center";g.fillStyle="#fff";g.shadowColor="#000";g.shadowBlur=8;g.fillText(t,256,62);const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));w=w||1.6;s.scale.set(w,w*96/512,1);s.position.set(x,y,0);s.renderOrder=8;return add(s)}
+function clu(c,x,y){const g=new TH.Group();orb(c,.2,0,0,0,g);DIR.forEach(d=>{orb(0xff4d3d,.12,d[0]*.4,d[1]*.4,d[2]*.4,g);stick(0xe8e8f0,.03,ZERO,V(d[0]*.4,d[1]*.4,d[2]*.4),g)});g.position.set(x,y,0);return add(g)}
+function ion(x,y){return cf.cl?clu(cf.mc,x,y):orb(cf.mc,.26,x,y,0)}
+function lim(){S.fx.a.forEach(m=>S.G.remove(m));S.fx=null}
+function parts(z){const m=q$("m"+z),w=m&&m.querySelector(":scope > a-entity"),i=w&&w.querySelector("[gltf-model]"),r=i&&i.getObject3D&&i.getObject3D("mesh");return r?{m,w,inner:i,r}:null}
+function setup(P){const r=S.root,el=[];r.traverse(o=>{if(o.isMesh&&CAPAS.categoria(o)==="ele")el.push({o,n:CAPAS.nivel(o)||0})});S.EL=el.sort((a,b)=>b.n-a.n);
+ r.traverse(o=>{const n=o.name||"";cf.hide.forEach(h=>{if(h[0].test(n))S.LV.push({o,min:h[1]})})});
+ P.m.object3D.updateMatrixWorld(true);const sc=new TH.Vector3().setFromMatrixScale(P.inner.object3D.matrixWorld).x||1,sz=new TH.Box3().setFromObject(r).getSize(new TH.Vector3());S.R=Math.max(sz.x,sz.y,sz.z)/2/sc;
+ S.aura=new TH.Mesh(new TH.SphereGeometry(1,24,16),new TH.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0,side:TH.BackSide,depthWrite:false,blending:TH.AdditiveBlending}));S.aura.scale.setScalar(S.R*1.25);P.inner.object3D.add(S.aura);
+ S.G=new TH.Group();S.G.scale.setScalar(S.R*.65);P.inner.object3D.add(S.G);
+ if(cf.o){S.bond=[0,1,2,3].map(()=>{const m=new TH.Mesh(CYL,M(0xe8e8f0));m.visible=false;P.inner.object3D.add(m);return m});
+  const Ld=TH.GLTFLoader;if(Ld)try{new Ld().load("glb/8.glb",g=>{for(let i=0;i<4;i++){const h=new TH.Group();h.add(g.scene.clone(true));h.visible=false;P.inner.object3D.add(h);S.ox.push(h)}})}catch(e){}}}
+function ui(){const c=cf.col[S.q];bl.textContent=lab(cf.s,S.q);bl.style.color=c?"rgb("+c.slice(0,3).map(x=>Math.round(x*255)).join(",")+")":"#fff";bt.textContent=S.sec?"Secuestrado en la vacuola: ya no está disponible para dañar. La planta lo retiene (y después hay que gestionar la planta cosechada).":cf.tx[S.q];bm.disabled=S.q>=cf.max;bp.disabled=S.q<=0}
+function poner(n){S.q=n;S.sec=0;S.hs=new Set(S.EL.slice(0,n).map(x=>x.o));S.EL.forEach(x=>x.o.visible=true);S.LV.forEach(x=>x.o.visible=true);try{CAPAS.aplicarModelo(S.root)}catch(e){}ui()}
+function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a||!a.E)return;S.gone=S.gone.filter(e=>{if(S.hs.has(e.o))return true;a.E.push(e);return false});a.E=a.E.filter(e=>{if(S.hs.has(e.o)){S.gone.push(e);return false}return true})}
+function ir(k){if(S.fx)lim();const need=k===3?cf.lk:k===0?cf.ent:k===1?cf.imp:cf.lk;
+ if(!need.includes(S.q)){bt.textContent="Para ver esta prueba, ponlo en "+need.map(n=>lab(cf.s,n)).join(" o ")+".";return}
+ S.fx={k,t0:performance.now(),a:[],d:0};bt.textContent=k===3?"La planta usa el mismo enlace metal–azufre, pero con péptidos propios (fitoquelatinas) y guarda el metal en la vacuola. Ej.: "+cf.pl+".":cf.cap[k];const f=S.fx;
+ if(k===0){for(const s of[-1,1])for(let i=0;i<7;i++){const y=s*(.85+i*.21);for(const g of[-1,1]){const x=2.4+g*.52;orb(0xf0c27a,.1,x,y,0);for(const dz of[-.09,.09])stick(0xd9a65c,.028,V(x,y,dz),V(2.4+g*.08,y+dz*.5,dz))}}
+  for(let i=0;i<8;i++){const a=i*Math.PI/4,y=.62*Math.cos(a),z=.62*Math.sin(a);stick(0x8e7cff,.09,V(1.9,y,z),V(2.9,y,z))}
+  [1.9,2.9].forEach(x=>{const r=new TH.Mesh(new TH.TorusGeometry(.62,.05,8,24),M(0xb4a8ff));r.rotation.y=Math.PI/2;r.position.x=x;add(r)});L("Membrana",2.4,2.35);L(cf.ch,2.4,-1.05,1.7);f.i=ion(-2.2,0)}
+ if(k===1){const pr=[],pos=[];f.h=[];
+  if(cf.cl){[1.1,0,-1.1].forEach(y=>pos.push([2.4,y]));pr.push([0,1],[1,2])}else{for(let j=0;j<3;j++)for(let i=0;i<3;i++)pos.push([2.4+(i-1)*.55,(j-1)*.55]);for(let j=0;j<3;j++)for(let i=0;i<3;i++){if(i<2)pr.push([j*3+i,j*3+i+1]);if(j<2)pr.push([j*3+i,j*3+i+3])}}
+  const c=cf.cl?1:4;pos.forEach(p=>f.h.push(cf.cl?clu(0xff9d2e,p[0],p[1]):orb(cf.host.c,.2,p[0],p[1],0)));f.bd=pr.map(p=>({m:cyl(0xcfd6e6),a:p[0],b:p[1]}));f.c=c;f.pos=pos;f.i=ion(-2.2,0);
+  L(cf.cl?"cadena de fosfatos (ATP/ADN)":cf.hn+" en la proteína o el hueso",2.4,cf.cl?2.0:1.5,2)}
+ if(k===2||k===3){const pl=k===3;f.pl=pl;f.mx=-2.2;f.i=ion(pl?-1.2:-2.2,pl?.2:0);
+  if(!pl){f.ring=[];for(let j=0;j<8;j++){const a=(j-3.5)*.78;f.ring.push([orb(0x7a93b8,.16,0,0,0),a])}f.s=[orb(0xffe14a,.13,2.05,.2,0),orb(0xffe14a,.13,2.05,-.2,0)];f.s.forEach((s,i)=>L("S",2.05,(i?-.2:.2)+(i?-.3:.3),.4));if(cf.zn){f.zn=orb(0x9fb4c8,.15,2.35,0,0);L("Zn",2.35,.35,.4)}f.sub=orb(0x35e07a,.2,2.2,2,0);L("enzima",2.2,-1.3,.9);f.bl=[0,1].map(()=>cyl(0xe8e8f0));f.lb=L("enzima bloqueada",2.2,-1.75,1.6);f.lb.visible=false}
+  else{f.b=[...Array(7)].map((_,i)=>orb(i%2?0xffe14a:0x9aa7bd,.12,0,0,0));f.cb=f.b.slice(1).map(()=>cyl(0xcfd6e6));f.sb=[1,3,5].map(()=>cyl(0xe8e8f0));const v=new TH.Mesh(new TH.TorusGeometry(.8,.04,8,32),M(0x35e07a));v.position.set(1.7,.2,0);add(v);add(Object.assign(new TH.Mesh(GEO,M(0x35e07a,.12)),{}),null);const w=f.a[f.a.length-1];w.scale.setScalar(.8);w.position.set(1.7,.2,0);L("vacuola",1.7,1.25,.8);L("fitoquelatina (péptido con azufre)",-1.4,-1.7,2.2)}}}
+function paso(now){const f=S.fx;if(!f)return;const T=(now-f.t0)/1000,k=f.k;if(T>(k===3?7:5.5)){lim();return}
+ if(k===0){const p=Math.min(1,T/3.2);f.i.position.x=-2.2+4.1*ez(p);if(cf.cl)f.i.rotation.y=T*2}
+ if(k===1){const c=f.c,d=T>2.2?Math.min(1,(T-2.2)/1.2):0,h=f.h,e=ez(cp((T-1.2)/1),0,1);f.i.position.set(-2.2+(f.pos[c][0]+2.2)*ez(cp(T/2.2,0,1)),f.pos[c][1]*ez(cp(T/2.2,0,1)),0);
+  h[c].position.set(f.pos[c][0]+e*1.2,f.pos[c][1]+e*1.2,0);h[c].scale.setScalar(Math.max(1-e,1e-3)*(cf.cl?1:.2)||1e-3);if(cf.cl)h[c].scale.setScalar(Math.max(1-e,1e-3));else h[c].scale.setScalar(Math.max(.2*(1-e),1e-3));
+  h.forEach((m,i)=>{if(i===c)return;const dx=f.pos[i][0]-f.pos[c][0],dy=f.pos[i][1]-f.pos[c][1],l=Math.hypot(dx,dy)||1;m.position.set(f.pos[i][0]+dx/l*.18*d+Math.sin(T*9+i*3)*.04*d,f.pos[i][1]+dy/l*.18*d+Math.cos(T*8+i)*.04*d,0);if(!cf.cl&&d>0)m.material.color.setHex(0xff3b3b)});
+  f.bd.forEach(b=>{const A=b.a===c?f.i.position:h[b.a].position,B=b.b===c?f.i.position:h[b.b].position;link(b.m,A,B,d>.85&&(b.a===c||b.b===c)&&cf.cl?0:.04*(1-.6*d));if(d>0)b.m.material.color.setHex(0xff3b3b)})}
+ if(k===2){const x=-2.2+4.65*ez(cp(T/2.2,0,1)),d=ez(cp((T-2.2)/.8,0,1)),mp=V(x,0,0);f.i.position.x=x;
+  f.ring.forEach(r=>{const rr=.6*(1-.25*d);r[0].position.set(2.2+Math.cos(r[1])*rr,Math.sin(r[1])*rr,0);if(d>0)r[0].material.color.setHex(0xff3b3b)});
+  if(f.zn){const u=ez(cp((T-1.6)/.9,0,1));f.zn.position.set(2.35+u*.9,u*1.4,0);f.zn.visible=u<1}
+  f.bl.forEach((b,i)=>link(b,mp,f.s[i].position,d>0?.04:0));
+  const y=T<3?2:T<3.8?2-1.05*ez((T-3)/.8):.95+1.05*ez(cp((T-3.8)/.8,0,1));f.sub.position.set(2.2,y,0);f.lb.visible=T>3.2}
+ if(k===3){const e=ez(cp((T-.6)/1.6,0,1)),off=2.9*ez(cp((T-2.6)/1.6,0,1)),C=V(-1.2+off,.2,0);f.i.position.copy(C);
+  const P=f.b.map((m,i)=>{const a=i*1.15,r=i%2?.3:.42,tx=-2.4+i*.4,ty=-1.3,px=C.x+Math.cos(a)*r,py=C.y+Math.sin(a)*r,pz=(i-3)*.06,x=(tx+off*e)*(1-e)+px*e,y=ty*(1-e)+py*e;m.position.set(x,y,pz*e);return m.position});
+  f.cb.forEach((b,i)=>link(b,P[i],P[i+1],.035));f.sb.forEach((b,i)=>link(b,C,P[1+i*2],e>.8?.03:0));
+  if(T>4.4&&!f.d){f.d=1;S.sec=1;ui()}}}
+function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1000||0);last=now;
+ let z=0,P=null;for(const k of ZL){const p=parts(k);if(p&&p.m.object3D.visible){z=k;P=p;break}}
+ bx.hidden=!z;if(!z)return;
+ if(z!==Z){Z=z;cf=CF[z];S=ST[z]||(ST[z]=newS());if(!S.root){S.root=P.r;setup(P);poner(0)}else ui()}
+ if(S.root!==P.r)return;
+ S.hs.forEach(o=>o.visible=false);S.LV.forEach(x=>{if(S.q>=x.min)x.o.visible=false});lista();
+ const c=S.sec?[.21,.88,.48,.3]:cf.col[S.q];let al=c?c[3]:0;if(c&&!S.sec&&cf.col[S.q]===A)al*=.7+.3*Math.sin(now/120);if(c&&c===RD)al*=.75+.25*Math.sin(now/260);
+ if(c)S.aura.material.color.setRGB(c[0],c[1],c[2]);S.aura.material.opacity+=(al-S.aura.material.opacity)*.15;S.aura.visible=S.aura.material.opacity>.01;
+ const nx=cf.o?cf.o(S.q):0;if(nx)S.nl=nx;S.po=cp(S.po+(nx?1:-1)*dt*1.2,0,1);const kk=ez(S.po);
+ S.ox.forEach((g,i)=>{const d=S.R*(2.8-1.95*kk);g.visible=S.po>.01&&i<S.nl;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(.7*Math.max(kk,1e-3));g.rotation.y=now/1100+i*1.7;g.rotation.x=.35*Math.sin(now/900+i);link(S.bond[i],ZERO,g.position,.025);S.bond[i].visible=S.bond[i].visible&&g.visible});
+ if(S.fx){const sc=document.querySelector("a-scene"),cm=sc&&sc.camera;if(cm){cm.getWorldQuaternion(QC);P.inner.object3D.getWorldQuaternion(QI);S.G.quaternion.copy(QI).invert().multiply(QC)}}
+ paso(now)}
+bm.onclick=()=>{if(S&&S.root&&S.q<cf.max)poner(S.q+1)};bp.onclick=()=>{if(S&&S.root&&S.q>0)poner(S.q-1)};
+q$("mtw").onclick=()=>{const z=q$("mtq");z.hidden=!z.hidden};
+document.querySelectorAll("#mtq button").forEach(b=>b.onclick=()=>{if(S&&S.root){const k=+b.dataset.k;ir(k);if(cf[["ent","imp","lk"][k]].includes(S.q))b.style.borderColor="#ff3b3b"}});
+q$("mtr").onclick=()=>{if(S&&S.root)ir(3)};
+requestAnimationFrame(tick);
+})();
 </script></body></html>
