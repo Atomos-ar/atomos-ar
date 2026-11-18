@@ -1627,4 +1627,40 @@ void main(){float r=length(vQ);if(r>1.0)discard;
  const f=Q.get("tut");
  if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
 })();
+</script><style>#crb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#crb[hidden]{display:none}#crb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#crb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#crb button:disabled{opacity:.35}#crb b{font:600 20px system-ui,sans-serif;min-width:64px}#crb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}</style><div id="crb" hidden><div class="rw"><button id="crm" type="button">− electrón</button><b id="crl">Cr</b><button id="crp" type="button">+ electrón</button></div><small id="crt"></small></div><script>(function(){
+const TH=AFRAME.THREE,Z=24,ez=x=>x*x*(3-2*x);
+const LAB=["Cr","Cr⁺","Cr²⁺","Cr³⁺","Cr⁴⁺","Cr⁵⁺","Cr⁶⁺"],
+TXT=["Neutro: 6 electrones de valencia (4s¹ 3d⁵).","Pierde el 4s¹: desaparece la 4.ª capa y el átomo se achica.","Reductor fuerte y poco estable fuera del laboratorio.","Forma estable y mucho menos tóxica: se une a OH⁻ y queda como sólido insoluble.","Estado intermedio muy inestable.","Estado intermedio muy inestable.","Sin electrones de valencia. En la realidad es cromato (CrO₄²⁻): tóxico y cancerígeno. El 7.º electrón está en una capa interna y ya no se puede sacar."],
+COL=[[1,1,1,0],[1,.84,.29,.1],[1,.84,.29,.16],[.21,.88,.48,.3],[1,.62,.18,.3],[1,.48,.1,.34],[1,.16,.16,.42]],
+DIR=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x/1.7321));
+let q=0,po=0,R=1,EL=[],LV=[],hs=new Set(),gone=[],aura=null,ox=[],root=null,last=0;
+const bx=document.getElementById("crb"),bm=document.getElementById("crm"),bp=document.getElementById("crp"),bl=document.getElementById("crl"),bt=document.getElementById("crt");
+function parts(){const m=document.getElementById("m"+Z),w=m&&m.querySelector(":scope > a-entity"),i=w&&w.querySelector("[gltf-model]"),r=i&&i.getObject3D&&i.getObject3D("mesh");return r?{m,w,inner:i,r}:null}
+function setup(P){const el=[];root.traverse(o=>{if(o.isMesh&&CAPAS.categoria(o)==="ele")el.push({o,n:CAPAS.nivel(o)||0})});
+ EL=el.sort((a,b)=>b.n-a.n);
+ root.traverse(o=>{const n=o.name||"";if(/^nivel_?n?4/i.test(n)||/^orbital_?4s/i.test(n))LV.push({o,min:1});else if(/^orbital_?3d/i.test(n))LV.push({o,min:6})});
+ P.m.object3D.updateMatrixWorld(true);
+ const s=new TH.Vector3().setFromMatrixScale(P.inner.object3D.matrixWorld).x||1,z=new TH.Box3().setFromObject(root).getSize(new TH.Vector3());
+ R=Math.max(z.x,z.y,z.z)/2/s;
+ aura=new TH.Mesh(new TH.SphereGeometry(1,24,16),new TH.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0,side:TH.BackSide,depthWrite:false,blending:TH.AdditiveBlending}));
+ aura.scale.setScalar(R*1.25);P.inner.object3D.add(aura);
+ for(let i=0;i<4;i++){const e=document.createElement("a-entity"),o={e,k:1};e.setAttribute("gltf-model","glb/8.glb");
+  e.addEventListener("model-loaded",()=>{const r=e.getObject3D("mesh");if(!r)return;const q3=new TH.Box3().setFromObject(r).getSize(new TH.Vector3()),ro=Math.max(q3.x,q3.y,q3.z)/2/s;o.k=ro>0?.4*R/ro:1;e.object3D.visible=false});
+  P.inner.appendChild(e);ox.push(o)}}
+function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a||!a.E)return;
+ gone=gone.filter(e=>{if(hs.has(e.o))return true;a.E.push(e);return false});
+ a.E=a.E.filter(e=>{if(hs.has(e.o)){gone.push(e);return false}return true})}
+function poner(n){q=n;hs=new Set(EL.slice(0,q).map(x=>x.o));EL.forEach(x=>x.o.visible=true);LV.forEach(x=>x.o.visible=true);try{CAPAS.aplicarModelo(root)}catch(e){}
+ const c=COL[q];bl.textContent=LAB[q];bl.style.color="rgb("+(c[3]?c.slice(0,3).map(x=>Math.round(x*255)).join(","):"255,255,255")+")";bt.textContent=TXT[q];bm.disabled=q>=6;bp.disabled=q<=0}
+bm.onclick=()=>{if(root&&q<6)poner(q+1)};bp.onclick=()=>{if(root&&q>0)poner(q-1)};
+function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1000||0);last=now;
+ const P=parts(),vis=!!(P&&P.m.object3D.visible);bx.hidden=!vis;if(!P)return;
+ if(!root){root=P.r;setup(P);poner(0)}if(root!==P.r)return;
+ hs.forEach(o=>o.visible=false);LV.forEach(x=>{if(q>=x.min)x.o.visible=false});lista();
+ const c=COL[q];let al=c[3];if(q>=4&&q<6)al*=.6+.4*Math.sin(now/90);if(q===6)al*=.75+.25*Math.sin(now/260);
+ aura.material.color.setRGB(c[0],c[1],c[2]);aura.material.opacity+=(al-aura.material.opacity)*.15;aura.visible=aura.material.opacity>.01;
+ const t=q===6?1:0;po=Math.max(0,Math.min(1,po+(t?1:-1)*dt*1.2));const k=ez(po);
+ ox.forEach((o,i)=>{const d=R*(2.8-1.6*k),sc=o.k*k;o.e.object3D.visible=po>.01;o.e.object3D.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);o.e.object3D.scale.setScalar(Math.max(sc,1e-4))})}
+requestAnimationFrame(tick);
+})();
 </script></body></html>
