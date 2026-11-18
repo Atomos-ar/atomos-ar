@@ -1644,10 +1644,15 @@ function setup(P){const el=[];root.traverse(o=>{if(o.isMesh&&CAPAS.categoria(o)=
  R=Math.max(z.x,z.y,z.z)/2/s;
  aura=new TH.Mesh(new TH.SphereGeometry(1,24,16),new TH.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0,side:TH.BackSide,depthWrite:false,blending:TH.AdditiveBlending}));
  G=new TH.Group();G.scale.setScalar(R);P.inner.object3D.add(G);aura.scale.setScalar(R*1.25);P.inner.object3D.add(aura);
+ mkOx(P);
+ bond=[0,1,2,3].map(()=>{const m=new TH.Mesh(CYL,M(0xe8e8f0));m.visible=false;P.inner.object3D.add(m);return m})}
+function sph(P){
  const mO=M(0xff4d3d);
  for(let i=0;i<4;i++){const g=new TH.Group(),c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.font="bold 40px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillStyle="#fff";x.fillText("O",32,34);
   const sp=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));sp.scale.setScalar(1.6);g.add(new TH.Mesh(new TH.SphereGeometry(1,16,12),mO),sp);g.visible=false;P.inner.object3D.add(g);ox.push(g)}
- bond=[0,1,2,3].map(()=>{const m=new TH.Mesh(CYL,M(0xe8e8f0));m.visible=false;P.inner.object3D.add(m);return m})}
+}
+function mkOx(P){const GLd=TH.GLTFLoader;if(!GLd)return sph(P);
+ try{new GLd().load("glb/8.glb",g=>{for(let i=0;i<4;i++){const h=new TH.Group();h.add(g.scene.clone(true));h.visible=false;h.userData.real=1;P.inner.object3D.add(h);ox.push(h)}},undefined,()=>sph(P))}catch(e){sph(P)}}
 function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a||!a.E)return;
  gone=gone.filter(e=>{if(hs.has(e.o))return true;a.E.push(e);return false});
  a.E=a.E.filter(e=>{if(hs.has(e.o)){gone.push(e);return false}return true})}
@@ -1661,7 +1666,7 @@ function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1
  const c=COL[q];let al=c[3];if(q>=4&&q<6)al*=.6+.4*Math.sin(now/90);if(q===6)al*=.75+.25*Math.sin(now/260);
  aura.material.color.setRGB(c[0],c[1],c[2]);aura.material.opacity+=(al-aura.material.opacity)*.15;aura.visible=aura.material.opacity>.01;
  const t=q===6?1:0;po=Math.max(0,Math.min(1,po+(t?1:-1)*dt*1.2));const k=ez(po);
- ox.forEach((g,i)=>{const d=R*(2.2-1.5*k),r=.22*R*Math.max(k,1e-3);g.visible=po>.01;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(r);link(bond[i],ZERO,g.position,.05*R);bond[i].visible=bond[i].visible&&po>.01});
+ ox.forEach((g,i)=>{const re=g.userData.real,d=re?R*(2.8-1.95*k):R*(2.2-1.5*k),r=re?.7*Math.max(k,1e-3):.22*R*Math.max(k,1e-3);g.visible=po>.01;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(r);if(re){g.rotation.y=now/1100+i*1.7;g.rotation.x=.35*Math.sin(now/900+i)}link(bond[i],ZERO,g.position,re?.025:.05*R);bond[i].visible=bond[i].visible&&po>.01});
  paso(now)}
 
 const CAP=[["El Cr³⁺ no cruza el canal: la célula casi no lo absorbe.","El cromato tiene forma casi idéntica a la del sulfato y cruza el canal de la membrana."],["Con Cr³⁺ no hay robo de electrones: la molécula queda intacta.","El Cr⁶⁺ le saca 3 electrones a la molécula y baja a Cr³⁺. La molécula se daña."],["El Cr³⁺ no llega al ADN.","Dentro de la célula baja a Cr³⁺ pasando por estados inestables y se pega al ADN: lo deforma y causa mutaciones."]];
