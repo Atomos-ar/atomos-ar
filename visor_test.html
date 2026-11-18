@@ -1643,7 +1643,7 @@ function setup(P){const el=[];root.traverse(o=>{if(o.isMesh&&CAPAS.categoria(o)=
  const s=new TH.Vector3().setFromMatrixScale(P.inner.object3D.matrixWorld).x||1,z=new TH.Box3().setFromObject(root).getSize(new TH.Vector3());
  R=Math.max(z.x,z.y,z.z)/2/s;
  aura=new TH.Mesh(new TH.SphereGeometry(1,24,16),new TH.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0,side:TH.BackSide,depthWrite:false,blending:TH.AdditiveBlending}));
- G=new TH.Group();G.scale.setScalar(R);P.inner.object3D.add(G);aura.scale.setScalar(R*1.25);P.inner.object3D.add(aura);
+ G=new TH.Group();G.scale.setScalar(R*.65);P.inner.object3D.add(G);aura.scale.setScalar(R*1.25);P.inner.object3D.add(aura);
  mkOx(P);
  bond=[0,1,2,3].map(()=>{const m=new TH.Mesh(CYL,M(0xe8e8f0));m.visible=false;P.inner.object3D.add(m);return m})}
 function sph(P){
@@ -1667,12 +1667,13 @@ function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1
  aura.material.color.setRGB(c[0],c[1],c[2]);aura.material.opacity+=(al-aura.material.opacity)*.15;aura.visible=aura.material.opacity>.01;
  const t=q===6?1:0;po=Math.max(0,Math.min(1,po+(t?1:-1)*dt*1.2));const k=ez(po);
  ox.forEach((g,i)=>{const re=g.userData.real,d=re?R*(2.8-1.95*k):R*(2.2-1.5*k),r=re?.7*Math.max(k,1e-3):.22*R*Math.max(k,1e-3);g.visible=po>.01;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(r);if(re){g.rotation.y=now/1100+i*1.7;g.rotation.x=.35*Math.sin(now/900+i)}link(bond[i],ZERO,g.position,re?.025:.05*R);bond[i].visible=bond[i].visible&&po>.01});
+ if(fx&&G){const sc=document.querySelector("a-scene"),cm=sc&&sc.camera;if(cm){cm.getWorldQuaternion(QC);P.inner.object3D.getWorldQuaternion(QI);G.quaternion.copy(QI).invert().multiply(QC)}}
  paso(now)}
 
 const CAP=[["El Cr³⁺ no cruza el canal: la célula casi no lo absorbe.","El cromato tiene forma casi idéntica a la del sulfato y cruza el canal de la membrana."],["Con Cr³⁺ no hay robo de electrones: la molécula queda intacta.","El Cr⁶⁺ le saca 3 electrones a la molécula y baja a Cr³⁺. La molécula se daña."],["El Cr³⁺ no llega al ADN.","Dentro de la célula baja a Cr³⁺ pasando por estados inestables y se pega al ADN: lo deforma y causa mutaciones."]];
 const MC=(()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),g=x.createRadialGradient(46,40,4,64,64,64);g.addColorStop(0,"#fff");g.addColorStop(.25,"#dcdcdc");g.addColorStop(.7,"#7c7c7c");g.addColorStop(1,"#2c2c2c");x.fillStyle=g;x.fillRect(0,0,128,128);return new TH.CanvasTexture(c)})(),
 GL=(()=>{const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d"),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,"rgba(255,255,255,1)");g.addColorStop(.3,"rgba(255,255,255,.5)");g.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=g;x.fillRect(0,0,64,64);return new TH.CanvasTexture(c)})(),
-GEO=new TH.SphereGeometry(1,24,16),CYL=new TH.CylinderGeometry(1,1,1,10,1),ICO=new TH.IcosahedronGeometry(1,0),UP=new TH.Vector3(0,1,0),ZERO=new TH.Vector3(),v1=new TH.Vector3(),v2=new TH.Vector3(),V=(x,y,z)=>new TH.Vector3(x,y,z),cp=(x,a,b)=>x<a?a:x>b?b:x;
+GEO=new TH.SphereGeometry(1,24,16),CYL=new TH.CylinderGeometry(1,1,1,10,1),ICO=new TH.IcosahedronGeometry(1,0),UP=new TH.Vector3(0,1,0),ZERO=new TH.Vector3(),v1=new TH.Vector3(),v2=new TH.Vector3(),V=(x,y,z)=>new TH.Vector3(x,y,z),QC=new TH.Quaternion(),QI=new TH.Quaternion(),cp=(x,a,b)=>x<a?a:x>b?b:x;
 function M(c,o){return new TH.MeshMatcapMaterial({color:c,matcap:MC,transparent:o!=null,opacity:o==null?1:o})}
 function add(o,p){if(p)p.add(o);else{G.add(o);fx.a.push(o)}return o}
 function orb(c,r,x,y,z,p){const m=new TH.Mesh(GEO,M(c));m.scale.setScalar(r);m.position.set(x,y,z);return add(m,p)}
