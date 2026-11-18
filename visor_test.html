@@ -1627,13 +1627,13 @@ void main(){float r=length(vQ);if(r>1.0)discard;
  const f=Q.get("tut");
  if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
 })();
-</script><style>#crb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#crb[hidden]{display:none}#crb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#crb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#crb button:disabled{opacity:.35}#crb b{font:600 20px system-ui,sans-serif;min-width:64px}#crb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}</style><div id="crb" hidden><div class="rw"><button id="crm" type="button">− electrón</button><b id="crl">Cr</b><button id="crp" type="button">+ electrón</button></div><small id="crt"></small></div><script>(function(){
+</script><style>#crb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#crb[hidden]{display:none}#crb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#crb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#crb button:disabled{opacity:.35}#crb b{font:600 20px system-ui,sans-serif;min-width:64px}#crb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}#crb .rw[hidden]{display:none}#crb .rw+.rw,#crb small+.rw{margin-top:6px}#crb #crq button{padding:6px 9px;font-size:12px}</style><div id="crb" hidden><div class="rw"><button id="crm" type="button">− electrón</button><b id="crl">Cr</b><button id="crp" type="button">+ electrón</button></div><small id="crt"></small><div class="rw"><button id="crw" type="button">¿Por qué rojo?</button></div><div class="rw" id="crq" hidden><button data-k="0" type="button">Entra</button><button data-k="1" type="button">Oxida</button><button data-k="2" type="button">Daña el ADN</button></div></div><script>(function(){
 const TH=AFRAME.THREE,Z=24,ez=x=>x*x*(3-2*x);
 const LAB=["Cr","Cr⁺","Cr²⁺","Cr³⁺","Cr⁴⁺","Cr⁵⁺","Cr⁶⁺"],
 TXT=["Neutro: 6 electrones de valencia (4s¹ 3d⁵).","Pierde el 4s¹: desaparece la 4.ª capa y el átomo se achica.","Reductor fuerte y poco estable fuera del laboratorio.","Forma estable y mucho menos tóxica: se une a OH⁻ y queda como sólido insoluble.","Estado intermedio muy inestable.","Estado intermedio muy inestable.","Sin electrones de valencia. En la realidad es cromato (CrO₄²⁻): tóxico y cancerígeno. El 7.º electrón está en una capa interna y ya no se puede sacar."],
 COL=[[1,1,1,0],[1,.84,.29,.1],[1,.84,.29,.16],[.21,.88,.48,.3],[1,.62,.18,.3],[1,.48,.1,.34],[1,.16,.16,.42]],
 DIR=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x/1.7321));
-let q=0,po=0,R=1,EL=[],LV=[],hs=new Set(),gone=[],aura=null,bond=null,ox=[],root=null,last=0;
+let q=0,po=0,R=1,EL=[],LV=[],hs=new Set(),gone=[],aura=null,bond=null,G=null,fx=null,ox=[],root=null,last=0;
 const bx=document.getElementById("crb"),bm=document.getElementById("crm"),bp=document.getElementById("crp"),bl=document.getElementById("crl"),bt=document.getElementById("crt");
 function parts(){const m=document.getElementById("m"+Z),w=m&&m.querySelector(":scope > a-entity"),i=w&&w.querySelector("[gltf-model]"),r=i&&i.getObject3D&&i.getObject3D("mesh");return r?{m,w,inner:i,r}:null}
 function setup(P){const el=[];root.traverse(o=>{if(o.isMesh&&CAPAS.categoria(o)==="ele")el.push({o,n:CAPAS.nivel(o)||0})});
@@ -1643,7 +1643,7 @@ function setup(P){const el=[];root.traverse(o=>{if(o.isMesh&&CAPAS.categoria(o)=
  const s=new TH.Vector3().setFromMatrixScale(P.inner.object3D.matrixWorld).x||1,z=new TH.Box3().setFromObject(root).getSize(new TH.Vector3());
  R=Math.max(z.x,z.y,z.z)/2/s;
  aura=new TH.Mesh(new TH.SphereGeometry(1,24,16),new TH.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0,side:TH.BackSide,depthWrite:false,blending:TH.AdditiveBlending}));
- aura.scale.setScalar(R*1.25);P.inner.object3D.add(aura);
+ G=new TH.Group();P.inner.object3D.add(G);aura.scale.setScalar(R*1.25);P.inner.object3D.add(aura);
  const mO=new TH.MeshBasicMaterial({color:0xff4d3d,transparent:true,opacity:.92,depthWrite:false});
  for(let i=0;i<4;i++){const g=new TH.Group(),c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.font="bold 40px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillStyle="#fff";x.fillText("O",32,34);
   const sp=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));sp.scale.setScalar(1.6);g.add(new TH.Mesh(new TH.SphereGeometry(1,16,12),mO),sp);g.visible=false;P.inner.object3D.add(g);ox.push(g)}
@@ -1663,7 +1663,28 @@ function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1
  const t=q===6?1:0;po=Math.max(0,Math.min(1,po+(t?1:-1)*dt*1.2));const k=ez(po);
  const pa=bond.geometry.attributes.position;
  ox.forEach((g,i)=>{const d=R*(2.2-1.5*k),r=.22*R*Math.max(k,1e-3);g.visible=po>.01;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(r);pa.setXYZ(2*i,0,0,0);pa.setXYZ(2*i+1,g.position.x,g.position.y,g.position.z)});
- pa.needsUpdate=true;bond.visible=po>.01}
+ pa.needsUpdate=true;bond.visible=po>.01;paso(now)}
+
+const CAP=[["El Cr³⁺ no cruza el canal: la célula casi no lo absorbe.","El cromato tiene forma casi idéntica a la del sulfato y cruza el canal de la membrana."],["Con Cr³⁺ no hay robo de electrones: la molécula queda intacta.","El Cr⁶⁺ le saca 3 electrones a la molécula y baja a Cr³⁺. La molécula se daña."],["El Cr³⁺ no llega al ADN.","Dentro de la célula baja a Cr³⁺ pasando por estados inestables y se pega al ADN: lo deforma y causa mutaciones."]];
+function S(c,r,x,y,z){const m=new TH.Mesh(new TH.SphereGeometry(1,12,9),new TH.MeshBasicMaterial({color:c,transparent:true,depthTest:false}));m.scale.setScalar(r*R);m.position.set(x*R,y*R,z*R);m.renderOrder=5;G.add(m);fx.a.push(m);return m}
+function L(t,x,y){const c=document.createElement("canvas");c.width=256;c.height=64;const g=c.getContext("2d");g.font="bold 26px system-ui,sans-serif";g.textAlign="center";g.fillStyle="#fff";g.fillText(t,128,40);const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));s.scale.set(1.6*R,.4*R,1);s.position.set(x*R,y*R,0);s.renderOrder=6;G.add(s);fx.a.push(s)}
+function ir(k){if(fx){fx.a.forEach(m=>G.remove(m));fx=null}
+ if(q!==3&&q!==6){bt.textContent="Para comparar, ponlo en Cr³⁺ o en Cr⁶⁺.";return}
+ const h=q===6;fx={k,h,t0:performance.now(),a:[],d:0};bt.textContent=CAP[k][h?1:0];
+ if(k===0){[-1.3,1.3].forEach(y=>{const w=S(0x8aa0c8,1,2.4,y,0);w.scale.set(.18*R,.7*R,.3*R)});L("Membrana",2.4,2.2);
+  fx.i=S(h?0xff3b3b:0x35e07a,h?.22:.3,-2.2,0,0);if(h)fx.o=DIR.map(()=>S(0xff7a6a,.12,0,0,0))}
+ if(k===1){fx.m=[[0,0],[.4,0],[-.4,0],[0,.4],[0,-.4]].map(p=>[S(0x7ab8ff,.2,-2.4+p[0],p[1],0),p]);fx.e=[0,1,2].map(()=>S(0xffe14a,.1,-2.4,0,0));L("molécula (esquema)",-2.4,-1.1)}
+ if(k===2){fx.s=[];for(let i=0;i<14;i++){const th=i*.6,y=(i-6.5)*.22;fx.s.push([S(0x6fa8ff,.09,2.4+Math.cos(th)*.25,y,Math.sin(th)*.25),S(0x6fa8ff,.09,2.4-Math.cos(th)*.25,y,-Math.sin(th)*.25),i,th])}L("ADN",2.4,2.0);fx.i=S(0xff3b3b,.3,-1,0,0)}}
+function paso(now){if(!fx)return;const T=(now-fx.t0)/1000,h=fx.h,k=fx.k;if(T>5.5){fx.a.forEach(m=>G.remove(m));fx=null;return}
+ if(k===0){const p=Math.min(1,T/3.2),x=-2.2+4.1*(h?ez(p):(p<.6?ez(p/.6):1-.35*ez((p-.6)/.4)));fx.i.position.x=x*R;if(h)fx.o.forEach((s,i)=>s.position.set((x+DIR[i][0]*.38)*R,DIR[i][1]*.38*R,DIR[i][2]*.38*R))}
+ if(k===1){const d=h&&T>2.9?Math.min(1,(T-2.9)/1.2):0;fx.m.forEach(a=>{a[0].position.set((-2.4+a[1][0]*(1+1.2*d)+Math.sin(T*9+a[1][1]*7)*.06*d)*R,(a[1][1]*(1+1.2*d))*R,0);if(d>0)a[0].material.color.setHex(0xff3b3b)});
+  fx.e.forEach((e,i)=>{const t=h?Math.max(0,Math.min(1,(T-.8-i*.45)/.9)):0,u=ez(t);e.visible=t<1;e.position.set((-2.4*(1-u)+(t?0:Math.cos(T*3+i*2.1)*.55))*R,(Math.sin(Math.PI*t)*.5+(t?0:Math.sin(T*3+i*2.1)*.55))*R,0)});
+  if(h&&T>3.1&&!fx.d){fx.d=1;poner(3)}}
+ if(k===2){const p=Math.min(1,T/2.4);fx.i.position.x=(h?-1+3*ez(p):-1+1.9*ez(Math.min(1,T/1.2)))*R;
+  fx.i.material.color.setHex(!h?0x35e07a:T<.6?0xff3b3b:T<1.8?0xff9d2e:0x35e07a);fx.i.material.opacity=h?1:1-Math.max(0,T-1.2);
+  const d=h&&T>2.6?Math.min(1,(T-2.6)/1.2):0;fx.s.forEach(a=>{const o=Math.sin(a[2]*.7+T*8)*.12*d;a[0].position.x=(2.4+Math.cos(a[3])*.25+o)*R;a[1].position.x=(2.4-Math.cos(a[3])*.25+o)*R;if(d>0){a[0].material.color.setHex(0xff3b3b);a[1].material.color.setHex(0xff3b3b)}})}}
+document.getElementById("crw").onclick=()=>{const z=document.getElementById("crq");z.hidden=!z.hidden};
+document.querySelectorAll("#crq button").forEach(b=>b.onclick=()=>{if(!root)return;const c=q===6?"#ff3b3b":q===3?"#35e07a":"";ir(+b.dataset.k);if(c)b.style.borderColor=c});
 requestAnimationFrame(tick);
 })();
 </script></body></html>
