@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prueba barcode 4x4 BCH</title>
 <style>
-  html, body { margin: 0; overflow: hidden; background: #000; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   #info {
     position: fixed; top: 8px; left: 8px; right: 8px; z-index: 10;
     padding: 8px 12px; border-radius: 10px;
@@ -20,72 +20,106 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/three.js/build/ar-threex.js"></script>
 <script>
-  // IDs de los marcadores que descargaste de la galería (editá esta lista)
-  const IDS = [008, 026];
+  // Prueba con todos los IDs de 1 a 118 (número atómico): no hace falta editar nada
+  const IDS = Array.from({ length: 118 }, (_, i) => i + 1);
 
   const info = document.getElementById('info');
+  let baseText = 'Apuntá a un marcador…';
+  let context = null;
+  let running = false;
+  const roots = {};
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setClearColor(0x000000, 0);
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.domElement.style.position = 'absolute';
-  renderer.domElement.style.top = '0';
-  renderer.domElement.style.left = '0';
+  renderer.domElement.style.zIndex = '1';
   document.body.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();
   scene.add(camera);
 
-  const source = new THREEx.ArToolkitSource({ sourceType: 'webcam' });
-
-  const context = new THREEx.ArToolkitContext({
-    detectionMode: 'mono_and_matrix',
-    matrixCodeType: '4x4_BCH_13_9_3',
+  // Pide más resolución a la cámara (antes: 640x480, que se estiraba y recortaba)
+  const source = new THREEx.ArToolkitSource({
+    sourceType: 'webcam',
+    sourceWidth: 1280,
+    sourceHeight: 720,
   });
 
-  function onResize() {
-    source.onResizeElement();
-    source.copyElementSizeTo(renderer.domElement);
-    if (context.arController !== null) {
-      source.copyElementSizeTo(context.arController.canvas);
+  // Muestra la imagen COMPLETA de la cámara (sin recortar = sin zoom), centrada
+  function fit() {
+    const v = source.domElement;
+    if (!v || !v.videoWidth) return;
+    const s = Math.min(window.innerWidth / v.videoWidth, window.innerHeight / v.videoHeight);
+    const w = Math.round(v.videoWidth * s);
+    const h = Math.round(v.videoHeight * s);
+    const left = Math.round((window.innerWidth - w) / 2);
+    const top = Math.round((window.innerHeight - h) / 2);
+    renderer.setSize(w, h);
+    for (const el of [v, renderer.domElement]) {
+      el.style.position = 'absolute';
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+      el.style.margin = '0';
     }
+    v.style.zIndex = '0';
   }
 
-  source.init(() => setTimeout(onResize, 300));
-  window.addEventListener('resize', onResize);
-
-  context.init(() => {
-    camera.projectionMatrix.copy(context.getProjectionMatrix());
-    info.textContent = 'Apuntá a un marcador…';
-  });
-
-  // Un cubo de color distinto por marcador
-  const roots = {};
-  IDS.forEach((id, i) => {
-    const root = new THREE.Group();
-    root.visible = false;
-    scene.add(root);
-
-    new THREEx.ArMarkerControls(context, root, {
-      type: 'barcode',
-      barcodeValue: id,
+  function start() {
+    const v = source.domElement;
+    // Canvas de detección con la misma proporción que el video (lado largo = 640 px)
+    const k = 640 / Math.max(v.videoWidth, v.videoHeight);
+    context = new THREEx.ArToolkitContext({
+      detectionMode: 'mono_and_matrix',
+      matrixCodeType: '4x4_BCH_13_9_3',
+      canvasWidth: Math.round(v.videoWidth * k),
+      canvasHeight: Math.round(v.videoHeight * k),
+    });
+    context.init(() => {
+      camera.projectionMatrix.copy(context.getProjectionMatrix());
+      running = true;
     });
 
-    const cube = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(i / IDS.length, 0.8, 0.55) })
-    );
-    cube.position.y = 0.5;
-    root.add(cube);
-    roots[id] = root;
-  });
+    IDS.forEach(id => {
+      const root = new THREE.Group();
+      root.visible = false;
+      scene.add(root);
+      new THREEx.ArMarkerControls(context, root, { type: 'barcode', barcodeValue: id });
+      const cube = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL((id * 0.137) % 1, 0.8, 0.55) })
+      );
+      cube.position.y = 0.5;
+      root.add(cube);
+      roots[id] = root;
+    });
+
+    fit();
+    baseText = 'Cámara ' + v.videoWidth + '×' + v.videoHeight + ' · apuntá a un marcador…';
+    info.textContent = baseText;
+  }
+
+  function waitVideo() {
+    if (source.domElement.videoWidth) start();
+    else setTimeout(waitVideo, 100);
+  }
+
+  source.init(
+    () => setTimeout(waitVideo, 300),
+    () => { info.textContent = 'No se pudo abrir la cámara (¿diste el permiso?)'; }
+  );
+
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', () => setTimeout(() => location.reload(), 300));
 
   function loop() {
     requestAnimationFrame(loop);
-    if (source.ready) context.update(source.domElement);
-    const visibles = IDS.filter(id => roots[id].visible);
-    if (visibles.length) info.textContent = 'Detectados: ' + visibles.join(', ');
+    if (running && source.ready) context.update(source.domElement);
+    const visibles = IDS.filter(id => roots[id] && roots[id].visible);
+    info.textContent = visibles.length ? 'Detectados: ' + visibles.join(', ') : baseText;
     renderer.render(scene, camera);
   }
   loop();
