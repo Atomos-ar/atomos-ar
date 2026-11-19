@@ -1627,7 +1627,7 @@ void main(){float r=length(vQ);if(r>1.0)discard;
  const f=Q.get("tut");
  if(f==="1"||(f!=="0"&&!visto))(function w(){if(document.getElementById("intro"))return setTimeout(w,300);setTimeout(()=>ini(0),600)})();
 })();
-</script><style>#crb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#crb[hidden]{display:none}#crb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#crb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#crb button:disabled{opacity:.35}#crb b{font:600 20px system-ui,sans-serif;min-width:64px}#crb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}#crb .rw[hidden]{display:none}#crb .rw+.rw,#crb small+.rw{margin-top:6px}#crb #crq button{padding:6px 9px;font-size:12px}</style><div id="crb" hidden><div class="rw"><button id="crm" type="button">− electrón</button><b id="crl">Cr</b><button id="crp" type="button">+ electrón</button></div><small id="crt"></small><div class="rw"><button id="crw" type="button">¿Por qué rojo?</button><button id="crr" type="button">Remediar con hierro</button></div><div class="rw" id="crq" hidden><button data-k="0" type="button">Entra</button><button data-k="1" type="button">Oxida</button><button data-k="2" type="button">Daña el ADN</button></div></div><script>(function(){
+</script><style>#crb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#crb[hidden]{display:none}#crb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#crb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#crb button:disabled{opacity:.35}#crb b{font:600 20px system-ui,sans-serif;min-width:64px}#crb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}#crb .rw[hidden]{display:none}#crb .rw+.rw,#crb small+.rw{margin-top:6px}#crb #crq button{padding:6px 9px;font-size:12px}</style><div id="crb" hidden><div class="rw"><button id="crm" type="button">− electrón</button><b id="crl">Cr</b><button id="crp" type="button">+ electrón</button></div><small id="crt"></small><div class="rw"><button id="crw" type="button">¿Por qué rojo?</button><button id="crr" type="button">Remediar con hierro</button></div><div class="rw" id="crq" hidden><button data-k="0" type="button">Entra</button><button data-k="1" type="button">Oxida</button><button data-k="2" type="button">Daña el ADN</button></div><div class="rw" id="crc" hidden><button id="crz" type="button">⏸ Pausar</button><button id="crx" type="button">✕ Cerrar escena</button></div></div><script>(function(){
 const TH=AFRAME.THREE,Z=24,ez=x=>x*x*(3-2*x);
 const LAB=["Cr","Cr⁺","Cr²⁺","Cr³⁺","Cr⁴⁺","Cr⁵⁺","Cr⁶⁺"],
 TXT=["Neutro: 6 electrones de valencia (4s¹ 3d⁵).","Pierde el 4s¹: desaparece la 4.ª capa y el átomo se achica.","Reductor fuerte y poco estable fuera del laboratorio.","Forma estable y mucho menos tóxica: se une a OH⁻ y queda como sólido insoluble.","Estado intermedio muy inestable.","Estado intermedio muy inestable.","Sin electrones de valencia. En la realidad es cromato (CrO₄²⁻): tóxico y cancerígeno. El 7.º electrón está en una capa interna y ya no se puede sacar."],
@@ -1658,7 +1658,7 @@ function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a
  a.E=a.E.filter(e=>{if(hs.has(e.o)){gone.push(e);return false}return true})}
 function poner(n){q=n;hs=new Set(EL.slice(0,q).map(x=>x.o));EL.forEach(x=>x.o.visible=true);LV.forEach(x=>x.o.visible=true);try{CAPAS.aplicarModelo(root)}catch(e){}
  const c=COL[q];bl.textContent=LAB[q];bl.style.color="rgb("+(c[3]?c.slice(0,3).map(x=>Math.round(x*255)).join(","):"255,255,255")+")";bt.textContent=TXT[q];bm.disabled=q>=6;bp.disabled=q<=0}
-bm.onclick=()=>{if(root&&q<6)poner(q+1)};bp.onclick=()=>{if(root&&q>0)poner(q-1)};
+bm.onclick=()=>{if(root&&q<6){if(fx)lim();poner(q+1)}};bp.onclick=()=>{if(root&&q>0){if(fx)lim();poner(q-1)}};
 function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1000||0);last=now;
  const P=parts(),vis=!!(P&&P.m.object3D.visible);bx.hidden=!vis;if(!P)return;
  if(!root){root=P.r;setup(P);poner(0)}if(root!==P.r)return;
@@ -1668,7 +1668,7 @@ function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1
  const t=q===6?1:0;po=Math.max(0,Math.min(1,po+(t?1:-1)*dt*1.2));const k=ez(po);
  ox.forEach((g,i)=>{const re=g.userData.real,d=re?R*(2.8-1.95*k):R*(2.2-1.5*k),r=re?.7*Math.max(k,1e-3):.22*R*Math.max(k,1e-3);g.visible=po>.01;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(r);if(re){g.rotation.y=now/1100+i*1.7;g.rotation.x=.35*Math.sin(now/900+i)}link(bond[i],ZERO,g.position,re?.025:.05*R);bond[i].visible=bond[i].visible&&po>.01});
  if(fx&&G){const sc=document.querySelector("a-scene"),cm=sc&&sc.camera;if(cm){cm.getWorldQuaternion(QC);P.inner.object3D.getWorldQuaternion(QI);G.quaternion.copy(QI).invert().multiply(QC)}}
- paso(now)}
+ cC.hidden=!fx;paso(now)}
 
 const CAP=[["El Cr³⁺ no cruza el canal: la célula casi no lo absorbe.","El cromato tiene forma casi idéntica a la del sulfato y cruza el canal de la membrana."],["Con Cr³⁺ no hay robo de electrones: la molécula queda intacta.","El Cr⁶⁺ le saca 3 electrones a la molécula y baja a Cr³⁺. La molécula se daña."],["El Cr³⁺ no llega al ADN.","Dentro de la célula baja a Cr³⁺ pasando por estados inestables y se pega al ADN: lo deforma y causa mutaciones."]];
 const MC=(()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),g=x.createRadialGradient(46,40,4,64,64,64);g.addColorStop(0,"#fff");g.addColorStop(.25,"#dcdcdc");g.addColorStop(.7,"#7c7c7c");g.addColorStop(1,"#2c2c2c");x.fillStyle=g;x.fillRect(0,0,128,128);return new TH.CanvasTexture(c)})(),
@@ -1680,13 +1680,13 @@ function orb(c,r,x,y,z,p){const m=new TH.Mesh(GEO,M(c));m.scale.setScalar(r);m.p
 function cyl(c,p){return add(new TH.Mesh(CYL,M(c)),p)}
 function link(m,a,b,r){v1.copy(a);v2.copy(b).sub(v1);const l=v2.length();m.visible=l>1e-4&&r>0;if(!m.visible)return;m.position.copy(v1).addScaledVector(v2,.5);m.quaternion.setFromUnitVectors(UP,v2.divideScalar(l));m.scale.set(r,l,r)}
 function glow(c,s,x,y){const m=new TH.Sprite(new TH.SpriteMaterial({map:GL,color:c,transparent:true,blending:TH.AdditiveBlending,depthTest:false}));m.scale.setScalar(s);m.position.set(x,y,0);m.renderOrder=7;return add(m)}
-function L(t,x,y,w){const c=document.createElement("canvas");c.width=512;c.height=96;const g=c.getContext("2d");g.font="bold 44px system-ui,sans-serif";g.textAlign="center";g.fillStyle="#fff";g.shadowColor="#000";g.shadowBlur=8;g.fillText(t,256,62);const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));w=w||1.6;s.scale.set(w,w*96/512,1);s.position.set(x,y,0);s.renderOrder=8;return add(s)}
+function L(t,x,y){const c=document.createElement("canvas"),g=c.getContext("2d"),F="bold 44px system-ui,sans-serif";g.font=F;c.width=Math.ceil(g.measureText(t).width)+40;c.height=80;g.font=F;g.textAlign="center";g.fillStyle="#fff";g.shadowColor="#000";g.shadowBlur=8;g.fillText(t,c.width/2,56);const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));s.scale.set(.26*c.width/80,.26,1);s.position.set(x,y,0);s.renderOrder=8;return add(s)}
 function stick(c,r,a,b,p){const m=cyl(c,p);link(m,a,b,r);return m}
 function cro(){const g=new TH.Group();orb(0x9aa7bd,.22,0,0,0,g);DIR.forEach(d=>{orb(0xff4d3d,.12,d[0]*.42,d[1]*.42,d[2]*.42,g);stick(0xe8e8f0,.03,ZERO,V(d[0]*.42,d[1]*.42,d[2]*.42),g)});return g}
 function ohg(){const g=new TH.Group();orb(0xff4d3d,.12,0,0,0,g);orb(0xffffff,.07,.17,.1,0,g);stick(0xe8e8f0,.025,ZERO,V(.17,.1,0),g);g.visible=false;return add(g)}
 function lim(){fx.a.forEach(m=>G.remove(m));fx=null}
 function el(n,s){return[...Array(n)].map((_,i)=>glow(0xffe14a,s*(1-i*.28),0,0))}
-function ir(k){if(fx)lim();
+function ir(k){if(fx)lim();cZ.textContent="⏸ Pausar";
  if(q!==3&&q!==6){bt.textContent="Para comparar, ponlo en Cr³⁺ o en Cr⁶⁺.";return}
  const h=q===6;fx={k,h,t0:performance.now(),a:[],d:0};bt.textContent=CAP[k][h?1:0];
  if(k===0){for(const s of[-1,1])for(let i=0;i<7;i++){const y=s*(.85+i*.21);for(const f of[-1,1]){const x=2.4+f*.52;orb(0xf0c27a,.1,x,y,0);for(const dz of[-.09,.09])stick(0xd9a65c,.028,V(x,y,dz),V(2.4+f*.08,y+dz*.5,dz))}}
@@ -1697,11 +1697,11 @@ function ir(k){if(fx)lim();
   for(let i=0;i<6;i++){const a=i*Math.PI/3;fx.at.push({m:orb(0x8a93a6,.15,0,0,0,mg),b:[Math.cos(a)*.42,Math.sin(a)*.42,0],c:1})}
   for(let i=0;i<6;i++){const a=i*Math.PI/3,c=Math.cos(a),s=Math.sin(a),o=i===0;fx.at.push({m:orb(o?0xff4d3d:0xffffff,o?.13:.08,0,0,0,mg),b:[c*(o?.82:.78),s*(o?.82:.78),0],c:o});fx.bd.push({m:cyl(0xcfd6e6,mg),i,j:i+6,r:.03});fx.bd.push({m:cyl(0xcfd6e6,mg),i,j:(i+1)%6,r:.045})}
   fx.at.push({m:orb(0xffffff,.07,0,0,0,mg),b:[1.0,.2,0]});fx.bd.push({m:cyl(0xcfd6e6,mg),i:6,j:12,r:.03});
-  fx.e=[0,1,2].map(()=>el(3,.5));L("molécula orgánica (esquema)",-2.4,-1.25,2)}
+  fx.e=[0,1,2].map(()=>el(3,.5));L("molécula (esquema)",-2.4,-1.25)}
  if(k===2){fx.hb=[];for(const s of[0,1])for(let i=0;i<16;i++)fx.hb.push({m:orb(0x6fa8ff,.07,0,0,0),i,s});fx.bb=[];for(const s of[0,1])for(let i=0;i<15;i++)fx.bb.push({m:cyl(0x4f7fd0),i,s});
   fx.rg=[];for(let i=0;i<16;i++){const p=i%2?[0xffd84a,0x4aa3ff]:[0x4cd06a,0xff5a5a];fx.rg.push({m:cyl(p[0]),n:cyl(p[1]),i})}
   L("ADN",2.4,2.05,.8);fx.i=orb(0xff3b3b,.26,-1,0,0);fx.g=glow(0xff3b3b,1.2,0,0);fx.ad=orb(0x35e07a,.2,2.78,0,0);fx.ad.visible=false;fx.ag=glow(0x35e07a,1,2.78,0);fx.ag.visible=false}}
-function rem(){if(fx)lim();
+function rem(){if(fx)lim();cZ.textContent="⏸ Pausar";
  if(q!==6){bt.textContent="Para remediar, lleva el cromo a Cr⁶⁺ y toca Remediar.";return}
  fx={k:3,h:1,t0:performance.now(),a:[]};bt.textContent="Tres Fe²⁺ le ceden un electrón cada uno al Cr⁶⁺: baja a Cr³⁺, se une a OH⁻ y cae como sólido insoluble.";
  fx.f=[[-2.3,.9],[-2.5,0],[-2.3,-.9]].map(p=>{const o={p,m:orb(0xd9822b,.27,p[0],p[1],0),g:glow(0xffa23a,1.1,p[0],p[1]),a:L("Fe²⁺",p[0],p[1]+.5,.7),b:L("Fe³⁺",p[0],p[1]+.5,.7),e:el(3,.5)};o.b.visible=false;return o});
@@ -1714,7 +1714,7 @@ function paso3(T){const f=fx;
  const w=cp((T-3.3)/.8,0,1),c=T>4.4,fl=ez(cp((T-4.4)/1.5,0,1));
  f.oh.forEach((m,i)=>{m.visible=w>0&&!c;const r=(1-ez(w))*1.6+.42;m.position.set(DIR[i][0]*r,DIR[i][1]*r,DIR[i][2]*r)});
  f.pd.forEach((a,i)=>{a[0].visible=c;a[0].rotation.set(T*(1+i*.3),T*.8,0);a[0].position.set(a[1][0],a[1][1]-1.7*fl,0)});f.lb.visible=c&&fl>.5}
-function paso(now){if(!fx)return;const T=(now-fx.t0)/1000,h=fx.h,k=fx.k;if(T>(k===3?7:5.5)){lim();return}
+function paso(now){if(!fx)return;const D=fx.k===3?7:5.5,T=Math.min(((fx.pa||now)-fx.t0)/1000,D),h=fx.h,k=fx.k;
  if(k===3)return paso3(T);
  if(k===0){const p=Math.min(1,T/3.2),x=-2.2+4.1*(h?ez(p):(p<.6?ez(p/.6):1-.35*ez((p-.6)/.4)));fx.i.position.x=x;if(h)fx.i.rotation.y=T*2;else{fx.g.position.set(x,0,0)}}
  if(k===1){const d=h&&T>2.9?Math.min(1,(T-2.9)/1.2):0;fx.at.forEach((a,i)=>{a.m.position.set(a.b[0]*(1+1.3*d)+Math.sin(T*9+i*3)*.05*d,a.b[1]*(1+1.3*d)+Math.cos(T*8+i)*.05*d,a.b[2]);if(d>0&&a.c)a.m.material.color.setHex(0xff3b3b)});
@@ -1732,19 +1732,22 @@ document.getElementById("crw").onclick=()=>{const z=document.getElementById("crq
 document.querySelectorAll("#crq button").forEach(b=>b.onclick=()=>{if(!root)return;const c=q===6?"#ff3b3b":q===3?"#35e07a":"";ir(+b.dataset.k);if(c)b.style.borderColor=c});
 
 document.getElementById("crr").onclick=()=>{if(root)rem()};
+const cC=document.getElementById("crc"),cZ=document.getElementById("crz"),cX=document.getElementById("crx");
+cZ.onclick=()=>{if(!fx)return;const n=performance.now();if(fx.pa){fx.t0+=n-fx.pa;fx.pa=0;cZ.textContent="⏸ Pausar"}else{fx.pa=n;cZ.textContent="▶ Seguir"}};
+cX.onclick=()=>{if(fx)lim()};
 requestAnimationFrame(tick);
 })();
-</script><style>#mtb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#mtb[hidden]{display:none}#mtb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#mtb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#mtb button:disabled{opacity:.35}#mtb b{font:600 20px system-ui,sans-serif;min-width:64px}#mtb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}#mtb .rw[hidden]{display:none}#mtb .rw+.rw,#mtb small+.rw{margin-top:6px}#mtb #mtq button{padding:6px 9px;font-size:12px}</style><div id="mtb" hidden><div class="rw"><button id="mtm" type="button">− electrón</button><b id="mtl">M</b><button id="mtp" type="button">+ electrón</button></div><small id="mtt"></small><div class="rw"><button id="mtw" type="button">¿Por qué rojo?</button><button id="mtr" type="button">Remediar con planta</button></div><div class="rw" id="mtq" hidden><button data-k="0" type="button">Entra</button><button data-k="1" type="button">Impostor</button><button data-k="2" type="button">Llave y cerradura</button></div></div><script>(function(){
+</script><style>#mtb{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;width:min(340px,94vw);padding:8px 10px;border-radius:16px;background:rgba(8,12,24,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:13px system-ui,sans-serif;text-align:center}#mtb[hidden]{display:none}#mtb .rw{display:flex;gap:8px;align-items:center;justify-content:center}#mtb button{padding:7px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(8,12,24,.6);color:#fff;font:13px system-ui,sans-serif;touch-action:manipulation}#mtb button:disabled{opacity:.35}#mtb b{font:600 20px system-ui,sans-serif;min-width:64px}#mtb small{display:block;margin-top:5px;color:#c9d6f0;line-height:1.3}#mtb .rw[hidden]{display:none}#mtb .rw+.rw,#mtb small+.rw{margin-top:6px}#mtb #mtq button{padding:6px 9px;font-size:12px}</style><div id="mtb" hidden><div class="rw"><button id="mtm" type="button">− electrón</button><b id="mtl">M</b><button id="mtp" type="button">+ electrón</button></div><small id="mtt"></small><div class="rw"><button id="mtw" type="button">¿Por qué rojo?</button><button id="mtr" type="button">Remediar con planta</button></div><div class="rw" id="mtq" hidden><button data-k="0" type="button">Entra</button><button data-k="1" type="button">Impostor</button><button data-k="2" type="button">Llave y cerradura</button></div><div class="rw" id="mtc" hidden><button id="mtz" type="button">⏸ Pausar</button><button id="mtx" type="button">✕ Cerrar escena</button></div></div><script>(function(){
 const TH=AFRAME.THREE,ez=x=>x*x*(3-2*x),cp=(x,a,b)=>x<a?a:x>b?b:x,SUP="⁰¹²³⁴⁵⁶⁷",lab=(s,q)=>s+(q?(q>1?SUP[q]:"")+"⁺":""),
 A=[1,.84,.29,.1],RD=[1,.16,.16,.42],OR=[1,.48,.1,.34],AM=[1,.62,.18,.3],DIR=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x/1.7321));
 const CF={
 82:{s:"Pb",max:4,col:[0,A,RD,AM,OR],tx:["Neutro: 4 electrones de valencia (6s² 6p²).","Estado inestable.","Pb²⁺: la forma tóxica habitual. Conserva el par 6s², imita al Ca²⁺ y se une al azufre de las enzimas.","Estado inestable.","Pb⁴⁺: oxidante fuerte (baterías de plomo). En el ambiente se reduce a Pb²⁺."],hide:[[/^nivel_?n?6/i,4],[/^orbital_?6s/i,4],[/^orbital_?6p/i,2]],ent:[2],imp:[2],lk:[2],host:{c:0x9ec5ff},zn:1,mc:0x7b8794,pl:"mostaza india",ch:"canal del calcio",
- cap:["El Pb²⁺ cruza el canal que el cuerpo usa para el calcio.","El Pb²⁺ tiene la misma carga y un tamaño parecido al Ca²⁺: lo desplaza (por ejemplo en el hueso) y queda ahí por años.","El Pb²⁺ desplaza al Zn, se une al azufre de la enzima y la bloquea (por ejemplo la que fabrica el hemo de la sangre)."],hn:"Ca²⁺"},
+ cap:["El Pb²⁺ cruza el canal que el cuerpo usa para el calcio.","El Pb²⁺ tiene la misma carga y un tamaño parecido al Ca²⁺: lo desplaza (por ejemplo en el hueso) y queda ahí por años.","El Pb²⁺ desplaza al Zn, se une al azufre de la enzima y la bloquea (por ejemplo la que fabrica el hemo de la sangre)."],hn:"Ca²⁺",hl:"Ca²⁺ del hueso"},
 48:{s:"Cd",max:2,col:[0,A,RD],tx:["Neutro: 2 electrones de valencia (5s²).","Estado inestable.","Cd²⁺: su único estado estable. Imita al Zn²⁺ y al Ca²⁺ y se acumula en riñón y hueso."],hide:[[/^nivel_?n?5/i,2],[/^orbital_?5s/i,2]],ent:[2],imp:[2],lk:[2],host:{c:0x9fb4c8},zn:1,mc:0xd9c25a,pl:"Noccaea caerulescens",ch:"canal del zinc",
- cap:["El Cd²⁺ entra por los canales del zinc y del calcio.","El Cd²⁺ ocupa el lugar del Zn²⁺ en las proteínas y las deja sin función.","El Cd²⁺ desplaza al Zn, se une al azufre de la enzima y la bloquea."],hn:"Zn²⁺"},
+ cap:["El Cd²⁺ entra por los canales del zinc y del calcio.","El Cd²⁺ ocupa el lugar del Zn²⁺ en las proteínas y las deja sin función.","El Cd²⁺ desplaza al Zn, se une al azufre de la enzima y la bloquea."],hn:"Zn²⁺",hl:"Zn²⁺ de la proteína"},
 33:{s:"As",max:5,col:[0,A,A,RD,A,OR],tx:["Neutro: 5 electrones de valencia (4s² 4p³).","Estado inestable.","Estado inestable.","As³⁺ (arsenito): se une al azufre de las enzimas y las bloquea. Es la forma más tóxica.","Estado inestable.","As⁵⁺ (arseniato): tiene forma casi idéntica a la del fosfato y se cuela en el ATP y el ADN."],hide:[[/^nivel_?n?4/i,5],[/^orbital_?4s/i,5],[/^orbital_?4p/i,3]],ent:[3,5],imp:[5],lk:[3],cl:1,zn:0,mc:0xb59a6a,pl:"helecho Pteris vittata",ch:"transportador de fosfato",o:q=>q===3?3:q===5?4:0,
  cap:["El arseniato se parece al fosfato y cruza su transportador.","El arseniato reemplaza al fosfato en la cadena (ATP, ADN): el enlace es inestable y se rompe.","El As³⁺ se une a dos azufres de la enzima y la bloquea."],hn:"fosfato"}};
-const ST={},ZL=[48,33,82],q$=id=>document.getElementById(id),bx=q$("mtb"),bm=q$("mtm"),bp=q$("mtp"),bl=q$("mtl"),bt=q$("mtt");
+const ST={},ZL=[48,33,82],q$=id=>document.getElementById(id),bx=q$("mtb"),bm=q$("mtm"),bp=q$("mtp"),bl=q$("mtl"),bt=q$("mtt"),mC=q$("mtc"),mZ=q$("mtz"),mX=q$("mtx");
 const MC=(()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),g=x.createRadialGradient(46,40,4,64,64,64);g.addColorStop(0,"#fff");g.addColorStop(.25,"#dcdcdc");g.addColorStop(.7,"#7c7c7c");g.addColorStop(1,"#2c2c2c");x.fillStyle=g;x.fillRect(0,0,128,128);return new TH.CanvasTexture(c)})(),
 GL=(()=>{const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d"),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,"rgba(255,255,255,1)");g.addColorStop(.3,"rgba(255,255,255,.5)");g.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=g;x.fillRect(0,0,64,64);return new TH.CanvasTexture(c)})(),
 GEO=new TH.SphereGeometry(1,24,16),CYL=new TH.CylinderGeometry(1,1,1,10,1),UP=new TH.Vector3(0,1,0),ZERO=new TH.Vector3(),v1=new TH.Vector3(),v2=new TH.Vector3(),QC=new TH.Quaternion(),QI=new TH.Quaternion(),V=(x,y,z)=>new TH.Vector3(x,y,z);
@@ -1757,7 +1760,7 @@ function cyl(c,p){return add(new TH.Mesh(CYL,M(c)),p)}
 function link(m,a,b,r){v1.copy(a);v2.copy(b).sub(v1);const l=v2.length();m.visible=l>1e-4&&r>0;if(!m.visible)return;m.position.copy(v1).addScaledVector(v2,.5);m.quaternion.setFromUnitVectors(UP,v2.divideScalar(l));m.scale.set(r,l,r)}
 function stick(c,r,a,b,p){const m=cyl(c,p);link(m,a,b,r);return m}
 function glow(c,s,x,y){const m=new TH.Sprite(new TH.SpriteMaterial({map:GL,color:c,transparent:true,blending:TH.AdditiveBlending,depthTest:false}));m.scale.setScalar(s);m.position.set(x,y,0);m.renderOrder=7;return add(m)}
-function L(t,x,y,w){const c=document.createElement("canvas");c.width=512;c.height=96;const g=c.getContext("2d");g.font="bold 44px system-ui,sans-serif";g.textAlign="center";g.fillStyle="#fff";g.shadowColor="#000";g.shadowBlur=8;g.fillText(t,256,62);const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));w=w||1.6;s.scale.set(w,w*96/512,1);s.position.set(x,y,0);s.renderOrder=8;return add(s)}
+function L(t,x,y){const c=document.createElement("canvas"),g=c.getContext("2d"),F="bold 44px system-ui,sans-serif";g.font=F;c.width=Math.ceil(g.measureText(t).width)+40;c.height=80;g.font=F;g.textAlign="center";g.fillStyle="#fff";g.shadowColor="#000";g.shadowBlur=8;g.fillText(t,c.width/2,56);const s=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));s.scale.set(.26*c.width/80,.26,1);s.position.set(x,y,0);s.renderOrder=8;return add(s)}
 function clu(c,x,y){const g=new TH.Group();orb(c,.2,0,0,0,g);DIR.forEach(d=>{orb(0xff4d3d,.12,d[0]*.4,d[1]*.4,d[2]*.4,g);stick(0xe8e8f0,.03,ZERO,V(d[0]*.4,d[1]*.4,d[2]*.4),g)});g.position.set(x,y,0);return add(g)}
 function ion(x,y){return cf.cl?clu(cf.mc,x,y):orb(cf.mc,.26,x,y,0)}
 function lim(){S.fx.a.forEach(m=>S.G.remove(m));S.fx=null}
@@ -1772,7 +1775,7 @@ function setup(P){const r=S.root,el=[];r.traverse(o=>{if(o.isMesh&&CAPAS.categor
 function ui(){const c=cf.col[S.q];bl.textContent=lab(cf.s,S.q);bl.style.color=c?"rgb("+c.slice(0,3).map(x=>Math.round(x*255)).join(",")+")":"#fff";bt.textContent=S.sec?"Secuestrado en la vacuola: ya no está disponible para dañar. La planta lo retiene (y después hay que gestionar la planta cosechada).":cf.tx[S.q];bm.disabled=S.q>=cf.max;bp.disabled=S.q<=0}
 function poner(n){S.q=n;S.sec=0;S.hs=new Set(S.EL.slice(0,n).map(x=>x.o));S.EL.forEach(x=>x.o.visible=true);S.LV.forEach(x=>x.o.visible=true);try{CAPAS.aplicarModelo(S.root)}catch(e){}ui()}
 function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a||!a.E)return;S.gone=S.gone.filter(e=>{if(S.hs.has(e.o))return true;a.E.push(e);return false});a.E=a.E.filter(e=>{if(S.hs.has(e.o)){S.gone.push(e);return false}return true})}
-function ir(k){if(S.fx)lim();const need=k===3?cf.lk:k===0?cf.ent:k===1?cf.imp:cf.lk;
+function ir(k){if(S.fx)lim();mZ.textContent="⏸ Pausar";const need=k===3?cf.lk:k===0?cf.ent:k===1?cf.imp:cf.lk;
  if(!need.includes(S.q)){bt.textContent="Para ver esta prueba, ponlo en "+need.map(n=>lab(cf.s,n)).join(" o ")+".";return}
  S.fx={k,t0:performance.now(),a:[],d:0};bt.textContent=k===3?"La planta usa el mismo enlace metal–azufre, pero con péptidos propios (fitoquelatinas) y guarda el metal en la vacuola. Ej.: "+cf.pl+".":cf.cap[k];const f=S.fx;
  if(k===0){for(const s of[-1,1])for(let i=0;i<7;i++){const y=s*(.85+i*.21);for(const g of[-1,1]){const x=2.4+g*.52;orb(0xf0c27a,.1,x,y,0);for(const dz of[-.09,.09])stick(0xd9a65c,.028,V(x,y,dz),V(2.4+g*.08,y+dz*.5,dz))}}
@@ -1781,11 +1784,11 @@ function ir(k){if(S.fx)lim();const need=k===3?cf.lk:k===0?cf.ent:k===1?cf.imp:cf
  if(k===1){const pr=[],pos=[];f.h=[];
   if(cf.cl){[1.1,0,-1.1].forEach(y=>pos.push([2.4,y]));pr.push([0,1],[1,2])}else{for(let j=0;j<3;j++)for(let i=0;i<3;i++)pos.push([2.4+(i-1)*.55,(j-1)*.55]);for(let j=0;j<3;j++)for(let i=0;i<3;i++){if(i<2)pr.push([j*3+i,j*3+i+1]);if(j<2)pr.push([j*3+i,j*3+i+3])}}
   const c=cf.cl?1:4;pos.forEach(p=>f.h.push(cf.cl?clu(0xff9d2e,p[0],p[1]):orb(cf.host.c,.2,p[0],p[1],0)));f.bd=pr.map(p=>({m:cyl(0xcfd6e6),a:p[0],b:p[1]}));f.c=c;f.pos=pos;f.i=ion(-2.2,0);
-  L(cf.cl?"cadena de fosfatos (ATP/ADN)":cf.hn+" en la proteína o el hueso",2.4,cf.cl?2.0:1.5,2)}
+  L(cf.cl?"cadena de fosfatos":cf.hl,2.4,cf.cl?2.0:1.5)}
  if(k===2||k===3){const pl=k===3;f.pl=pl;f.mx=-2.2;f.i=ion(pl?-1.2:-2.2,pl?.2:0);
   if(!pl){f.ring=[];for(let j=0;j<8;j++){const a=(j-3.5)*.78;f.ring.push([orb(0x7a93b8,.16,0,0,0),a])}f.s=[orb(0xffe14a,.13,2.05,.2,0),orb(0xffe14a,.13,2.05,-.2,0)];f.s.forEach((s,i)=>L("S",2.05,(i?-.2:.2)+(i?-.3:.3),.4));if(cf.zn){f.zn=orb(0x9fb4c8,.15,2.35,0,0);L("Zn",2.35,.35,.4)}f.sub=orb(0x35e07a,.2,2.2,2,0);L("enzima",2.2,-1.3,.9);f.bl=[0,1].map(()=>cyl(0xe8e8f0));f.lb=L("enzima bloqueada",2.2,-1.75,1.6);f.lb.visible=false}
-  else{f.b=[...Array(7)].map((_,i)=>orb(i%2?0xffe14a:0x9aa7bd,.12,0,0,0));f.cb=f.b.slice(1).map(()=>cyl(0xcfd6e6));f.sb=[1,3,5].map(()=>cyl(0xe8e8f0));const v=new TH.Mesh(new TH.TorusGeometry(.8,.04,8,32),M(0x35e07a));v.position.set(1.7,.2,0);add(v);add(Object.assign(new TH.Mesh(GEO,M(0x35e07a,.12)),{}),null);const w=f.a[f.a.length-1];w.scale.setScalar(.8);w.position.set(1.7,.2,0);L("vacuola",1.7,1.25,.8);L("fitoquelatina (péptido con azufre)",-1.4,-1.7,2.2)}}}
-function paso(now){const f=S.fx;if(!f)return;const T=(now-f.t0)/1000,k=f.k;if(T>(k===3?7:5.5)){lim();return}
+  else{f.b=[...Array(7)].map((_,i)=>orb(i%2?0xffe14a:0x9aa7bd,.12,0,0,0));f.cb=f.b.slice(1).map(()=>cyl(0xcfd6e6));f.sb=[1,3,5].map(()=>cyl(0xe8e8f0));const v=new TH.Mesh(new TH.TorusGeometry(.8,.04,8,32),M(0x35e07a));v.position.set(1.7,.2,0);add(v);add(Object.assign(new TH.Mesh(GEO,M(0x35e07a,.12)),{}),null);const w=f.a[f.a.length-1];w.scale.setScalar(.8);w.position.set(1.7,.2,0);L("vacuola",1.7,1.25,.8);f.fl=L("fitoquelatina",-1.4,-1.6)}}}
+function paso(now){const f=S.fx;if(!f)return;const k=f.k,T=Math.min(((f.pa||now)-f.t0)/1000,k===3?7:5.5);
  if(k===0){const p=Math.min(1,T/3.2);f.i.position.x=-2.2+4.1*ez(p);if(cf.cl)f.i.rotation.y=T*2}
  if(k===1){const c=f.c,d=T>2.2?Math.min(1,(T-2.2)/1.2):0,h=f.h,e=ez(cp((T-1.2)/1),0,1);f.i.position.set(-2.2+(f.pos[c][0]+2.2)*ez(cp(T/2.2,0,1)),f.pos[c][1]*ez(cp(T/2.2,0,1)),0);
   h[c].position.set(f.pos[c][0]+e*1.2,f.pos[c][1]+e*1.2,0);h[c].scale.setScalar(Math.max(1-e,1e-3)*(cf.cl?1:.2)||1e-3);if(cf.cl)h[c].scale.setScalar(Math.max(1-e,1e-3));else h[c].scale.setScalar(Math.max(.2*(1-e),1e-3));
@@ -1796,7 +1799,7 @@ function paso(now){const f=S.fx;if(!f)return;const T=(now-f.t0)/1000,k=f.k;if(T>
   if(f.zn){const u=ez(cp((T-1.6)/.9,0,1));f.zn.position.set(2.35+u*.9,u*1.4,0);f.zn.visible=u<1}
   f.bl.forEach((b,i)=>link(b,mp,f.s[i].position,d>0?.04:0));
   const y=T<3?2:T<3.8?2-1.05*ez((T-3)/.8):.95+1.05*ez(cp((T-3.8)/.8,0,1));f.sub.position.set(2.2,y,0);f.lb.visible=T>3.2}
- if(k===3){const e=ez(cp((T-.6)/1.6,0,1)),off=2.9*ez(cp((T-2.6)/1.6,0,1)),C=V(-1.2+off,.2,0);f.i.position.copy(C);
+ if(k===3){const e=ez(cp((T-.6)/1.6,0,1)),off=2.9*ez(cp((T-2.6)/1.6,0,1)),C=V(-1.2+off,.2,0);f.i.position.copy(C);f.fl.position.set(C.x,C.y-1.05,0);
   const P=f.b.map((m,i)=>{const a=i*1.15,r=i%2?.3:.42,tx=-2.4+i*.4,ty=-1.3,px=C.x+Math.cos(a)*r,py=C.y+Math.sin(a)*r,pz=(i-3)*.06,x=(tx+off*e)*(1-e)+px*e,y=ty*(1-e)+py*e;m.position.set(x,y,pz*e);return m.position});
   f.cb.forEach((b,i)=>link(b,P[i],P[i+1],.035));f.sb.forEach((b,i)=>link(b,C,P[1+i*2],e>.8?.03:0));
   if(T>4.4&&!f.d){f.d=1;S.sec=1;ui()}}}
@@ -1805,6 +1808,7 @@ function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1
  bx.hidden=!z;if(!z)return;
  if(z!==Z){Z=z;cf=CF[z];S=ST[z]||(ST[z]=newS());if(!S.root){S.root=P.r;setup(P);poner(0)}else ui()}
  if(S.root!==P.r)return;
+ mC.hidden=!S.fx;
  S.hs.forEach(o=>o.visible=false);S.LV.forEach(x=>{if(S.q>=x.min)x.o.visible=false});lista();
  const c=S.sec?[.21,.88,.48,.3]:cf.col[S.q];let al=c?c[3]:0;if(c&&!S.sec&&cf.col[S.q]===A)al*=.7+.3*Math.sin(now/120);if(c&&c===RD)al*=.75+.25*Math.sin(now/260);
  if(c)S.aura.material.color.setRGB(c[0],c[1],c[2]);S.aura.material.opacity+=(al-S.aura.material.opacity)*.15;S.aura.visible=S.aura.material.opacity>.01;
@@ -1812,7 +1816,9 @@ function tick(now){requestAnimationFrame(tick);const dt=Math.min(.1,(now-last)/1
  S.ox.forEach((g,i)=>{const d=S.R*(2.8-1.95*kk);g.visible=S.po>.01&&i<S.nl;g.position.set(DIR[i][0]*d,DIR[i][1]*d,DIR[i][2]*d);g.scale.setScalar(.7*Math.max(kk,1e-3));g.rotation.y=now/1100+i*1.7;g.rotation.x=.35*Math.sin(now/900+i);link(S.bond[i],ZERO,g.position,.025);S.bond[i].visible=S.bond[i].visible&&g.visible});
  if(S.fx){const sc=document.querySelector("a-scene"),cm=sc&&sc.camera;if(cm){cm.getWorldQuaternion(QC);P.inner.object3D.getWorldQuaternion(QI);S.G.quaternion.copy(QI).invert().multiply(QC)}}
  paso(now)}
-bm.onclick=()=>{if(S&&S.root&&S.q<cf.max)poner(S.q+1)};bp.onclick=()=>{if(S&&S.root&&S.q>0)poner(S.q-1)};
+bm.onclick=()=>{if(S&&S.root&&S.q<cf.max){if(S.fx)lim();poner(S.q+1)}};bp.onclick=()=>{if(S&&S.root&&S.q>0){if(S.fx)lim();poner(S.q-1)}};
+mZ.onclick=()=>{const f=S&&S.fx;if(!f)return;const n=performance.now();if(f.pa){f.t0+=n-f.pa;f.pa=0;mZ.textContent="⏸ Pausar"}else{f.pa=n;mZ.textContent="▶ Seguir"}};
+mX.onclick=()=>{if(S&&S.fx)lim()};
 q$("mtw").onclick=()=>{const z=q$("mtq");z.hidden=!z.hidden};
 document.querySelectorAll("#mtq button").forEach(b=>b.onclick=()=>{if(S&&S.root){const k=+b.dataset.k;ir(k);if(cf[["ent","imp","lk"][k]].includes(S.q))b.style.borderColor="#ff3b3b"}});
 q$("mtr").onclick=()=>{if(S&&S.root)ir(3)};
