@@ -122,9 +122,10 @@ ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z
 /* ---------- Rendimiento: núcleo unido. Todos los protones pasan a ser UNA malla y todos los neutrones OTRA (mismo aspecto, mismas posiciones y colores):
    un átomo pesado deja de dibujar ~300 objetos sueltos del núcleo. Para comparar en el celular: ?fusnuc=0 lo apaga. ---------- */
 (function(){
-window.__LOB=+(new URLSearchParams(location.search).get("lob")||0)||0;/* ?lob=1 matemática de la burbuja más barata (mismo aspecto); ?lob=2 además luz simple en los lóbulos */
+{const lp=new URLSearchParams(location.search).get("lob");window.__LOB=(lp===null||lp==="")?2:(+lp||0)}/* lob=2 por defecto: burbuja con matemática más barata + luz simple en los lóbulos. ?lob=1 solo la matemática; ?lob=0 aspecto original */
 const TH=window.AFRAME&&AFRAME.THREE;if(!TH)return;
 const N=window.__NUC={n:0,ahorro:0,on:new URLSearchParams(location.search).get("fusnuc")!=="0"};
+try{const P=TH.WebGLRenderer.prototype,r0=P.render;P.render=function(a,b){const t=performance.now();try{return r0.call(this,a,b)}finally{window.__RT=(window.__RT||0)*.9+(performance.now()-t)*.1}}}catch(e){}/* tiempo de CPU del dibujo (solo three.js) para el panel ?d=1 */
 /* Une todos los protones en UNA malla y todos los neutrones en OTRA (misma forma, mismo material, mismas posiciones).
    Se ve idéntico, pero el átomo pasa de ~300 dibujos de núcleo a 2. Devuelve cuántos objetos se ahorraron. */
 function fusionarNucleos(root,TH){
@@ -166,6 +167,7 @@ function lobulosBaratos(root){
   let n=mp.get(m);if(!n){n=new TH.MeshLambertMaterial({color:m.color.clone(),transparent:true,opacity:m.opacity,side:m.side,depthWrite:m.depthWrite,depthTest:m.depthTest,blending:m.blending,vertexColors:m.vertexColors});n.name=m.name;n.userData=Object.assign({},m.userData);mp.set(m,n)}
   o.material=n})}
 const hacer=root=>{try{if(N.on){const a=fusionarNucleos(root,TH);if(a>0){N.n++;N.ahorro+=a}}if(window.__LOB>=2)lobulosBaratos(root)}catch(e){window.__err="rendimiento "+e.message}};
+window.__OPT=hacer;
 /* captura: corre ANTES que Capas, la medición de tamaño y los demás módulos, así ninguno llega a ver los nucleones sueltos */
 addEventListener("model-loaded",e=>{const t=e.target;if(!t||!t.hasAttribute||!t.hasAttribute("gltf-model"))return;const r=(e.detail&&e.detail.model)||(t.getObject3D&&t.getObject3D("mesh"));if(r)hacer(r)},true);
 const sc=document.querySelector("a-scene");
@@ -515,7 +517,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (?fus=0)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\ndibujos:"+(FR.calls||0)+"  triáng:"+Math.round((FR.tris||0)/1000)+"k  núcleo unido:"+(window.__NUC?(window.__NUC.on?"-"+window.__NUC.ahorro+" objs":"apagado"):"-")+"  lóbulos:"+(window.__LOB||0)+"  prof.log:"+(new URLSearchParams(location.search).get("log")==="0"?"no":"sí")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (?fus=0)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\ndibujos:"+(FR.calls||0)+"  triáng:"+Math.round((FR.tris||0)/1000)+"k  núcleo unido:"+(window.__NUC?(window.__NUC.on?"-"+window.__NUC.ahorro+" objs":"apagado"):"-")+"  lóbulos:"+(window.__LOB||0)+"  prof.log:"+(new URLSearchParams(location.search).get("log")==="0"?"no":"sí")+"\ncpu: dibujo "+(window.__RT||0).toFixed(1)+"ms · radiactividad "+(window.__FXT||0).toFixed(1)+"ms"+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
@@ -1569,7 +1571,8 @@ void main(){float r=length(vQ);if(r>1.0)discard;
      lay.PT(x,y,z,es*.8,WH,.85*fa,0);lay.PT(x,y,z,es*2.4,col,.3*fa,1)}}}}
  /* ---- cada cuadro (antes de dibujar) ---- */
  let last=performance.now()/1000;
- function paso(){
+ function paso(){const _t=performance.now();try{paso1()}finally{window.__FXT=(window.__FXT||0)*.9+(performance.now()-_t)*.1}}
+ function paso1(){
   const now=performance.now()/1000,dt=cl(now-last,0,.1),on=(window.__FXOP||{on:1}).on;last=now;
   for(const z of ZS){
    let h=HZ[z];if(h===undefined){const m=document.getElementById("m"+z),w=m&&m.querySelector(":scope > a-entity"),inner=w&&w.querySelector("[gltf-model]");h=HZ[z]=m&&inner?{m,inner}:null}
@@ -1706,7 +1709,7 @@ function sph(P){
   const sp=new TH.Sprite(new TH.SpriteMaterial({map:new TH.CanvasTexture(c),transparent:true,depthTest:false}));sp.scale.setScalar(1.6);g.add(new TH.Mesh(new TH.SphereGeometry(1,16,12),mO),sp);g.visible=false;P.inner.object3D.add(g);ox.push(g)}
 }
 function mkOx(P){const GLd=TH.GLTFLoader;if(!GLd)return sph(P);
- try{new GLd().load("glb/8.glb",g=>{for(let i=0;i<4;i++){const h=new TH.Group();h.add(g.scene.clone(true));h.visible=false;h.userData.real=1;P.inner.object3D.add(h);ox.push(h)}},undefined,()=>sph(P))}catch(e){sph(P)}}
+ try{new GLd().load("glb/8.glb",g=>{window.__OPT&&window.__OPT(g.scene);for(let i=0;i<4;i++){const h=new TH.Group();h.add(g.scene.clone(true));h.visible=false;h.userData.real=1;P.inner.object3D.add(h);ox.push(h)}},undefined,()=>sph(P))}catch(e){sph(P)}}
 function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a||!a.E)return;
  gone=gone.filter(e=>{if(hs.has(e.o))return true;a.E.push(e);return false});
  a.E=a.E.filter(e=>{if(hs.has(e.o)){gone.push(e);return false}return true})}
@@ -1825,7 +1828,7 @@ function setup(P){const r=S.root,el=[];r.traverse(o=>{if(o.isMesh&&CAPAS.categor
  S.aura=new TH.Mesh(new TH.SphereGeometry(1,24,16),new TH.MeshBasicMaterial({color:0xff2a2a,transparent:true,opacity:0,side:TH.BackSide,depthWrite:false,blending:TH.AdditiveBlending}));S.aura.scale.setScalar(S.R*1.25);P.inner.object3D.add(S.aura);
  S.G=new TH.Group();S.G.scale.setScalar(S.R*.65);P.inner.object3D.add(S.G);
  if(cf.o){S.bond=[0,1,2,3].map(()=>{const m=new TH.Mesh(CYL,M(0xe8e8f0));m.visible=false;P.inner.object3D.add(m);return m});
-  const Ld=TH.GLTFLoader;if(Ld)try{new Ld().load("glb/8.glb",g=>{for(let i=0;i<4;i++){const h=new TH.Group();h.add(g.scene.clone(true));h.visible=false;P.inner.object3D.add(h);S.ox.push(h)}})}catch(e){}}}
+  const Ld=TH.GLTFLoader;if(Ld)try{new Ld().load("glb/8.glb",g=>{window.__OPT&&window.__OPT(g.scene);for(let i=0;i<4;i++){const h=new TH.Group();h.add(g.scene.clone(true));h.visible=false;P.inner.object3D.add(h);S.ox.push(h)}})}catch(e){}}}
 function ui(){const c=cf.col[S.q];bl.textContent=lab(cf.s,S.q);bl.style.color=c?"rgb("+c.slice(0,3).map(x=>Math.round(x*255)).join(",")+")":"#fff";bt.textContent=S.sec?"Secuestrado en la vacuola: ya no está disponible para dañar. La planta lo retiene (y después hay que gestionar la planta cosechada).":cf.tx[S.q];bm.disabled=S.q>=cf.max;bp.disabled=S.q<=0}
 function poner(n){S.q=n;S.sec=0;S.hs=new Set(S.EL.slice(0,n).map(x=>x.o));S.EL.forEach(x=>x.o.visible=true);S.LV.forEach(x=>x.o.visible=true);try{CAPAS.aplicarModelo(S.root)}catch(e){}ui()}
 function lista(){const a=window.__RAD&&window.__RAD.AT&&window.__RAD.AT[Z];if(!a||!a.E)return;S.gone=S.gone.filter(e=>{if(S.hs.has(e.o))return true;a.E.push(e);return false});a.E=a.E.filter(e=>{if(S.hs.has(e.o)){S.gone.push(e);return false}return true})}
