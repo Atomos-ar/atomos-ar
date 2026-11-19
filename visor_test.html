@@ -122,8 +122,9 @@ ZS.forEach(z=>document.write('<a-marker id="m'+z+'" type="pattern" url="patt/'+z
 /* ---------- Rendimiento: núcleo unido. Todos los protones pasan a ser UNA malla y todos los neutrones OTRA (mismo aspecto, mismas posiciones y colores):
    un átomo pesado deja de dibujar ~300 objetos sueltos del núcleo. Para comparar en el celular: ?fusnuc=0 lo apaga. ---------- */
 (function(){
+window.__LOB=+(new URLSearchParams(location.search).get("lob")||0)||0;/* ?lob=1 matemática de la burbuja más barata (mismo aspecto); ?lob=2 además luz simple en los lóbulos */
 const TH=window.AFRAME&&AFRAME.THREE;if(!TH)return;
-const N=window.__NUC={n:0,ahorro:0,on:new URLSearchParams(location.search).get("fusnuc")!=="0"};if(!N.on)return;
+const N=window.__NUC={n:0,ahorro:0,on:new URLSearchParams(location.search).get("fusnuc")!=="0"};
 /* Une todos los protones en UNA malla y todos los neutrones en OTRA (misma forma, mismo material, mismas posiciones).
    Se ve idéntico, pero el átomo pasa de ~300 dibujos de núcleo a 2. Devuelve cuántos objetos se ahorraron. */
 function fusionarNucleos(root,TH){
@@ -157,7 +158,14 @@ function fusionarNucleos(root,TH){
   L.forEach(o=>par.remove(o));par.add(M);
   ahorro+=L.length-1}
  root.userData.__nuc=ahorro;return ahorro}
-const hacer=root=>{try{const a=fusionarNucleos(root,TH);if(a>0){N.n++;N.ahorro+=a}}catch(e){window.__err="núcleo "+e.message}};
+/* lob>=2: los lóbulos translúcidos (los que más píxeles pintan) pasan de PBR completo a luz simple (Lambert). Mantiene color, opacidad, caras y mezcla. */
+function lobulosBaratos(root){
+ if(!root||root.userData.__lob)return;root.userData.__lob=1;const mp=new Map();
+ root.traverse(o=>{if(!o.isMesh||Array.isArray(o.material)||!/^orbital_?\d+[spdf]/i.test(o.name||""))return;
+  const m=o.material;if(!m||!m.isMeshStandardMaterial||!m.transparent||m.flatShading)return;
+  let n=mp.get(m);if(!n){n=new TH.MeshLambertMaterial({color:m.color.clone(),transparent:true,opacity:m.opacity,side:m.side,depthWrite:m.depthWrite,depthTest:m.depthTest,blending:m.blending,vertexColors:m.vertexColors});n.name=m.name;n.userData=Object.assign({},m.userData);mp.set(m,n)}
+  o.material=n})}
+const hacer=root=>{try{if(N.on){const a=fusionarNucleos(root,TH);if(a>0){N.n++;N.ahorro+=a}}if(window.__LOB>=2)lobulosBaratos(root)}catch(e){window.__err="rendimiento "+e.message}};
 /* captura: corre ANTES que Capas, la medición de tamaño y los demás módulos, así ninguno llega a ver los nucleones sueltos */
 addEventListener("model-loaded",e=>{const t=e.target;if(!t||!t.hasAttribute||!t.hasAttribute("gltf-model"))return;const r=(e.detail&&e.detail.model)||(t.getObject3D&&t.getObject3D("mesh"));if(r)hacer(r)},true);
 const sc=document.querySelector("a-scene");
@@ -507,7 +515,7 @@ setInterval(()=>{const v=document.querySelector("video"),c=document.querySelecto
  const st=[];for(const id in window.__ST){const x=window.__ST[id]();if(x[1]<5000)st.push(id+" real:"+(x[0]?1:0)+" ("+Math.round(x[1])+"ms)")}
  d.textContent=(v?"video "+v.videoWidth+"x"+v.videoHeight:"sin video")+" | canvas "+(c?c.width+"x"+c.height:"-")+" | modo "+(new URLSearchParams(location.search).get("c")||"3")+" | err:"+(window.__err||"-")
  +"\nfps:"+FR.fps.toFixed(0)+"  pico entre cuadros:"+Math.round(Math.max(FR.max,FR.pk))+"ms  redim:"+(window.__rs||0)+" bloq:"+(window.__blk||0)+" obj:"+(window.__obj||"-")
- +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (?fus=0)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\ndibujos:"+(FR.calls||0)+"  triáng:"+Math.round((FR.tris||0)/1000)+"k  núcleo unido:"+(window.__NUC?(window.__NUC.on?"-"+window.__NUC.ahorro+" objs":"apagado"):"-")+"  prof.log:"+(new URLSearchParams(location.search).get("log")==="0"?"no":"sí")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
+ +"\n"+(window.__camInfo?window.__camInfo(c,v):"")+"\nhoja rígida: "+(window.__FUS?(window.__FUS.on?"ACTIVA":window.__FUS.ready?"en espera":"aprendiendo ejes")+" · "+window.__FUS.n+" marc · pares "+Math.round(window.__FUS.neff)+"\n   error "+window.__FUS.err.toFixed(2)+"/típico "+window.__FUS.ref.toFixed(2)+" · ejes "+(window.__FUS.sel===window.__FUS.pri?"estándar":"#"+window.__FUS.sel)+" · escala "+(window.__FUS.ks||0).toFixed(2)+"\n   desv "+window.__FUS.dev.toFixed(2)+" · rechazos "+window.__FUS.rej+(window.__FUS.why?" ("+window.__FUS.why+")":"")+(window.__FUS.saved?" · guardado":""):"apagada (?fus=0)")+"\nancla:"+(window.__LK?window.__LK.no+" rechazos":"off")+(window.__lkerr?" ERR "+window.__lkerr:"")+"\ndibujos:"+(FR.calls||0)+"  triáng:"+Math.round((FR.tris||0)/1000)+"k  núcleo unido:"+(window.__NUC?(window.__NUC.on?"-"+window.__NUC.ahorro+" objs":"apagado"):"-")+"  lóbulos:"+(window.__LOB||0)+"  prof.log:"+(new URLSearchParams(location.search).get("log")==="0"?"no":"sí")+"\nhuecos:"+gaps+" (máx "+Math.round(maxgap)+"ms)  aguanta:"+HOLD+"ms\n"+(st.join("\n")||"marcador: ninguno")},500)}
 const t=document.getElementById("t"),s=document.getElementById("s");let cur=0;
 for(const z in D){const m=document.getElementById("m"+z);
  m.addEventListener("markerFound",()=>{cur=z;if(quiz){t.textContent=D[z][0]+" ("+D[z][1]+")";s.textContent="¿Cuántos electrones, protones y neutrones ves?"}else{t.textContent=D[z][0]+" ("+D[z][1]+") · "+z+" electrones";s.textContent=D[z][2]}});
@@ -554,8 +562,8 @@ const CAPAS=(function(){
  const BURB={centro:.35,exp:2,tope:.92,brillo:.65};
  const BURB_VS="vBubN=normalize(normalMatrix*normal);vBubP=(modelViewMatrix*vec4(transformed,1.0)).xyz;";
  /* va justo antes del tonemapping: gl_FragColor ya tiene la luz aplicada y el alfa final; diffuseColor sigue siendo el color base del material */
- const BURB_FS="{float bl=length(vBubN);if(bl>0.0001){float bc=clamp(abs(dot(vBubN/bl,normalize(-vBubP))),0.0,1.0);float bt=acos(bc)*0.63662;"
-  +"float bf="+BURB.centro.toFixed(4)+"+"+(1-BURB.centro).toFixed(4)+"*pow(max(bt*2.0,0.0001),"+BURB.exp.toFixed(4)+");"
+ const BURB_FS="{float bl=length(vBubN);if(bl>0.0001){float bc=clamp(abs(dot(vBubN/bl,normalize(-vBubP))),0.0,1.0);float bt="+(window.__LOB>=1?"(sqrt(1.0-bc)*(1.5707288+bc*(-0.2121144+bc*(0.0742610-bc*0.0187293))))":"acos(bc)")+"*0.63662;"
+  +"float bf="+BURB.centro.toFixed(4)+"+"+(1-BURB.centro).toFixed(4)+"*"+(window.__LOB>=1&&BURB.exp===2?"(max(bt*2.0,0.0001)*max(bt*2.0,0.0001))":"pow(max(bt*2.0,0.0001),"+BURB.exp.toFixed(4)+")")+";"
   +"gl_FragColor.a=min(gl_FragColor.a*bf,max(gl_FragColor.a,"+BURB.tope.toFixed(4)+"));"
   +"gl_FragColor.rgb+=diffuseColor.rgb*smoothstep(0.5,1.0,bt)*"+BURB.brillo.toFixed(4)+";}}";
  function bubOBC(sh){const A="#include <begin_vertex>",B="#include <tonemapping_fragment>";
